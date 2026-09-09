@@ -1,28 +1,43 @@
 import type { Metadata, Viewport } from "next";
+import { Instrument_Serif, Inter } from "next/font/google";
 
 import { site } from "@/config/site";
 
 import "./globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument-serif",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: site.title,
-    // Applies to child segments only, which is why `default` is required.
+    default: `${site.name} — ${site.tagline}`,
     template: `%s · ${site.name}`,
   },
   description: site.description,
+  applicationName: site.name,
 };
 
 export const viewport: Viewport = {
-  // `charset` and `width=device-width, initial-scale=1` are emitted
-  // automatically by Next.js and must not be re-declared here.
-  colorScheme: "light dark",
+  colorScheme: "light",
+  themeColor: "#faf8f4",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${inter.variable} ${instrumentSerif.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

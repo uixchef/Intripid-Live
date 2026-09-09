@@ -1,0 +1,112 @@
+.avatar {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--radius-full);
+  background: var(--avatar-color, var(--brand-600));
+  color: var(--paper-0);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  /*
+   * A paper-coloured ring rather than white: avatars sit on tinted surfaces
+   * and a pure white ring would read as a cut-out.
+   */
+  box-shadow: 0 0 0 1.5px var(--bg-surface-raised);
+  user-select: none;
+}
+
+.initials {
+  display: block;
+  line-height: 1;
+  transform: translateY(0.02em);
+}
+
+.xs {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+}
+
+.sm {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.md {
+  width: 30px;
+  height: 30px;
+  font-size: var(--text-xs);
+}
+
+.lg {
+  width: 38px;
+  height: 38px;
+  font-size: var(--text-sm);
+}
+
+.overflow {
+  background: var(--paper-200);
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Presence                                                                  */
+/* ------------------------------------------------------------------------- */
+
+.presence {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 33%;
+  height: 33%;
+  min-width: 7px;
+  min-height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--success-500);
+  box-shadow: 0 0 0 1.5px var(--bg-surface-raised);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Stack                                                                     */
+/* ------------------------------------------------------------------------- */
+
+.stack {
+  display: inline-flex;
+  align-items: center;
+  isolation: isolate;
+}
+
+.stacked {
+  margin-left: -5px;
+}
+
+.stack_sm .stacked {
+  margin-left: -6px;
+}
+
+.stack_md .stacked {
+  margin-left: -7px;
+}
+
+.stacked:first-child {
+  margin-left: 0;
+}
+
+/* Later avatars sit under earlier ones, so the leftmost reads as primary. */
+.stack .stacked:nth-child(1) {
+  z-index: 5;
+}
+.stack .stacked:nth-child(2) {
+  z-index: 4;
+}
+.stack .stacked:nth-child(3) {
+  z-index: 3;
+}
+.stack .stacked:nth-child(4) {
+  z-index: 2;
+}
+.stack .stacked:nth-child(5) {
+  z-index: 1;
+}

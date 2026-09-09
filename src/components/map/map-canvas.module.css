@@ -1,0 +1,37 @@
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--map-water-tint);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * Mapbox chrome overrides. The stock controls and attribution read as
+ * third-party furniture; these bring them into the product's own language.
+ */
+.root :global(.mapboxgl-ctrl-logo) {
+  opacity: 0.45;
+  transform: scale(0.82);
+  transform-origin: bottom right;
+}
+
+.root :global(.mapboxgl-ctrl-bottom-right),
+.root :global(.mapboxgl-ctrl-bottom-left) {
+  margin: 0 var(--space-2) var(--space-1);
+}
+
+.root :global(.mapboxgl-canvas:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* Markers are positioned by Mapbox; keep our own stacking predictable. */
+.root :global(.mapboxgl-marker) {
+  will-change: transform;
+}

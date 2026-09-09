@@ -1,0 +1,269 @@
+.step {
+  display: grid;
+  gap: var(--space-10);
+  align-content: start;
+}
+
+.stepHead {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.stepTitle {
+  font-family: var(--font-serif);
+  font-size: var(--text-3xl);
+  line-height: 1.08;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+  /* Serif display sits high; pull it back onto the eyebrow's baseline grid. */
+  margin-top: -0.06em;
+  text-wrap: balance;
+}
+
+.stepWhy {
+  font-size: var(--text-sm);
+  line-height: var(--lh-relaxed);
+  color: var(--text-tertiary);
+  max-width: 34ch;
+}
+
+.stepBody {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.subLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-4);
+}
+
+.readout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  line-height: var(--lh-normal);
+  color: var(--text-tertiary);
+}
+
+.readout strong {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.readoutIcon {
+  flex: none;
+  color: var(--energy-500);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Dates                                                                     */
+/* ------------------------------------------------------------------------- */
+
+.dateRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+.weekendNote {
+  display: flex;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--accent-50);
+  border: 1px solid var(--accent-100);
+}
+
+.weekendNote svg {
+  flex: none;
+  color: var(--accent-600);
+  margin-top: 1px;
+}
+
+.weekendTitle {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--accent-900);
+  letter-spacing: var(--tracking-tight);
+}
+
+.weekendBody {
+  font-size: var(--text-xs);
+  line-height: var(--lh-normal);
+  color: var(--accent-800);
+  margin-top: 2px;
+  opacity: 0.85;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Origin                                                                    */
+/* ------------------------------------------------------------------------- */
+
+.originGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.originItem {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface-raised);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  min-width: 0;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-hover);
+}
+
+.originItem:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.originItemOn {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  box-shadow:
+    var(--shadow-xs),
+    0 0 0 1px var(--brand-500);
+}
+
+.originCity {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.originCountry {
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.originItemOn .originCountry {
+  color: var(--brand-700);
+}
+
+.scopeBlock {
+  padding-top: var(--space-2);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Budget                                                                    */
+/* ------------------------------------------------------------------------- */
+
+.budgetGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Style                                                                     */
+/* ------------------------------------------------------------------------- */
+
+.styleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.styleCard {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface-raised);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  min-width: 0;
+  position: relative;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-hover);
+}
+
+.styleCard:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.styleCardOn {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  box-shadow:
+    var(--shadow-xs),
+    0 0 0 1px var(--brand-500);
+}
+
+.styleTitle {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.styleBlurb {
+  font-size: var(--text-2xs);
+  line-height: var(--lh-snug);
+  color: var(--text-tertiary);
+}
+
+.styleCardOn .styleBlurb {
+  color: var(--brand-700);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Interests                                                                 */
+/* ------------------------------------------------------------------------- */
+
+.interestWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Narrow console                                                            */
+/* ------------------------------------------------------------------------- */
+
+@media (max-width: 460px) {
+  .stepTitle {
+    font-size: var(--text-2xl);
+  }
+
+  .dateRow,
+  .originGrid,
+  .budgetGrid,
+  .styleGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* At 320px the option cards' glyph + text + meta row needs to give way. */
+@media (max-width: 340px) {
+  .originItem,
+  .styleCard {
+    padding: var(--space-4) var(--space-5);
+  }
+}

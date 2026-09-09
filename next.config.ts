@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
    * (previously `experimental.typedRoutes`).
    */
   typedRoutes: true,
+
+  /** The floating dev badge sits over the UI and pollutes visual QA. */
+  devIndicators: false,
 };
 
 export default nextConfig;

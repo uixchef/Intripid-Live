@@ -1,0 +1,180 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface-raised);
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-hover);
+}
+
+.md {
+  height: 32px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-base);
+}
+
+.sm {
+  height: 27px;
+  padding: 0 var(--space-5);
+  font-size: var(--text-sm);
+  gap: var(--space-2);
+}
+
+.chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  /* The hummingbird lift: small, quick, with a touch of overshoot. */
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.chip:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+.selected {
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+  color: var(--paper-0);
+  box-shadow:
+    var(--shadow-xs),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.selected:hover {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: var(--paper-0);
+}
+
+.label {
+  display: block;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  opacity: 0.9;
+}
+
+/*
+ * The check occupies its slot at all times and only fades in — so selecting a
+ * chip never reflows the row, which matters when a dozen sit together.
+ */
+.check {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-strong);
+  color: transparent;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.check svg {
+  transform: scale(0.7);
+  transition: transform var(--dur-fast) var(--ease-hover);
+}
+
+.selected .check {
+  background: var(--paper-0);
+  border-color: var(--paper-0);
+  color: var(--brand-700);
+}
+
+.selected .check svg {
+  transform: scale(1);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Tag                                                                       */
+/* ------------------------------------------------------------------------- */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.tag_sm {
+  height: 20px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-2xs);
+}
+
+.tag_md {
+  height: 24px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-xs);
+}
+
+.tone_neutral {
+  background: var(--paper-150);
+  color: var(--text-secondary);
+}
+
+.tone_brand {
+  background: var(--brand-50);
+  color: var(--brand-700);
+  border-color: var(--brand-100);
+}
+
+.tone_accent {
+  background: var(--accent-50);
+  color: var(--accent-700);
+  border-color: var(--accent-100);
+}
+
+.tone_energy {
+  background: var(--energy-50);
+  color: var(--energy-700);
+  border-color: var(--energy-100);
+}
+
+.tone_success {
+  background: var(--success-50);
+  color: var(--success-700);
+  border-color: var(--success-100);
+}
+
+.tone_warning {
+  background: var(--warning-50);
+  color: var(--warning-700);
+  border-color: var(--warning-100);
+}
+
+.tone_danger {
+  background: var(--danger-50);
+  color: var(--danger-700);
+  border-color: var(--danger-100);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,292 @@
+/* ------------------------------------------------------------------------- */
+/* Offers                                                                    */
+/* ------------------------------------------------------------------------- */
+
+.offers {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+.offer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+  box-shadow: var(--shadow-xs);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-hover);
+}
+
+.offer:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+/* An actual problem gets the attention colour; an opportunity does not. */
+.offerAttention {
+  background: var(--danger-50);
+  border-color: var(--danger-100);
+}
+
+.offerAttention:hover {
+  border-color: var(--danger-200, #f2c4c0);
+}
+
+.offerIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-md);
+  background: var(--energy-50);
+  border: 1px solid var(--energy-100);
+  color: var(--energy-600);
+}
+
+.offerAttention .offerIcon {
+  background: var(--paper-0);
+  border-color: var(--danger-100);
+  color: var(--danger-600);
+}
+
+.offerBody {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.offerLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.offerDetail {
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.offerArrow {
+  flex: none;
+  color: var(--text-quaternary);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.offer:hover .offerArrow {
+  opacity: 1;
+}
+
+/* Nothing-to-do state */
+
+.quiet {
+  display: flex;
+  gap: var(--space-5);
+  padding: var(--space-7) var(--space-6);
+}
+
+.quietIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--success-50);
+  color: var(--success-600);
+  border: 1px solid var(--success-100);
+  margin-top: 1px;
+}
+
+.quietTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.quietBody {
+  font-size: var(--text-xs);
+  line-height: var(--lh-relaxed);
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Plan panel                                                                */
+/* ------------------------------------------------------------------------- */
+
+.panel {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 0;
+  height: 100%;
+  background: var(--bg-surface);
+}
+
+.panelHead {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.panelHeadTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.panelBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 20px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--energy-50);
+  border: 1px solid var(--energy-100);
+  color: var(--energy-700);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.panelTitle {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  line-height: 1.15;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.panelBody {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: var(--space-8);
+  align-content: start;
+  padding: var(--space-6);
+}
+
+.rationale {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.rationale li {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+  line-height: var(--lh-relaxed);
+  color: var(--text-secondary);
+}
+
+.rationaleNum {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  border-radius: var(--radius-full);
+  background: var(--paper-150);
+  color: var(--text-tertiary);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.changes {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.changeList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.change {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-subtle);
+  min-width: 0;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.change:hover {
+  border-color: var(--brand-300);
+  background: var(--brand-50);
+}
+
+.changeApplied {
+  background: var(--success-50);
+  border-color: var(--success-100);
+}
+
+.changeApplied:hover {
+  border-color: var(--success-100);
+  background: var(--success-50);
+}
+
+.changeSummary {
+  font-size: var(--text-xs);
+  line-height: var(--lh-normal);
+  color: var(--text-primary);
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.changeDone {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--success-700);
+  padding-right: var(--space-3);
+}
+
+.panelFoot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .offer:hover {
+    transform: none;
+  }
+}

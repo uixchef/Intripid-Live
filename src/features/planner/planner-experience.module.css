@@ -1,0 +1,382 @@
+.root {
+  display: grid;
+  grid-template-rows: var(--topbar-h) auto 1fr;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-canvas);
+  position: relative;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Top bar                                                                   */
+/* ------------------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  padding: 0 var(--space-6);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  z-index: var(--z-topbar);
+  min-width: 0;
+}
+
+.topbarStart {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.backLink {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.backLink:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.tripMeta {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.tripName {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tripDates {
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbarEnd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: none;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Day rail                                                                  */
+/* ------------------------------------------------------------------------- */
+
+.dayRailWrap {
+  z-index: var(--z-sticky);
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Body                                                                      */
+/* ------------------------------------------------------------------------- */
+
+.body {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--rail-w-wide);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.schedule {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+.rightColumn {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  background: var(--bg-surface);
+}
+
+.mapPane {
+  min-height: 0;
+  position: relative;
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* Context panel */
+
+.contextPanel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+  background: var(--bg-surface);
+}
+
+.panelTabs {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.panelContent {
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+}
+
+.panelScroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.panelDivider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 0 var(--space-6);
+}
+
+/* Editor layer — occupies the right column, leaving the day visible. */
+
+.editorLayer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 46vw);
+  z-index: var(--z-rail);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Summary strip                                                             */
+/* ------------------------------------------------------------------------- */
+
+.summaryStrip {
+  position: absolute;
+  left: var(--space-6);
+  bottom: var(--space-5);
+  z-index: var(--z-content);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  max-width: calc(100% - var(--rail-w-wide) - var(--space-16));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Drag preview                                                              */
+/* ------------------------------------------------------------------------- */
+
+.dragPreview {
+  width: 216px;
+  box-shadow: var(--shadow-drag);
+  border-radius: var(--radius-md);
+  /* Slight tilt so the dragged card reads as lifted off the grid. */
+  transform: rotate(-1.1deg);
+  cursor: grabbing;
+}
+
+.dragPreviewIdea {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-strong);
+}
+
+.dragIdeaBar {
+  flex: none;
+  width: 3px;
+  background: var(--cat-color);
+}
+
+.dragIdeaBody {
+  display: grid;
+  gap: 1px;
+  padding: var(--space-4) var(--space-5);
+  min-width: 0;
+}
+
+.dragIdeaTitle {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dragIdeaMeta {
+  font-size: 10px;
+  color: var(--text-quaternary);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Mobile                                                                    */
+/* ------------------------------------------------------------------------- */
+
+.mobileMap,
+.mobileMapToggle,
+.mobileBar,
+.mobileSegmented {
+  display: none;
+}
+
+/* Smaller desktop: the right column narrows before the schedule does. */
+@media (max-width: 1280px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr) var(--rail-w);
+  }
+
+  .summaryStrip {
+    max-width: calc(100% - var(--rail-w) - var(--space-16));
+  }
+}
+
+@media (max-width: 1100px) {
+  .tripDatesExtra {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .root {
+    grid-template-rows: var(--topbar-h) auto 1fr auto;
+  }
+
+  .topbar {
+    padding: 0 var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .topbarEnd {
+    gap: var(--space-2);
+  }
+
+  .tripName {
+    font-size: var(--text-sm);
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .schedule {
+    border-right: 0;
+    min-height: 0;
+  }
+
+  /*
+   * The mobile map strip. Pinned above the day rather than hidden behind a
+   * floating button, so the schedule/map coupling survives on a phone.
+   */
+  .mobileMap {
+    display: block;
+    position: relative;
+    height: 152px;
+    border-bottom: 1px solid var(--border-default);
+    transition: height var(--dur-slow) var(--ease-out);
+  }
+
+  .mobileMapOpen {
+    height: 44dvh;
+  }
+
+  .mobileMapToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    position: absolute;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    z-index: var(--z-content);
+    height: 26px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-full);
+    background: var(--paper-900);
+    color: var(--paper-25);
+    font-size: 10px;
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-tight);
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .rightColumn,
+  .editorLayer,
+  .summaryStrip {
+    display: none;
+  }
+
+  .mobileBar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-default);
+    z-index: var(--z-sticky);
+  }
+
+  .mobileSegmented {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar {
+    padding: 0 var(--space-3);
+  }
+
+  .backLink {
+    width: 24px;
+  }
+
+  .mobileMap {
+    height: 128px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobileMap {
+    transition: none;
+  }
+
+  .dragPreview {
+    transform: none;
+  }
+}

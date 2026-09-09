@@ -1,0 +1,510 @@
+.root {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+  height: 100%;
+  background: var(--bg-surface);
+}
+
+/* ------------------------------------------------------------------------- */
+/* All-day band                                                              */
+/* ------------------------------------------------------------------------- */
+
+.allDay {
+  display: grid;
+  grid-template-columns: var(--gutter-w) 1fr;
+  align-items: center;
+  gap: 0;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface-sunken);
+  padding: var(--space-3) var(--space-4) var(--space-3) 0;
+  flex: none;
+}
+
+.allDayLabel {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+  text-align: right;
+  padding-right: var(--space-5);
+}
+
+.allDayTrack {
+  min-width: 0;
+}
+
+.stayBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--cat-stay-soft);
+  border: 1px solid color-mix(in srgb, var(--cat-stay) 24%, transparent);
+  border-left: 3px solid var(--cat-stay);
+  cursor: pointer;
+  min-width: 0;
+  text-align: left;
+  transition:
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.stayBar:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.stayBarSelected {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 1px var(--brand-500);
+}
+
+.stayName {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--cat-stay-ink);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: none;
+  max-width: 45%;
+}
+
+.stayPlace {
+  font-size: var(--text-2xs);
+  color: var(--cat-stay-ink);
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.stayBooking {
+  margin-left: auto;
+  flex: none;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--cat-stay-ink);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Grid                                                                      */
+/* ------------------------------------------------------------------------- */
+
+.scroll {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: var(--gutter-w) repeat(var(--col-count), minmax(0, 1fr));
+  min-height: 100%;
+  min-width: 0;
+}
+
+/* Hour gutter */
+
+.gutter {
+  position: relative;
+  border-right: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  /* Times stay put while the grid scrolls horizontally on narrow screens. */
+  position: sticky;
+  left: 0;
+  z-index: 7;
+}
+
+.gutterHour {
+  height: var(--hour-h);
+  position: relative;
+}
+
+.gutterLabel {
+  position: absolute;
+  top: -0.5em;
+  right: var(--space-4);
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  color: var(--text-quaternary);
+  white-space: nowrap;
+}
+
+.gutterHour:first-child .gutterLabel {
+  top: var(--space-1);
+}
+
+/* Columns */
+
+.column {
+  position: relative;
+  border-right: 1px solid var(--border-subtle);
+  min-width: 0;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.column:last-child {
+  border-right: 0;
+}
+
+/* The focused day is lifted by paper, not by a border. */
+.columnActive {
+  background: var(--paper-0);
+}
+
+.columnOver {
+  background: var(--brand-50);
+}
+
+.lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.line {
+  height: var(--hour-h);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.line:first-child {
+  border-top: 0;
+}
+
+.surface {
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y;
+}
+
+.eventSlot {
+  position: absolute;
+  min-width: 0;
+}
+
+.eventFill {
+  width: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Drawing a new range                                                       */
+/* ------------------------------------------------------------------------- */
+
+.drawing {
+  position: absolute;
+  left: 2px;
+  right: 3px;
+  z-index: 8;
+  border-radius: var(--radius-md);
+  background: var(--brand-100);
+  border: 1px solid var(--brand-500);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.drawing span {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--brand-800);
+  letter-spacing: var(--tracking-tight);
+  padding: 0 var(--space-3);
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Gap                                                                       */
+/* ------------------------------------------------------------------------- */
+
+.gap {
+  position: absolute;
+  left: 2px;
+  right: 3px;
+  border-radius: var(--radius-md);
+  /*
+   * A hairline hatch, not a filled block: empty time should read as available
+   * rather than as another object competing with the real plan.
+   */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(31, 28, 25, 0.032) 0,
+    rgba(31, 28, 25, 0.032) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+  border: 1px dashed var(--border-default);
+  display: grid;
+  place-items: center;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.gap:hover {
+  border-color: var(--brand-300);
+  background-color: rgba(100, 56, 209, 0.035);
+}
+
+.gapInner {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  padding: var(--space-3);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gapLabel {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-quaternary);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+}
+
+.gapActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.gapButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 22px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.gapButton:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/*
+ * The assistant's channel is the amber "energy" accent — a flat colour, no
+ * gradient. The historical gradient AI button is exactly the dated tell to
+ * avoid, but the semantic channel is worth keeping.
+ */
+.gapButtonAi {
+  color: var(--energy-700);
+  border-color: var(--energy-200);
+  background: var(--energy-50);
+}
+
+.gapButtonAi:hover {
+  background: var(--energy-100);
+  border-color: var(--energy-300);
+  color: var(--energy-800);
+}
+
+.gapButton svg {
+  flex: none;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Day rail                                                                  */
+/* ------------------------------------------------------------------------- */
+
+.dayRail {
+  display: grid;
+  grid-template-columns: var(--gutter-w) repeat(var(--day-count, 5), minmax(0, 1fr));
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  flex: none;
+}
+
+/* The gutter column is empty here; the first tab starts after it. */
+.dayRail::before {
+  content: "";
+  border-right: 1px solid var(--border-default);
+}
+
+.dayTab {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  padding: var(--space-4) var(--space-5) var(--space-4);
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  min-width: 0;
+  text-align: left;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.dayTab:last-child {
+  border-right: 0;
+}
+
+.dayTab:hover {
+  background: var(--bg-hover);
+}
+
+.dayTabActive {
+  background: var(--paper-0);
+  border-bottom-color: var(--brand-600);
+}
+
+.dayTabTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.dayIndex {
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+  white-space: nowrap;
+}
+
+.dayTabActive .dayIndex {
+  color: var(--brand-700);
+}
+
+.dayConflict {
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: var(--radius-full);
+  background: var(--danger-500);
+  color: var(--paper-0);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.dayDate {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.dayWeekday {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.dayNum {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  line-height: 0.95;
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.dayMonth {
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+
+.dayMeta {
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dayLoad {
+  display: block;
+  height: 2px;
+  border-radius: var(--radius-full);
+  background: var(--paper-200);
+  overflow: hidden;
+  margin-top: var(--space-1);
+}
+
+.dayLoadFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--accent-400);
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+.dayTabActive .dayLoadFill {
+  background: var(--brand-500);
+}
+
+.dayRailCompact {
+  grid-template-columns: repeat(var(--day-count, 5), minmax(0, 1fr));
+}
+
+.dayRailCompact::before {
+  display: none;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Narrow                                                                    */
+/* ------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .allDay {
+    grid-template-columns: var(--gutter-w) 1fr;
+    padding-right: var(--space-3);
+  }
+
+  .stayBooking {
+    display: none;
+  }
+
+  .dayRail {
+    display: flex;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .dayRail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dayRail::before {
+    display: none;
+  }
+
+  .dayTab {
+    flex: none;
+    min-width: 92px;
+    scroll-snap-align: start;
+  }
+}

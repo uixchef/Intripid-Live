@@ -1,0 +1,155 @@
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Stop marker                                                               */
+/* ------------------------------------------------------------------------- */
+
+.stop {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  transform-origin: bottom center;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.stopLetter {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--stop-color, var(--brand-600));
+  color: var(--paper-0);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  box-shadow:
+    0 0 0 2px var(--map-pin-ring),
+    var(--shadow-md);
+  transition:
+    width var(--dur-fast) var(--ease-hover),
+    height var(--dur-fast) var(--ease-hover),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.stopSelected .stopLetter {
+  width: 27px;
+  height: 27px;
+  font-size: var(--text-xs);
+  box-shadow:
+    0 0 0 2.5px var(--map-pin-ring),
+    0 0 0 8px var(--map-halo),
+    var(--shadow-lg);
+}
+
+.stopHovered .stopLetter {
+  box-shadow:
+    0 0 0 2px var(--map-pin-ring),
+    0 0 0 6px var(--map-halo),
+    var(--shadow-lg);
+}
+
+/* Dimming the rest is what makes the selection legible on a dense day. */
+.stopDimmed {
+  opacity: 0.42;
+}
+
+.stopLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--paper-900);
+  color: var(--paper-25);
+  box-shadow: var(--shadow-lg);
+  white-space: nowrap;
+  pointer-events: none;
+  max-width: 15rem;
+}
+
+.stopTitle {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stopTime {
+  font-size: 10px;
+  opacity: 0.62;
+  flex: none;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Stay marker                                                               */
+/* ------------------------------------------------------------------------- */
+
+.stayPin {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+  color: var(--cat-stay);
+  border: 1.5px solid var(--cat-stay);
+  cursor: pointer;
+  box-shadow:
+    0 0 0 2px var(--map-pin-ring),
+    var(--shadow-md);
+  transition: box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.stayPinSelected {
+  background: var(--cat-stay);
+  color: var(--paper-0);
+  box-shadow:
+    0 0 0 2.5px var(--map-pin-ring),
+    0 0 0 7px var(--map-halo),
+    var(--shadow-lg);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Empty                                                                     */
+/* ------------------------------------------------------------------------- */
+
+.emptyNote {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-10);
+  transform: translateX(-50%);
+  width: min(20rem, calc(100% - var(--space-12)));
+  padding: var(--space-6) var(--space-7);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: var(--space-2);
+  text-align: center;
+  pointer-events: none;
+}
+
+.emptyTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.emptyBody {
+  font-size: var(--text-xs);
+  line-height: var(--lh-normal);
+  color: var(--text-tertiary);
+}

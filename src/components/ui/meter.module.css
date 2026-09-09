@@ -1,0 +1,189 @@
+/* ------------------------------------------------------------------------- */
+/* Score ring                                                                */
+/* ------------------------------------------------------------------------- */
+
+.ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.ring svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.ring_strong {
+  --ring-color: var(--accent-500);
+}
+
+.ring_fair {
+  --ring-color: var(--energy-400);
+}
+
+.ring_weak {
+  --ring-color: var(--paper-400);
+}
+
+.ringValue {
+  position: relative;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tighter);
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Factor bar                                                                */
+/* ------------------------------------------------------------------------- */
+
+.factor {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.factorHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.factorLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.factorWeight {
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
+  white-space: nowrap;
+  flex: none;
+}
+
+.factorTrack {
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--paper-200);
+  overflow: hidden;
+}
+
+.factorFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+.fill_strong {
+  background: var(--accent-500);
+}
+
+.fill_fair {
+  background: var(--energy-400);
+}
+
+.fill_weak {
+  background: var(--paper-400);
+}
+
+.factorDetail {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--lh-normal);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Confidence                                                                */
+/* ------------------------------------------------------------------------- */
+
+.confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  cursor: default;
+}
+
+.confidenceBars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+
+.confBar {
+  display: block;
+  width: 3px;
+  border-radius: 1px;
+  background: var(--paper-300);
+}
+
+.confBar:nth-child(1) {
+  height: 45%;
+}
+.confBar:nth-child(2) {
+  height: 72%;
+}
+.confBar:nth-child(3) {
+  height: 100%;
+}
+
+.confBarOn {
+  background: var(--accent-500);
+}
+
+.confidenceLabel {
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Season spark                                                              */
+/* ------------------------------------------------------------------------- */
+
+.spark {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.sparkBars {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  align-items: flex-end;
+}
+
+.sparkBar {
+  display: block;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--paper-250, var(--paper-200));
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.sparkBarOn {
+  background: var(--accent-400);
+}
+
+.sparkLabels {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  font-size: 9px;
+  font-weight: var(--weight-medium);
+  color: var(--text-quaternary);
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.sparkLabelOn {
+  color: var(--accent-700);
+  font-weight: var(--weight-bold);
+}

@@ -1,0 +1,100 @@
+.root {
+  display: grid;
+  gap: var(--space-8);
+  align-content: start;
+}
+
+.head {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: var(--text-3xl);
+  line-height: 1.08;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+  margin-top: -0.06em;
+}
+
+.track {
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--paper-200);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--brand-600);
+}
+
+.lines {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.line {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.bullet {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  margin-top: 1px;
+}
+
+.bulletDone {
+  background: var(--accent-100);
+  color: var(--accent-700);
+}
+
+.bulletActive {
+  background: var(--brand-100);
+  color: var(--brand-700);
+}
+
+.bulletActive svg {
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lineBody {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.lineText {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-snug);
+}
+
+.lineDetail {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  line-height: var(--lh-normal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulletActive svg {
+    animation: none;
+  }
+}

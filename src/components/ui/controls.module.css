@@ -1,0 +1,361 @@
+/* ------------------------------------------------------------------------- */
+/* Segmented                                                                 */
+/* ------------------------------------------------------------------------- */
+
+.segmented {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--seg-count), 1fr);
+  background: var(--paper-150);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  isolation: isolate;
+}
+
+.seg_md {
+  height: 34px;
+}
+
+.seg_sm {
+  height: 28px;
+  border-radius: var(--radius-sm);
+}
+
+.thumb {
+  position: absolute;
+  z-index: 0;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / var(--seg-count));
+  transform: translateX(calc(var(--seg-index) * 100%));
+  background: var(--bg-surface-raised);
+  border-radius: calc(var(--radius-md) - 2px);
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.seg_sm .thumb {
+  border-radius: calc(var(--radius-sm) - 1px);
+}
+
+.segment {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-tertiary);
+  border-radius: calc(var(--radius-md) - 2px);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0 var(--space-4);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.segment:hover {
+  color: var(--text-secondary);
+}
+
+.segmentActive {
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.segIcon {
+  display: grid;
+  place-items: center;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Field                                                                     */
+/* ------------------------------------------------------------------------- */
+
+.field {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.fieldHint,
+.fieldError {
+  font-size: var(--text-xs);
+  line-height: var(--lh-snug);
+}
+
+.fieldHint {
+  color: var(--text-tertiary);
+}
+
+.fieldError {
+  color: var(--danger-600);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Input                                                                     */
+/* ------------------------------------------------------------------------- */
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-5);
+  min-width: 0;
+  box-shadow: var(--shadow-xs);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.input_md {
+  height: 34px;
+}
+
+.input_sm {
+  height: 30px;
+  font-size: var(--text-sm);
+}
+
+.inputWrap:hover {
+  border-color: var(--border-strong);
+}
+
+.inputWrap:focus-within {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-100);
+}
+
+.inputInvalid {
+  border-color: var(--danger-500);
+}
+
+.inputInvalid:focus-within {
+  border-color: var(--danger-500);
+  box-shadow: 0 0 0 3px var(--danger-100);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-size: inherit;
+  color: var(--text-primary);
+}
+
+.input::placeholder {
+  color: var(--text-quaternary);
+}
+
+.inputIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.inputSlot {
+  display: flex;
+  align-items: center;
+  flex: none;
+  margin-right: calc(var(--space-3) * -1);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 68px;
+  resize: vertical;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--lh-normal);
+  color: var(--text-primary);
+  outline: none;
+  box-shadow: var(--shadow-xs);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.textarea::placeholder {
+  color: var(--text-quaternary);
+}
+
+.textarea:hover {
+  border-color: var(--border-strong);
+}
+
+.textarea:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-100);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Option card                                                               */
+/* ------------------------------------------------------------------------- */
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-6);
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-hover);
+}
+
+.option:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.option:active {
+  transform: translateY(0);
+}
+
+.optionSelected {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  box-shadow:
+    var(--shadow-xs),
+    0 0 0 1px var(--brand-500);
+}
+
+.optionSelected:hover {
+  border-color: var(--brand-600);
+}
+
+.optionGlyph {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--paper-100);
+  color: var(--text-secondary);
+  font-size: var(--text-lg);
+  line-height: 1;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.optionSelected .optionGlyph {
+  background: var(--brand-600);
+  color: var(--paper-0);
+}
+
+.optionBody {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.optionTitle {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.optionBlurb {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  line-height: var(--lh-snug);
+}
+
+.optionMeta {
+  flex: none;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--weight-medium);
+}
+
+.optionSelected .optionMeta {
+  color: var(--brand-700);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Stepper                                                                   */
+/* ------------------------------------------------------------------------- */
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-raised);
+  height: 34px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+
+.stepperButton {
+  width: 30px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.stepperButton:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.stepperButton:disabled {
+  color: var(--text-quaternary);
+  cursor: not-allowed;
+}
+
+.stepperValue {
+  min-width: 5.5rem;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  border-left: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option:hover {
+    transform: none;
+  }
+}
