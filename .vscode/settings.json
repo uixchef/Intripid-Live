@@ -1,0 +1,11 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "workbench.editor.customLabels.patterns": {
+    "**/app/**/page.tsx": "${dirname} - Page",
+    "**/app/**/layout.tsx": "${dirname} - Layout",
+    "**/app/**/route.ts": "${dirname} - Route",
+    "**/app/**/loading.tsx": "${dirname} - Loading",
+    "**/app/**/error.tsx": "${dirname} - Error",
+    "**/app/**/not-found.tsx": "${dirname} - Not Found"
+  }
+}

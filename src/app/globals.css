@@ -1,0 +1,94 @@
+/*
+ * Global stylesheet — reset and document-level defaults ONLY.
+ *
+ * Deliberately unbranded: no palette, typeface, spacing scale or component
+ * styling is chosen yet. Component styles belong in colocated `*.module.css`
+ * files, not here.
+ *
+ * Two Next.js 16 notes that constrain what may live in this file:
+ *  - Global CSS is never unloaded on client-side navigation, so third-party
+ *    stylesheets (e.g. `mapbox-gl/dist/mapbox-gl.css`) are imported inside the
+ *    client module that needs them, not here.
+ *  - Next.js 16 no longer overrides `scroll-behavior` during navigation. If
+ *    `scroll-behavior: smooth` is ever added to `html`, the `<html>` element
+ *    must also carry `data-scroll-behavior="smooth"` or every route change
+ *    animates a scroll.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  /* Opt in to the user's OS preference until a theme is designed. */
+  color-scheme: light dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
