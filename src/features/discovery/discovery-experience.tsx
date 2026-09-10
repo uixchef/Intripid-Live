@@ -315,7 +315,7 @@ export function DiscoveryExperience() {
               {stage === "processing" ? (
                 <motion.div
                   key="processing"
-                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
                   transition={{ duration: reduceMotion ? 0.12 : 0.26 }}
@@ -337,7 +337,7 @@ export function DiscoveryExperience() {
               ) : stage === "results" ? (
                 <motion.div
                   key="results"
-                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
                   transition={{ duration: reduceMotion ? 0.12 : 0.28 }}
@@ -353,7 +353,7 @@ export function DiscoveryExperience() {
               ) : (
                 <motion.div
                   key={step}
-                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 18 }}
+                  initial={{ opacity: 0, x: 18 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -18 }}
                   transition={{ duration: reduceMotion ? 0.12 : 0.26, ease: [0.2, 0.8, 0.2, 1] }}
@@ -395,6 +395,49 @@ export function DiscoveryExperience() {
               )}
             </AnimatePresence>
           </div>
+
+          {/*
+           * The live front-runners. This is the whole argument for asking
+           * questions on a map instead of in a form: the answer is already
+           * forming, and you can watch your last input move it.
+           */}
+          {stage === "questions" && answered.length >= 1 && !active ? (
+            <div className={styles.liveMatches}>
+              <div className={styles.liveHead}>
+                <span className="eyebrow">Leading right now</span>
+                <span className={styles.liveCount}>
+                  {strongCount > 0
+                    ? `${strongCount} strong`
+                    : `${recommendations.length} candidates`}
+                </span>
+              </div>
+              <ol className={styles.liveList}>
+                {recommendations.slice(0, 3).map((recommendation) => (
+                  <li key={recommendation.destination.id}>
+                    <button
+                      type="button"
+                      className={styles.liveItem}
+                      onPointerEnter={() =>
+                        handleHover(recommendation.destination.id)
+                      }
+                      onPointerLeave={() => handleHover(null)}
+                      onClick={() => handleSelect(recommendation.destination.id)}
+                    >
+                      <span className={cn(styles.liveRank, "tabular")}>
+                        {recommendation.rank}
+                      </span>
+                      <span className={styles.liveName}>
+                        {recommendation.destination.name}
+                      </span>
+                      <span className={cn(styles.liveScore, "tabular")}>
+                        {Math.round(recommendation.score)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
 
           {/* Question navigation */}
           {stage === "questions" ? (

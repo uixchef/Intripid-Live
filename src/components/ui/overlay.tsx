@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -36,11 +37,22 @@ function useDismiss(open: boolean, onClose: () => void) {
   }, [open, onClose]);
 }
 
-/** Portals only after mount, so SSR markup and hydration agree. */
+/**
+ * The portal target, available only in the browser.
+ *
+ * `useSyncExternalStore` with a never-firing subscription is the idiomatic way
+ * to read a client-only value: it returns null during SSR and document.body on
+ * the client without mirroring anything into state, so there is no extra
+ * render on mount and nothing to tear.
+ */
+const NEVER_CHANGES = () => () => {};
+
 function usePortalTarget(): HTMLElement | null {
-  const [target, setTarget] = useState<HTMLElement | null>(null);
-  useEffect(() => setTarget(document.body), []);
-  return target;
+  return useSyncExternalStore(
+    NEVER_CHANGES,
+    () => document.body,
+    () => null,
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -143,8 +155,14 @@ export function Popover({
     setPosition({ top, left });
   }, [anchor, placement, offset, align]);
 
+  /*
+   * Measure-then-position. The popover's own size is only knowable after it
+   * renders, so this is the one place where writing state from a layout effect
+   * is correct — the alternative is a visible frame at the wrong coordinates.
+   */
   useLayoutEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPosition(null);
       return;
     }
@@ -193,7 +211,7 @@ export function Popover({
             // Hidden until measured, so it never flashes in the wrong place.
             visibility: position ? "visible" : "hidden",
           }}
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: -4 }}
+          initial={{ opacity: 0, scale: 0.97, y: -4 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: -3 }}
           transition={{ duration: reduceMotion ? 0.12 : 0.17, ease: [0.2, 0.8, 0.2, 1] }}
@@ -270,7 +288,7 @@ export function Sheet({
             aria-label={label}
             className={cn(styles.sheet, className)}
             style={{ maxHeight: `${Math.round(height * 100)}dvh` }}
-            initial={reduceMotion ? { opacity: 0 } : { y: "100%" }}
+            initial={{ y: "100%" }}
             animate={reduceMotion ? { opacity: 1 } : { y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
             transition={
@@ -343,7 +361,7 @@ export function Modal({
             aria-label={label}
             className={cn(styles.modal, className)}
             style={{ width }}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 10 }}
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 6 }}
             transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.2, 0.8, 0.2, 1] }}
@@ -397,7 +415,7 @@ export function Toast({
           <motion.div
             key={toastKey ?? message}
             className={cn(styles.toast, styles[`toast_${tone}`])}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.97 }}
+            initial={{ opacity: 0, y: 12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: reduceMotion ? 0.12 : 0.24, ease: [0.2, 0.8, 0.2, 1] }}

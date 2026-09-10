@@ -167,8 +167,13 @@
     var(--shadow-md);
 }
 
+/*
+ * Dimming the rest of the day focuses a selection, but 0.42 made the calendar
+ * genuinely hard to read while the editor was open. This is enough to recede
+ * without becoming unreadable.
+ */
 .dimmed {
-  opacity: 0.42;
+  opacity: 0.58;
 }
 
 .dragging {

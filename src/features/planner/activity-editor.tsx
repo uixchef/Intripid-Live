@@ -99,7 +99,7 @@ export function ActivityEditor({
     <motion.aside
       className={styles.root}
       aria-label={mode === "create" ? "Add an activity" : "Edit activity"}
-      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 28 }}
+      initial={{ opacity: 0, x: 28 }}
       animate={{ opacity: 1, x: 0 }}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24 }}
       transition={{ duration: reduceMotion ? 0.12 : 0.26, ease: [0.2, 0.8, 0.2, 1] }}

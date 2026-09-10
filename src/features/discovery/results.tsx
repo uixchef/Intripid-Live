@@ -83,7 +83,7 @@ export function ResultsRail({
             <motion.li
               key={destination.id}
               layout={!reduceMotion}
-              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
                 duration: 0.34,
@@ -217,7 +217,7 @@ export function DestinationBrief({
     <motion.div
       className={styles.brief}
       data-brief=""
-      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -18 }}
+      initial={{ opacity: 0, x: -18 }}
       animate={{ opacity: 1, x: 0 }}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -14 }}
       transition={{ duration: reduceMotion ? 0.14 : 0.32, ease: [0.2, 0.8, 0.2, 1] }}

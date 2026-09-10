@@ -492,7 +492,7 @@ function GapSlot({
           {hovered || !roomy ? (
             <motion.div
               className={styles.gapActions}
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 3 }}
               transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
@@ -574,10 +574,21 @@ export function DayRail({
           >
             <span className={styles.dayTabTop}>
               <span className={styles.dayIndex}>Day {index + 1}</span>
-              {summary.conflictCount > 0 ? (
+              {summary.errorCount > 0 ? (
                 <span className={styles.dayConflict} title="Scheduling clash">
-                  {summary.conflictCount}
+                  {summary.errorCount}
                 </span>
+              ) : summary.warningCount > 0 ? (
+                /* Advisory: a dot, not a count in alarm red. */
+                <span
+                  className={styles.dayWarning}
+                  title={`${summary.warningCount} tight connection${
+                    summary.warningCount === 1 ? "" : "s"
+                  }`}
+                  aria-label={`${summary.warningCount} tight connection${
+                    summary.warningCount === 1 ? "" : "s"
+                  }`}
+                />
               ) : null}
             </span>
 

@@ -118,7 +118,7 @@ export function Itinerary({
           day={activeDay}
           summary={summary}
           stay={stay}
-          conflictCount={conflictList.length}
+          conflictCount={conflictList.filter((c) => c.severity === "error").length}
         />
         <div className={styles.empty}>
           <span className={styles.emptyMark} aria-hidden>
@@ -161,7 +161,16 @@ export function Itinerary({
       />
 
       {conflictList.length > 0 ? (
-        <div className={styles.conflictBanner} role="alert">
+        <div
+          className={cn(
+            styles.conflictBanner,
+            !conflictList.some((c) => c.severity === "error") &&
+              styles.conflictBannerAdvisory,
+          )}
+          role={
+            conflictList.some((c) => c.severity === "error") ? "alert" : "note"
+          }
+        >
           <AlertTriangle size={14} strokeWidth={2.1} />
           <div>
             {conflictList.slice(0, 2).map((conflict) => (
@@ -193,7 +202,7 @@ export function Itinerary({
             <motion.li
               key={item.id}
               layout={!reduceMotion}
-              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
                 duration: 0.3,

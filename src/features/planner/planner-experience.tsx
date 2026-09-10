@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Link from "next/link";
 import {
   DndContext,
@@ -89,30 +95,48 @@ export function PlannerExperience() {
   const toast = useTrip((s) => s.toast);
   const selectedItem = useTrip(selectSelectedItem);
 
-  const [panelOverride, setPanelOverride] = useState<PanelTab | null>(null);
+  /*
+   * The pinned panel tab, remembered against the selection it was pinned for.
+   * Storing the selection alongside it means a NEW selection naturally wins
+   * without an effect that resets state — the override simply stops matching.
+   */
+  const [panelOverride, setPanelOverride] = useState<{
+    tab: PanelTab;
+    forSelection: string | null;
+  } | null>(null);
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
 
   const days = useMemo(() => tripDayKeys(trip), [trip]);
   const destination = getDestination(trip.destinationId);
   const hourHeight = isShort ? HOUR_HEIGHT_SHORT : HOUR_HEIGHT;
 
   /**
-   * Rehydrate persisted edits after mount rather than during render, so the
-   * server markup and the first client render agree. Without this, a refresh
+   * Persisted edits are rehydrated after mount, not during render, so the
+   * server markup and the first client render agree — without this a refresh
    * after editing throws a hydration mismatch.
+   *
+   * The flag is read from zustand's persist API as an external store rather
+   * than mirrored into local state, so the effect below only starts the work.
    */
-  useEffect(() => {
-    const store = api as unknown as {
-      persist?: { rehydrate: () => Promise<void> | void };
-    };
-    const done = store.persist?.rehydrate();
-    if (done && typeof (done as Promise<void>).then === "function") {
-      void (done as Promise<void>).then(() => setHydrated(true));
-    } else {
-      setHydrated(true);
+  const persist = (
+    api as unknown as {
+      persist: {
+        rehydrate: () => Promise<void> | void;
+        hasHydrated: () => boolean;
+        onFinishHydration: (fn: () => void) => () => void;
+      };
     }
-  }, [api]);
+  ).persist;
+
+  const hydrated = useSyncExternalStore(
+    useCallback((cb: () => void) => persist.onFinishHydration(cb), [persist]),
+    () => persist.hasHydrated(),
+    () => false,
+  );
+
+  useEffect(() => {
+    void persist.rehydrate();
+  }, [persist]);
 
   const offers = useMemo(
     () => offersForDay(trip, activeDay),
@@ -123,11 +147,11 @@ export function PlannerExperience() {
   // signal to override whatever tab was last pinned.
   const panel: PanelTab = assistant.plan
     ? "assistant"
-    : (panelOverride ?? (selectedItem ? "details" : "ideas"));
-
-  useEffect(() => {
-    if (selectedItemId) setPanelOverride(null);
-  }, [selectedItemId]);
+    : panelOverride && panelOverride.forSelection === selectedItemId
+      ? panelOverride.tab
+      : selectedItem
+        ? "details"
+        : "ideas";
 
   /* ---------------------------------------------------------------------- */
   /* Drag and drop                                                          */
@@ -254,8 +278,12 @@ export function PlannerExperience() {
             ]}
             value={panel === "details" ? "details" : "ideas"}
             onChange={(value) => {
-              setPanelOverride(value as PanelTab);
-              if (value === "ideas") api.getState().selectItem(null);
+              const tab = value as PanelTab;
+              setPanelOverride({
+                tab,
+                forSelection: tab === "ideas" ? null : selectedItemId,
+              });
+              if (tab === "ideas") api.getState().selectItem(null);
             }}
             label="Context panel"
             size="sm"
@@ -392,6 +420,7 @@ export function PlannerExperience() {
               label="Reset trip to the original plan"
               size="sm"
               variant="ghost"
+              className={styles.topbarReset}
               onClick={() => api.getState().resetTrip()}
             >
               <RotateCcw size={14} strokeWidth={2} />
@@ -400,6 +429,7 @@ export function PlannerExperience() {
             <Button
               variant="primary"
               size="sm"
+              className={styles.topbarAdd}
               iconLeft={<Plus size={14} strokeWidth={2.4} />}
               onClick={() => api.getState().openCreate()}
             >
@@ -444,7 +474,7 @@ export function PlannerExperience() {
                 onSelect={onSelectFromMap}
                 onHover={onHover}
                 onBackgroundClick={() => api.getState().selectItem(null)}
-                padding={{ top: 32, right: 28, bottom: 32, left: 28 }}
+                padding={{ top: 26, right: 26, bottom: 30, left: 26 }}
               />
               <button
                 type="button"

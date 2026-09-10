@@ -33,13 +33,12 @@ export interface MapCanvasProps {
   zoom: number;
   children?: ReactNode;
   /**
-   * How much the basemap is allowed to say.
-   *  - "minimal": no POI or road labels — a clean canvas for discovery.
-   *  - "context": streets and neighbourhoods, but no POI pins, so the
-   *    product's own markers are the only points of interest. Planner default.
-   *  - "full": everything the style ships with.
+   * Which basemap labels are allowed. Explicit flags rather than a single
+   * level, because the useful combination differs per surface: the planner
+   * wants street names for orientation, while the destination brief wants
+   * neighbourhoods but no highway shields competing with its own pins.
    */
-  labels?: "minimal" | "context" | "full";
+  labels?: { poi?: boolean; roads?: boolean; places?: boolean };
   /** Disable all user interaction — used for decorative/preview maps. */
   interactive?: boolean;
   /** Padding used by fitBounds callers, in px. */
@@ -53,7 +52,7 @@ export function MapCanvas({
   center,
   zoom,
   children,
-  labels = "context",
+  labels,
   interactive = true,
   className,
   onReady,
@@ -122,10 +121,10 @@ export function MapCanvas({
       setConfig("theme", "faded");
       setConfig("lightPreset", "day");
       setConfig("show3dObjects", false);
-      setConfig("showPointOfInterestLabels", labels === "full");
+      setConfig("showPointOfInterestLabels", labels?.poi ?? false);
       setConfig("showTransitLabels", false);
-      setConfig("showPlaceLabels", labels !== "minimal");
-      setConfig("showRoadLabels", labels !== "minimal");
+      setConfig("showPlaceLabels", labels?.places ?? true);
+      setConfig("showRoadLabels", labels?.roads ?? true);
 
       setReady(true);
       onReadyRef.current?.(instance);
@@ -157,17 +156,13 @@ export function MapCanvas({
   useEffect(() => {
     if (!map || !ready) return;
     try {
-      map.setConfigProperty(
-        "basemap",
-        "showPointOfInterestLabels",
-        labels === "full",
-      );
-      map.setConfigProperty("basemap", "showPlaceLabels", labels !== "minimal");
-      map.setConfigProperty("basemap", "showRoadLabels", labels !== "minimal");
+      map.setConfigProperty("basemap", "showPointOfInterestLabels", labels?.poi ?? false);
+      map.setConfigProperty("basemap", "showPlaceLabels", labels?.places ?? true);
+      map.setConfigProperty("basemap", "showRoadLabels", labels?.roads ?? true);
     } catch {
       /* style without these config keys */
     }
-  }, [map, ready, labels]);
+  }, [map, ready, labels?.poi, labels?.places, labels?.roads]);
 
   return (
     <div className={className ? `${styles.root} ${className}` : styles.root}>

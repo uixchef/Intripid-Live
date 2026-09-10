@@ -100,7 +100,7 @@ export function AssistantPlanPanel({
   return (
     <motion.div
       className={styles.panel}
-      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
       transition={{ duration: reduceMotion ? 0.12 : 0.26, ease: [0.2, 0.8, 0.2, 1] }}
@@ -124,17 +124,6 @@ export function AssistantPlanPanel({
       </header>
 
       <div className={styles.panelBody}>
-        {/* The reasoning, as steps. Showing the working is what separates a
-            suggestion you can trust from one that just happens to you. */}
-        <ol className={styles.rationale}>
-          {plan.rationale.map((line, index) => (
-            <li key={line}>
-              <span className={styles.rationaleNum}>{index + 1}</span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ol>
-
         <div className={styles.changes}>
           <p className="eyebrow">
             {plan.changes.length}{" "}
@@ -169,6 +158,18 @@ export function AssistantPlanPanel({
               );
             })}
           </ul>
+        </div>
+
+        <div className={styles.reasoning}>
+          <p className="eyebrow">Why</p>
+          <ol className={styles.rationale}>
+            {plan.rationale.map((line, index) => (
+              <li key={line}>
+                <span className={styles.rationaleNum}>{index + 1}</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
 

@@ -40,8 +40,12 @@ export function ScoreRing({
   const stroke = size >= 40 ? 3.5 : 3;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  // Leave a small gap so the arc has a visible start and end.
-  const arc = circumference * 0.82;
+  /*
+   * A full-circle track. An earlier version left an 18% gap at the bottom so
+   * the arc had visible ends, but the track's round cap read as a stray tick
+   * rather than as a deliberate scale.
+   */
+  const arc = circumference;
   const filled = (clamped / 100) * arc;
 
   const tone =
@@ -55,7 +59,7 @@ export function ScoreRing({
       aria-label={label ?? `Match score ${Math.round(clamped)} out of 100`}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <g transform={`rotate(-234 ${size / 2} ${size / 2})`}>
+        <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -63,8 +67,6 @@ export function ScoreRing({
             fill="none"
             stroke="var(--paper-200)"
             strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={`${arc} ${circumference}`}
           />
           <motion.circle
             cx={size / 2}
@@ -75,7 +77,7 @@ export function ScoreRing({
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${filled} ${circumference}`}
-            initial={reduceMotion ? false : { strokeDasharray: `0 ${circumference}` }}
+            initial={{ strokeDasharray: `0 ${circumference}` }}
             animate={{ strokeDasharray: `${filled} ${circumference}` }}
             transition={{ duration: reduceMotion ? 0 : 0.62, ease: [0.2, 0.8, 0.2, 1] }}
           />
@@ -126,14 +128,14 @@ export function FactorBar({
         <span className={styles.factorLabel}>{label}</span>
         {weight !== undefined ? (
           <span className={cn(styles.factorWeight, "tabular")}>
-            {Math.round(weight * 100)}% of score
+            counts for {Math.round(weight * 100)}%
           </span>
         ) : null}
       </div>
       <div className={styles.factorTrack}>
         <motion.span
           className={cn(styles.factorFill, styles[`fill_${tone}`])}
-          initial={reduceMotion ? false : { width: 0 }}
+          initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: reduceMotion ? 0 : 0.5, ease: [0.2, 0.8, 0.2, 1] }}
         />

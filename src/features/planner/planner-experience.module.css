@@ -121,6 +121,12 @@
   min-height: 0;
   position: relative;
   border-bottom: 1px solid var(--border-default);
+  /*
+   * Map markers carry their own z-index (a selected pin must sit above its
+   * neighbours). `isolation` keeps that ordering inside the map, so a marker
+   * label cannot paint over the editor panel that slides in beside it.
+   */
+  isolation: isolate;
 }
 
 /* Context panel */
@@ -164,30 +170,6 @@
   bottom: 0;
   width: min(420px, 46vw);
   z-index: var(--z-rail);
-}
-
-/* ------------------------------------------------------------------------- */
-/* Summary strip                                                             */
-/* ------------------------------------------------------------------------- */
-
-.summaryStrip {
-  position: absolute;
-  left: var(--space-6);
-  bottom: var(--space-5);
-  z-index: var(--z-content);
-  padding: var(--space-2) var(--space-5);
-  border-radius: var(--radius-full);
-  background: var(--bg-surface-raised);
-  border: 1px solid var(--border-default);
-  box-shadow: var(--shadow-sm);
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-  max-width: calc(100% - var(--rail-w-wide) - var(--space-16));
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -256,10 +238,6 @@
   .body {
     grid-template-columns: minmax(0, 1fr) var(--rail-w);
   }
-
-  .summaryStrip {
-    max-width: calc(100% - var(--rail-w) - var(--space-16));
-  }
 }
 
 @media (max-width: 1100px) {
@@ -286,6 +264,18 @@
     font-size: var(--text-sm);
   }
 
+  /*
+   * At phone width the top bar was carrying a back link, mark, name, dates,
+   * avatars, a reset button and an Add button — which truncated the trip name
+   * to "Five da...". The bottom bar already has Add, and reset is a rare
+   * action, so both leave the top bar on mobile.
+   */
+  .tripDates,
+  .topbarReset,
+  .topbarAdd {
+    display: none;
+  }
+
   .body {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
@@ -303,7 +293,7 @@
   .mobileMap {
     display: block;
     position: relative;
-    height: 152px;
+    height: 168px;
     border-bottom: 1px solid var(--border-default);
     transition: height var(--dur-slow) var(--ease-out);
   }
@@ -334,8 +324,7 @@
   }
 
   .rightColumn,
-  .editorLayer,
-  .summaryStrip {
+  .editorLayer {
     display: none;
   }
 

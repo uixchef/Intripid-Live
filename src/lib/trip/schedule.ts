@@ -241,7 +241,10 @@ export interface DaySummary {
   busyMinutes: number;
   commuteMinutes: number;
   costUsd: number;
-  conflictCount: number;
+  /** Genuine problems — overlaps and impossible hops. */
+  errorCount: number;
+  /** Advisory only — tight connections. */
+  warningCount: number;
   categories: string[];
   firstStart: string | null;
   lastEnd: string | null;
@@ -279,6 +282,8 @@ export function summariseDay(trip: Trip, day: string): DaySummary {
     0,
   );
 
+  const conflicts = conflictsForDay(trip, day);
+
   return {
     day,
     itemCount: items.length,
@@ -286,7 +291,13 @@ export function summariseDay(trip: Trip, day: string): DaySummary {
     busyMinutes,
     commuteMinutes,
     costUsd: items.reduce((sum, i) => sum + (i.costUsd ?? 0), 0),
-    conflictCount: conflictsForDay(trip, day).length,
+    /*
+     * Counted separately. A single number conflated a real double-booking
+     * with a merely tight connection, so the day tab kept a red badge after
+     * the assistant had actually fixed the clash — which read as a failure.
+     */
+    errorCount: conflicts.filter((c) => c.severity === "error").length,
+    warningCount: conflicts.filter((c) => c.severity === "warning").length,
     categories: [...new Set(activities.map((i) => i.category))],
     firstStart: activities[0]?.start ?? null,
     lastEnd: activities.length > 0 ? (activities[activities.length - 1].end ?? null) : null,

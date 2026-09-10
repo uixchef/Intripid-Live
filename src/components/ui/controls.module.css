@@ -213,8 +213,8 @@
 
 .option {
   display: flex;
-  align-items: center;
-  gap: var(--space-6);
+  align-items: flex-start;
+  gap: var(--space-5);
   width: 100%;
   text-align: left;
   padding: var(--space-6);
@@ -275,9 +275,22 @@
 
 .optionBody {
   display: grid;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
   flex: 1;
+}
+
+/*
+ * Title and metric share a row so the blurb gets the card's full width. The
+ * previous three-column layout squeezed "Keep costs to a minimum" onto three
+ * lines and butted it against the price.
+ */
+.optionTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
 .optionTitle {
@@ -285,6 +298,7 @@
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
 }
 
 .optionBlurb {
@@ -298,6 +312,7 @@
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   font-weight: var(--weight-medium);
+  white-space: nowrap;
 }
 
 .optionSelected .optionMeta {

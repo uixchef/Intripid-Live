@@ -236,10 +236,14 @@ export function OptionCard({
         </span>
       ) : null}
       <span className={styles.optionBody}>
-        <span className={styles.optionTitle}>{title}</span>
+        <span className={styles.optionTitleRow}>
+          <span className={styles.optionTitle}>{title}</span>
+          {meta ? (
+            <span className={cn(styles.optionMeta, "tabular")}>{meta}</span>
+          ) : null}
+        </span>
         {blurb ? <span className={styles.optionBlurb}>{blurb}</span> : null}
       </span>
-      {meta ? <span className={cn(styles.optionMeta, "tabular")}>{meta}</span> : null}
     </button>
   );
 }

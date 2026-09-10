@@ -13,9 +13,11 @@ import {
   gapsForDay,
   itemsForDay,
   routeForDay,
+  tripDayKeys,
 } from "./schedule";
 import {
   atMinutes,
+  dayLabel,
   dayLabelLong,
   durationLabel,
   durationMinutes,
@@ -43,6 +45,71 @@ let planCounter = 0;
 function nextId(prefix: string): string {
   planCounter += 1;
   return `${prefix}-${planCounter}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Slot finding                                                              */
+/* -------------------------------------------------------------------------- */
+
+/** Minutes of breathing room the assistant leaves between two activities. */
+const BUFFER_MIN = 10;
+
+/**
+ * The earliest start at or after `from` where `duration` fits without hitting
+ * anything already on the day.
+ *
+ * This exists because a fix that creates a new clash is worse than no fix.
+ * Moving an overlapping item to "just after the anchor" is only correct if
+ * that slot is actually free — on a packed day it very often is not, and the
+ * assistant would hand back a plan that silently broke the next activity.
+ */
+function firstFreeSlot(
+  trip: Trip,
+  day: string,
+  duration: number,
+  from: number,
+  ignoreIds: string[] = [],
+): number {
+  const busy = activitiesForDay(trip, day)
+    .filter((item) => !ignoreIds.includes(item.id) && item.start && item.end)
+    .map((item) => ({
+      start: minutesIntoDay(item.start!),
+      end: minutesIntoDay(item.end!),
+    }))
+    .sort((a, b) => a.start - b.start);
+
+  let cursor = from;
+
+  for (const span of busy) {
+    // Free stretch before this item is long enough — take it.
+    if (cursor + duration + BUFFER_MIN <= span.start) return cursor;
+    // Otherwise clear this item and keep looking.
+    if (span.end + BUFFER_MIN > cursor) cursor = span.end + BUFFER_MIN;
+  }
+
+  return cursor;
+}
+
+/** True when the slot runs past a civilised end to the day. */
+function runsTooLate(startMinutes: number, duration: number): boolean {
+  return startMinutes + duration > 23 * 60;
+}
+
+/** The earliest day at or after `fromDay` with room for `duration`. */
+function nextDayWithRoom(
+  trip: Trip,
+  fromDay: string,
+  duration: number,
+  ignoreIds: string[] = [],
+): { day: string; startMinutes: number } | null {
+  const days = tripDayKeys(trip).filter((day) => day >= fromDay);
+
+  for (const day of days) {
+    const slot = firstFreeSlot(trip, day, duration, 9 * 60, ignoreIds);
+    if (!runsTooLate(slot, duration)) return { day, startMinutes: slot };
+  }
+
+  return null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -81,7 +148,60 @@ export function planResolveOverlap(trip: Trip, day: string): AssistantPlan | nul
         ? Math.max(10, Math.min(35, walkMinutes(anchor.place.coords, mover.place.coords)))
         : 15;
 
-    const newStart = anchorEnd + hop;
+    // Land it in a slot that is genuinely free, not merely after the anchor.
+    const newStart = firstFreeSlot(trip, day, moverDuration, anchorEnd + hop, [
+      mover.id,
+    ]);
+
+    if (runsTooLate(newStart, moverDuration)) {
+      /*
+       * The day is genuinely full. Rather than reporting failure and doing
+       * nothing, look across the rest of the trip — the timeline is the
+       * canvas, not one column of it.
+       */
+      const elsewhere = nextDayWithRoom(trip, day, moverDuration, [mover.id]);
+
+      if (elsewhere) {
+        changes.push({
+          id: nextId("chg"),
+          kind: "move",
+          itemId: mover.id,
+          summary: `Move “${mover.title}” to ${dayLabel(elsewhere.day)} at ${timeLabel(
+            atMinutes(elsewhere.day, elsewhere.startMinutes),
+          )}`,
+          patch: {
+            start: atMinutes(elsewhere.day, elsewhere.startMinutes),
+            end: atMinutes(
+              elsewhere.day,
+              elsewhere.startMinutes + moverDuration,
+            ),
+          },
+        });
+        rationale.push(
+          `“${anchor.title}” is anchored${anchor.booking ? " (booked)" : ""}, so it keeps its slot.`,
+        );
+        rationale.push(
+          `${dayLabelLong(day)} has no opening left that fits “${mover.title}” — the evening is already booked solid.`,
+        );
+        rationale.push(
+          `${dayLabel(elsewhere.day)} has room at ${timeLabel(
+            atMinutes(elsewhere.day, elsewhere.startMinutes),
+          )}, which is the earliest point in the trip it fits without displacing anything.`,
+        );
+      } else {
+        // Nowhere in the trip fits it. Park it in Ideas — reversible, honest.
+        changes.push({
+          id: nextId("chg"),
+          kind: "remove",
+          itemId: mover.id,
+          summary: `Move “${mover.title}” to Ideas for now`,
+        });
+        rationale.push(
+          `Nothing in the trip has a gap big enough for “${mover.title}”, so the only honest fix is to take it off the schedule and keep it on the Ideas list.`,
+        );
+      }
+      continue;
+    }
 
     changes.push({
       id: nextId("chg"),
@@ -97,10 +217,18 @@ export function planResolveOverlap(trip: Trip, day: string): AssistantPlan | nul
     rationale.push(
       `“${anchor.title}” is anchored${anchor.booking ? " (booked)" : ""}, so it keeps its slot.`,
     );
+
+    // Say so when the obvious slot was taken — otherwise the new time looks
+    // arbitrary rather than like the first one that actually works.
+    const pushedPast = newStart > anchorEnd + hop;
     rationale.push(
-      `“${mover.title}” is flexible — shifting it to ${timeLabel(
-        atMinutes(day, newStart),
-      )} clears the clash and leaves ${durationLabel(hop)} to get between them.`,
+      pushedPast
+        ? `“${mover.title}” is flexible, but the slot right after was already busy — ${timeLabel(
+            atMinutes(day, newStart),
+          )} is the first opening that fits it without creating a new clash.`
+        : `“${mover.title}” is flexible — shifting it to ${timeLabel(
+            atMinutes(day, newStart),
+          )} clears the clash and leaves ${durationLabel(hop)} to get between them.`,
     );
   }
 

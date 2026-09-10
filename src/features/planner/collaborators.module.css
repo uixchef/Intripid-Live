@@ -206,3 +206,14 @@
     flex: 1;
   }
 }
+
+/* Below ~420px the presence count competes with the trip name for space. */
+@media (max-width: 420px) {
+  .triggerMeta {
+    display: none;
+  }
+
+  .trigger {
+    padding-right: var(--space-3);
+  }
+}

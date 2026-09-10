@@ -128,13 +128,20 @@ function IdeaCard({
   return (
     <li
       ref={setNodeRef}
+      data-idea={idea.id}
       className={cn(
         styles.idea,
         (dragging || isDragging) && styles.ideaDragging,
       )}
       style={{ ["--cat-color" as string]: meta.color }}
     >
-      <span className={styles.ideaGrip} {...listeners} {...attributes} aria-hidden>
+      <span
+        data-idea-grip=""
+        className={styles.ideaGrip}
+        {...listeners}
+        {...attributes}
+        aria-hidden
+      >
         <GripVertical size={13} strokeWidth={2} />
       </span>
 
@@ -231,7 +238,7 @@ export function DetailsPanel({
   return (
     <motion.div
       className={styles.details}
-      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduceMotion ? 0.12 : 0.24, ease: [0.2, 0.8, 0.2, 1] }}
     >
@@ -360,7 +367,7 @@ export function DetailsPanel({
             <span className="eyebrow">Who&rsquo;s going</span>
             <p className={styles.whoHint}>
               {item.assignedTo.length === 0
-                ? "Everyone on the trip"
+                ? "Everyone on the trip — tap someone to leave them out"
                 : `${item.assignedTo.length} of ${trip.travellers.length} travellers`}
             </p>
             <ul className={styles.whoList}>

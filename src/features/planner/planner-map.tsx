@@ -64,7 +64,12 @@ export function PlannerMap({
    */
   const camera = useMemo(() => {
     if (selected) {
-      return { center: selected.place.coords, zoom: 14.6, fit: null };
+      /*
+       * Close enough to read the streets, wide enough to keep the neighbouring
+       * stops and the route line in frame — the point of moving the camera is
+       * to show where this stop sits in the day, not to isolate it.
+       */
+      return { center: selected.place.coords, zoom: 13.6, fit: null };
     }
     if (routePoints.length > 0) {
       return { center: null, zoom: undefined, fit: routePoints };
@@ -80,6 +85,8 @@ export function PlannerMap({
       <MapSurface
         center={{ lng: -73.9857, lat: 40.7484 }}
         zoom={11.6}
+        /* Street names help when the day involves walking between stops. */
+        labels={{ poi: false, roads: true, places: true }}
         onBackgroundClick={onBackgroundClick}
       >
         <MapCamera
@@ -140,7 +147,7 @@ export function PlannerMap({
                 style={{ ["--stop-color" as string]: meta.color }}
                 onPointerEnter={() => onHover(stop.item.id)}
                 onPointerLeave={() => onHover(null)}
-                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.5, y: 8 }}
+                initial={{ opacity: 0, scale: 0.5, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{
                   duration: reduceMotion ? 0.14 : 0.34,

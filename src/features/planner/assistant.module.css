@@ -188,9 +188,14 @@
   padding: var(--space-6);
 }
 
+.reasoning {
+  display: grid;
+  gap: var(--space-4);
+}
+
 .rationale {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .rationale li {

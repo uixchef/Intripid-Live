@@ -59,7 +59,7 @@ export function Landing() {
       <div className={styles.body}>
         <motion.section
           className={styles.copy}
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0.2 : 0.55, ease: [0.2, 0.8, 0.2, 1] }}
         >
@@ -139,9 +139,7 @@ export function Landing() {
               <motion.li
                 key={recommendation.destination.id}
                 className={styles.previewCard}
-                initial={
-                  reduceMotion ? { opacity: 0 } : { opacity: 0, y: 22, scale: 0.97 }
-                }
+                initial={{ opacity: 0, y: 22, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{
                   duration: reduceMotion ? 0.2 : 0.5,

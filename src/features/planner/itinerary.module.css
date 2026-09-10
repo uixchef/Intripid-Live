@@ -2,6 +2,13 @@
   display: grid;
   align-content: start;
   gap: var(--space-8);
+  /*
+   * Capped measure. This view is read, not scanned — at full width the notes
+   * ran to ~140 characters a line, which is roughly twice a comfortable
+   * measure. The cap is on the content, not the panel, so the surface still
+   * fills the space it is given.
+   */
+  max-width: 60rem;
   padding: var(--space-10);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -426,4 +433,11 @@
 
 .stopWarnAmber {
   color: var(--energy-600);
+}
+
+/* Warnings-only: same shape, calmer colour. */
+.conflictBannerAdvisory {
+  background: var(--energy-50);
+  border-color: var(--energy-100);
+  color: var(--energy-800);
 }

@@ -1,29 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 /**
  * Matches a media query in the browser.
  *
- * Starts `false` on the server and on the first client render, then settles
- * after mount — so the markup React hydrates always matches what the server
- * produced. Layout that depends on this must therefore be correct at the
- * "false" value too, which is why the desktop composition is the default and
- * mobile is the override.
+ * Implemented with `useSyncExternalStore` because `matchMedia` IS an external
+ * store: subscribing in an effect and mirroring the result into state would
+ * cause a second render on mount and can tear during concurrent rendering.
+ *
+ * The server snapshot is `false`, so any layout depending on this must be
+ * correct at `false` too — which is why the desktop composition is the
+ * default and mobile is the override.
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const list = window.matchMedia(query);
+      list.addEventListener("change", onChange);
+      return () => list.removeEventListener("change", onChange);
+    },
+    [query],
+  );
 
-  useEffect(() => {
-    const list = window.matchMedia(query);
-    setMatches(list.matches);
+  const getSnapshot = useCallback(
+    () => window.matchMedia(query).matches,
+    [query],
+  );
 
-    const onChange = (event: MediaQueryListEvent) => setMatches(event.matches);
-    list.addEventListener("change", onChange);
-    return () => list.removeEventListener("change", onChange);
-  }, [query]);
-
-  return matches;
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
 
 /** True below the tablet breakpoint, where the planner switches composition. */

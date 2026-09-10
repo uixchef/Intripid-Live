@@ -504,7 +504,19 @@
 
   .dayTab {
     flex: none;
-    min-width: 92px;
+    min-width: 96px;
     scroll-snap-align: start;
   }
+}
+
+/*
+ * A tight connection is advice. It gets a small amber dot rather than a red
+ * count, so a day that merely needs attention does not look broken.
+ */
+.dayWarning {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--energy-400);
 }

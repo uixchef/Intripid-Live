@@ -386,21 +386,43 @@ export function makeTripStore() {
           });
         },
 
+        /**
+         * Toggle one traveller on or off an activity.
+         *
+         * An empty `assignedTo` means "everyone", and every chip renders as
+         * selected in that state. A naive toggle then ADDED the clicked
+         * person — leaving the chip still selected and looking like the click
+         * did nothing. So a click while "everyone" is implied is read as the
+         * only thing it can sensibly mean: everyone EXCEPT this person.
+         *
+         * Removing the last remaining traveller returns the item to
+         * "everyone" rather than leaving it assigned to nobody.
+         */
         toggleAssignee: (itemId, travellerId) => {
           const state = get();
+          const everyone = state.trip.travellers.map((t) => t.id);
+
           set({
             trip: {
               ...state.trip,
-              items: state.trip.items.map((i) =>
-                i.id === itemId
-                  ? {
-                      ...i,
-                      assignedTo: i.assignedTo.includes(travellerId)
-                        ? i.assignedTo.filter((t) => t !== travellerId)
-                        : [...i.assignedTo, travellerId],
-                    }
-                  : i,
-              ),
+              items: state.trip.items.map((i) => {
+                if (i.id !== itemId) return i;
+
+                const current =
+                  i.assignedTo.length === 0 ? everyone : i.assignedTo;
+                const next = current.includes(travellerId)
+                  ? current.filter((t) => t !== travellerId)
+                  : [...current, travellerId];
+
+                return {
+                  ...i,
+                  // Nobody assigned, or everybody assigned, both mean "everyone".
+                  assignedTo:
+                    next.length === 0 || next.length === everyone.length
+                      ? []
+                      : next,
+                };
+              }),
             },
           });
         },
@@ -525,6 +547,40 @@ export function makeTripStore() {
               i.id === change.itemId ? { ...i, ...change.patch } : i,
             );
           } else if (change.kind === "remove" && change.itemId) {
+            // The assistant never destroys anything: "remove" means unschedule
+            // back onto the Ideas list, which stays reversible.
+            const target = items.find((i) => i.id === change.itemId);
+            if (target) {
+              set({
+                trip: {
+                  ...state.trip,
+                  items: items.filter((i) => i.id !== change.itemId),
+                  ideas: [
+                    {
+                      id: newId("idea"),
+                      category: target.category,
+                      title: target.title,
+                      subtitle: target.subtitle,
+                      place: target.place,
+                      durationMin:
+                        target.start && target.end
+                          ? durationMinutes(target.start, target.end)
+                          : DEFAULT_DURATION,
+                      reason:
+                        "Taken off the schedule to clear a clash — drop it back in whenever there's room.",
+                      addedBy: "assistant",
+                      costUsd: target.costUsd,
+                    },
+                    ...state.trip.ideas,
+                  ],
+                },
+                assistant: {
+                  ...state.assistant,
+                  applied: [...state.assistant.applied, changeId],
+                },
+              });
+              return;
+            }
             items = items.filter((i) => i.id !== change.itemId);
           }
 

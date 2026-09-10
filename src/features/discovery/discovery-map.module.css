@@ -210,7 +210,7 @@
   pointer-events: none;
   background: hsl(38 14% 58%);
   mix-blend-mode: saturation;
-  opacity: 0.88;
+  opacity: 0.94;
 }
 
 .paperWash::after {
@@ -218,6 +218,6 @@
   position: absolute;
   inset: 0;
   background: var(--paper-200);
-  opacity: 0.2;
+  opacity: 0.26;
   mix-blend-mode: multiply;
 }

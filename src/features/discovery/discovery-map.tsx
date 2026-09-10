@@ -99,7 +99,8 @@ export function DiscoveryMap({
       <MapSurface
         center={{ lng: 6, lat: 26 }}
         zoom={1.35}
-        labels={active ? "context" : "minimal"}
+        /* Neighbourhood names help; highway shields fight our pins. */
+        labels={{ poi: false, roads: false, places: true }}
         onBackgroundClick={() => onHover(null)}
       >
         <MapCamera

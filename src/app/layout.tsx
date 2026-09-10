@@ -3,6 +3,8 @@ import { Instrument_Serif, Inter } from "next/font/google";
 
 import { site } from "@/config/site";
 
+import { Providers } from "./providers";
+
 import "./globals.css";
 
 const inter = Inter({
@@ -38,7 +40,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${inter.variable} ${instrumentSerif.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

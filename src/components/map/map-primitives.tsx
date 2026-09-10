@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import mapboxgl from "mapbox-gl";
 
@@ -48,6 +48,11 @@ export function MapMarker({
   label,
 }: MapMarkerProps) {
   const { map } = useMap();
+  /*
+   * The marker's host node. Created once via a state initialiser, then handed
+   * to Mapbox, which owns its transform. React never renders this node's
+   * attributes — only its contents, through the portal below.
+   */
   const [element] = useState(() => {
     const el = document.createElement("div");
     el.style.willChange = "transform";
@@ -73,7 +78,14 @@ export function MapMarker({
     markerRef.current?.setLngLat([coords.lng, coords.lat]);
   }, [coords.lng, coords.lat]);
 
+  /*
+   * Stacking order lives on the marker element itself, because Mapbox renders
+   * markers as siblings and a selected pin has to rise above its neighbours.
+   * This is a deliberate write to a library-owned DOM node, not React state —
+   * the immutability rule cannot distinguish the two.
+   */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     element.style.zIndex = String(z);
   }, [element, z]);
 
@@ -103,8 +115,6 @@ export function MapMarker({
 /* Route                                                                     */
 /* -------------------------------------------------------------------------- */
 
-let routeSeq = 0;
-
 export interface MapRouteProps {
   points: LngLat[];
   /** Dashed styling for the "suggested"/tentative case. */
@@ -127,10 +137,9 @@ export function MapRoute({
   opacity = 0.85,
 }: MapRouteProps) {
   const { map, ready } = useMap();
-  const id = useMemo(() => {
-    routeSeq += 1;
-    return `route-${routeSeq}`;
-  }, []);
+  // useId is unique per instance and stable across renders, which is what a
+  // Mapbox source/layer id needs — no module-level counter required.
+  const id = `route${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 
   const casingId = `${id}-casing`;
 
