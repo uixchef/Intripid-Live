@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { MotionConfig } from "motion/react";
 
+import { SessionStoreProvider } from "@/stores/session-store";
+
 /**
  * App-wide client providers.
  *
@@ -14,7 +16,17 @@ import { MotionConfig } from "motion/react";
  * the server (where the preference is unknown) than on the client, which React
  * reports as a hydration mismatch. Letting Motion do the reduction keeps the
  * rendered markup identical either way.
+ *
+ * The session provider is app-wide rather than scoped to `/dashboard` because
+ * "is this a returning user" is a fact about the app, not about one route.
+ * Instantiating it per tree (see `create-store-context`) keeps it off the
+ * module scope, which matters because Client Components render on the server
+ * too. It is a local mock; there is no authentication behind it.
  */
 export function Providers({ children }: { children: ReactNode }) {
-  return <MotionConfig reducedMotion="user">{children}</MotionConfig>;
+  return (
+    <MotionConfig reducedMotion="user">
+      <SessionStoreProvider>{children}</SessionStoreProvider>
+    </MotionConfig>
+  );
 }

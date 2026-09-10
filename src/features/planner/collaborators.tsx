@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/controls";
 import { Modal } from "@/components/ui/overlay";
 import { Tag } from "@/components/ui/chip";
+import { ROLE_LABELS, ROLE_NOTES } from "@/lib/collaboration";
 import { cn } from "@/lib/utils";
-import type { Trip, Traveller } from "@/lib/types";
+import type { Trip } from "@/lib/types";
 
 import styles from "./collaborators.module.css";
 
@@ -47,19 +48,6 @@ const CONNECTIONS: { label: string; initials: string; colorIndex: number; note: 
   { label: "Theo Lindqvist", initials: "TL", colorIndex: 5, note: "Kyoto, 2023" },
 ];
 
-const ROLE_LABELS: Record<Traveller["role"], string> = {
-  owner: "Organiser",
-  editor: "Traveller",
-  advisor: "Advisor",
-  viewer: "Observer",
-};
-
-const ROLE_NOTES: Record<Traveller["role"], string> = {
-  owner: "Created the trip, can change anything",
-  editor: "Going on the trip, can edit the plan",
-  advisor: "Helping plan, not travelling",
-  viewer: "Can follow along, cannot edit",
-};
 
 export interface PresenceChipProps {
   trip: Trip;

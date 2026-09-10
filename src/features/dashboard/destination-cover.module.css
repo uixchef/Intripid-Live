@@ -1,0 +1,116 @@
+/*
+ * The trip card's contour band.
+ *
+ * Held deliberately quiet: a 4% tint, hairline strokes, and one line of type.
+ * The dashboard is an operational surface, so this has to identify a trip at a
+ * glance without competing with the metadata underneath it.
+ */
+
+.cover {
+  position: relative;
+  /*
+   * 72, down from 88. The band carries one line of type and a drawing; at 88
+   * it was the tallest thing on a card whose job is the route row underneath.
+   */
+  height: 72px;
+  overflow: hidden;
+  background: var(--tint);
+  border-bottom: 1px solid var(--border-hairline);
+  isolation: isolate;
+}
+
+/*
+ * Continent channels. Four hues, all from the brand ramps, assigned by
+ * continent so a screen of trips never shows more than a few related tints.
+ */
+.cover[data-channel="purple"] {
+  --tint: var(--purple-50);
+  --stroke: var(--purple-400);
+  --ink: var(--purple-800);
+}
+
+.cover[data-channel="teal"] {
+  --tint: var(--teal-50);
+  --stroke: var(--teal-400);
+  --ink: var(--teal-800);
+}
+
+.cover[data-channel="orange"] {
+  --tint: var(--orange-50);
+  --stroke: var(--orange-400);
+  --ink: var(--orange-800);
+}
+
+.cover[data-channel="pink"] {
+  --tint: var(--pink-50);
+  --stroke: var(--pink-400);
+  --ink: var(--pink-800);
+}
+
+.lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lines path {
+  fill: none;
+  stroke: var(--stroke);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.label {
+  position: absolute;
+  left: var(--space-6);
+  bottom: var(--space-5);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+  max-width: calc(100% - var(--space-12));
+}
+
+.flag {
+  font-size: var(--text-sm);
+  line-height: 1;
+  flex: none;
+}
+
+/*
+ * The one display-serif moment on a trip card. A place name is an identity,
+ * not a control, and it is the only string here that is allowed to be
+ * expressive — everything below the band is operational and stays sans.
+ */
+.place {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* A trip you have already taken reads back a step. */
+.muted {
+  filter: saturate(0.45);
+}
+
+.muted .place {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+  .cover {
+    height: 66px;
+  }
+
+  .place {
+    font-size: var(--text-md);
+  }
+}

@@ -1,0 +1,234 @@
+/*
+ * The dashboard shell.
+ *
+ * A scrolling document with a sticky bar, not a fixed 100dvh application.
+ * The planner and Discovery both own the whole viewport because they are
+ * workspaces; a home screen has more content than fits and should scroll like
+ * a page.
+ */
+
+.root {
+  min-height: 100dvh;
+  background: var(--bg-canvas);
+}
+
+/*
+ * A real measure. At 1440 an unbounded dashboard puts the identity block's
+ * name 1,300px from its stats and leaves the trip cards absurdly wide; capped
+ * and centred, 1440 and 1600 look considered rather than stretched.
+ */
+.page {
+  max-width: 1240px;
+  margin-inline: auto;
+  padding: var(--space-10) var(--space-8) var(--space-16);
+  min-width: 0;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--space-8);
+  /* Each column sizes to its own content instead of stretching to the tallest. */
+  align-items: start;
+  min-width: 0;
+}
+
+.main,
+.support {
+  display: grid;
+  gap: var(--space-8);
+  align-content: start;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Slots                                                                     */
+/*                                                                           */
+/* Wrappers exist purely so the sections can be re-ordered once the columns   */
+/* flatten. They carry no visual style of their own.                         */
+/* ------------------------------------------------------------------------- */
+
+.slotIdentity,
+.slotPersona,
+.slotTravels,
+.slotQuickTrip,
+.slotEditorial,
+.slotSaved {
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Booting                                                                   */
+/* ------------------------------------------------------------------------- */
+
+/*
+ * Held blank for the one frame it takes to read the persisted session. A
+ * spinner here would be a spinner for 8ms, which is worse than nothing.
+ */
+.booting {
+  min-height: 100dvh;
+  background: var(--bg-canvas);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Guest gate                                                                */
+/* ------------------------------------------------------------------------- */
+
+.gate {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--space-10) var(--space-6);
+  background: var(--bg-canvas);
+}
+
+.gateCard {
+  display: grid;
+  gap: var(--space-5);
+  justify-items: start;
+  width: 100%;
+  max-width: 440px;
+  padding: var(--space-10);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.gateTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+  margin-top: var(--space-2);
+}
+
+.gateBody {
+  font-size: var(--text-sm);
+  line-height: var(--lh-relaxed);
+  color: var(--text-tertiary);
+}
+
+.gateActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+.gateLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--purple-700);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+}
+
+.gateLink:hover {
+  color: var(--purple-800);
+  text-decoration: underline;
+}
+
+.gateLink svg {
+  flex: none;
+}
+
+.gateNote {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text-quaternary);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-hairline);
+  width: 100%;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Responsive                                                                */
+/* ------------------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr) 312px;
+    gap: var(--space-7);
+  }
+
+  .page {
+    padding: var(--space-8) var(--space-6) var(--space-12);
+  }
+}
+
+/*
+ * One column, and RE-SEQUENCED. `display: contents` promotes the six sections
+ * to siblings of the page grid so `order` can put them in the sequence a
+ * phone user actually wants: who I am, start something, my trips, then the
+ * rest. Simply stacking the desktop columns would put a seasonal feature and
+ * a saved list above the trip you fly to on Tuesday.
+ */
+@media (max-width: 1080px) {
+  .body {
+    grid-template-columns: 1fr;
+    gap: var(--space-7);
+  }
+
+  .main,
+  .support {
+    display: contents;
+  }
+
+  .slotIdentity {
+    order: 1;
+  }
+
+  .slotQuickTrip {
+    order: 2;
+  }
+
+  .slotTravels {
+    order: 3;
+  }
+
+  .slotPersona {
+    order: 4;
+  }
+
+  .slotEditorial {
+    order: 5;
+  }
+
+  .slotSaved {
+    order: 6;
+  }
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: var(--space-6) var(--space-5) var(--space-12);
+  }
+
+  .body {
+    gap: var(--space-6);
+  }
+}
+
+@media (max-width: 400px) {
+  .page {
+    padding: var(--space-5) var(--space-4) var(--space-10);
+  }
+
+  .gateCard {
+    padding: var(--space-7);
+  }
+
+  .gateTitle {
+    font-size: var(--text-xl);
+  }
+
+  .gateActions > * {
+    flex: 1;
+  }
+}

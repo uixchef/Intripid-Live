@@ -1,0 +1,149 @@
+/*
+ * Popover contents. The Popover primitive supplies the surface, the border and
+ * the shadow, so this file only lays out what is inside it — no second card,
+ * no nested radius.
+ */
+
+.panel {
+  display: grid;
+  min-width: 0;
+}
+
+.head {
+  display: grid;
+  gap: 1px;
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.sub {
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
+}
+
+.groups {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  max-height: 26rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.groupLabel {
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+  padding: var(--space-3) var(--space-4) var(--space-2);
+}
+
+.list {
+  display: grid;
+  gap: 1px;
+}
+
+.row,
+.rowStatic {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  min-width: 0;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.row:hover {
+  background: var(--bg-hover);
+}
+
+.body {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.name {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * The history line is the reason this list is worth having, so it wraps to two
+ * lines rather than clipping. One line cut "Tokyo in blossom season" to
+ * "Tokyo in blossom se…", which loses exactly the word that identifies it.
+ */
+.history {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text-quaternary);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+
+.go {
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-top: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  color: var(--text-quaternary);
+  opacity: 0;
+  transition:
+    opacity var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
+}
+
+.row:hover .go {
+  opacity: 1;
+  background: var(--purple-100);
+  color: var(--purple-700);
+}
+
+/* Keyboard users get the affordance too — hover is not the only way in. */
+.row:focus-visible .go {
+  opacity: 1;
+}
+
+.foot {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.footNote {
+  font-size: 10.5px;
+  line-height: var(--lh-normal);
+  color: var(--text-quaternary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .go {
+    transition: none;
+  }
+}

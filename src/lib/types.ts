@@ -466,3 +466,199 @@ export interface Conflict {
   message: string;
   severity: "warning" | "error";
 }
+
+/* -------------------------------------------------------------------------- */
+/* Account — the authenticated dashboard                                      */
+/*                                                                            */
+/* The landing page at `/` is the logged-out door. A returning user has an    */
+/* account, and these are the objects that account is made of. There is no    */
+/* real auth behind them: the session is a deterministic local mock, which is */
+/* the honest shape for a portfolio build.                                    */
+/* -------------------------------------------------------------------------- */
+
+/** Who is looking. The app only ever needs to distinguish these two. */
+export type SessionState = "guest" | "authenticated";
+
+/**
+ * Traveller statistics.
+ *
+ * `avoid` is inherited from the original product and is the most distinctive
+ * of the three: Intripid lets you rule places OUT, and a recommender that
+ * knows where you will not go is more useful than one that only knows where
+ * you might. It is a first-class count, not a footnote.
+ */
+export interface TravelStats {
+  wishlist: number;
+  visited: number;
+  avoid: number;
+}
+
+/**
+ * A trait the recommender actually uses.
+ *
+ * Deliberately not a badge or an achievement. The original dashboard showed
+ * four badge-like circles; read as product rather than as decoration, what
+ * belongs in that position is the standing input to every recommendation —
+ * the things Discovery would otherwise have to ask again.
+ */
+export interface PersonaTrait {
+  id: string;
+  label: string;
+  /** What this trait causes the product to do differently. */
+  effect: string;
+  /** Which brand channel carries it, so the row is legible at a glance. */
+  channel: "purple" | "teal" | "orange" | "pink";
+}
+
+/** The standing preference profile shown as "About". */
+export interface TravelPersona {
+  /** Prose summary, editable. */
+  summary: string;
+  traits: PersonaTrait[];
+  /** How much structure this traveller wants in a day. */
+  pace: "loose" | "moderate" | "packed";
+  /** Interests carried into Discovery's ranking. */
+  interests: Interest[];
+  /** Preferred trip character. */
+  styles: TripStyle[];
+  /** Typical budget tier, used to pre-fill Discovery. */
+  budget: BudgetTier;
+  /** ISO date the persona was last confirmed by the user. */
+  updatedIso: string;
+}
+
+export interface AccountUser {
+  id: string;
+  name: string;
+  /** Without the leading "@". */
+  handle: string;
+  initials: string;
+  /** Index into the traveller colour ramp, shared with the planner. */
+  colorIndex: number;
+  /** Where they travel from by default; feeds Discovery's origin step. */
+  homeCity: string;
+  homeCountry: string;
+  memberSinceIso: string;
+  stats: TravelStats;
+  persona: TravelPersona;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Trip summaries                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Status is stored, not derived from today's date.
+ *
+ * Deriving it would make the dashboard mean different things on different
+ * days — the seeded April trip would silently become "completed" and the
+ * planner, which presents it as a live trip, would contradict the dashboard
+ * that links to it. Deterministic demo data has to be deterministic in time
+ * as well as in content.
+ */
+export type TripStatus = "upcoming" | "ongoing" | "completed";
+
+/**
+ * A trip as the dashboard knows it.
+ *
+ * Only one seeded trip has a real itinerary behind it (`plannerTripId` points
+ * at the planner's NYC trip). The rest are summaries, and the card says so by
+ * offering a different primary action rather than pretending to open a
+ * planner that has nothing in it.
+ */
+export interface TripSummary {
+  id: string;
+  name: string;
+  status: TripStatus;
+  /** Destination id, so covers, flags and Discovery data all resolve. */
+  destinationId: string;
+  /** Where the traveller set out from. */
+  origin: { city: string; countryCode: string; flag: string };
+  /** ISO dates, inclusive. */
+  startDate: string;
+  endDate: string;
+  /** Scheduled stops. Null when the trip is a summary with no itinerary. */
+  stops: number | null;
+  /** Traveller ids from the planner's roster, so the two agree. */
+  travellerIds: string[];
+  /** Set only when a real planner itinerary exists for this trip. */
+  plannerTripId?: string;
+  /** One line of why this trip exists, shown on completed trips. */
+  note?: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Connections                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Someone you have travelled with.
+ *
+ * This is the dashboard end of the planner's collaboration model: the same
+ * people, with the history that explains why they are suggested. It is not a
+ * social graph — there is no following, no feed and no profile page.
+ */
+export interface Connection {
+  /** Matches a planner traveller id where the person is on the NYC trip. */
+  id: string;
+  name: string;
+  initials: string;
+  colorIndex: number;
+  /** Trips taken together, most recent first. */
+  history: string[];
+  /** True when they are on at least one of your active trips. */
+  onCurrentTrip: boolean;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Notifications                                                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Notifications are only worth having if every one of them is actionable.
+ * Each carries the route it resolves to; there is no "someone liked this".
+ */
+export interface AppNotification {
+  id: string;
+  kind: "collaboration" | "advisor" | "season";
+  title: string;
+  detail: string;
+  /** Relative age, stored as text so the demo never drifts. */
+  age: string;
+  /** Where acting on it takes you. */
+  href: string;
+  read: boolean;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Editorial                                                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * One seasonal destination feature.
+ *
+ * The original dashboard carried a Cherry Blossom news card. Kept, but pointed
+ * back into the product: the reason to show it is that the window is closing
+ * and Discovery can act on that, not that it is news.
+ */
+export interface EditorialFeature {
+  id: string;
+  /** Destination id, so it links into Discovery with real data behind it. */
+  destinationId: string;
+  eyebrow: string;
+  headline: string;
+  body: string;
+  /** The window this is about, in the traveller's terms. */
+  window: string;
+  /** Why it is being surfaced now, tied to the persona. */
+  because: string;
+}
+
+/** A place kept for later, from Discovery or from a feature. */
+export interface SavedDestination {
+  destinationId: string;
+  /** What made them save it. */
+  reason: string;
+  /** Best months, in the traveller's terms. */
+  window: string;
+}

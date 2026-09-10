@@ -1,0 +1,211 @@
+.panel {
+  display: grid;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.headText {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.sub {
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
+}
+
+.markAll {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: var(--weight-semibold);
+  color: var(--purple-700);
+  letter-spacing: var(--tracking-tight);
+  cursor: pointer;
+  padding: var(--space-2) var(--space-3);
+  margin: calc(var(--space-2) * -1) calc(var(--space-3) * -1) 0 0;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.markAll:hover {
+  background: var(--purple-50);
+}
+
+.list {
+  display: grid;
+  gap: 1px;
+  padding: var(--space-3);
+  max-height: 27rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  min-width: 0;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.row:hover {
+  background: var(--bg-hover);
+}
+
+/*
+ * Unread is a tint plus a dot, never bold text. Bolding the unread ones makes
+ * the read ones look broken, and the list stops being scannable the moment
+ * half of it is heavier than the other half.
+ */
+.rowUnread {
+  background: var(--purple-50);
+}
+
+.rowUnread:hover {
+  background: var(--purple-100);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: var(--radius-sm);
+}
+
+/*
+ * Channel by kind, using the palette's own semantics: purple is the system
+ * acting, teal is people, orange is time and season. No new hues.
+ */
+.advisor {
+  background: var(--purple-100);
+  color: var(--purple-700);
+}
+
+.collaboration {
+  background: var(--teal-100);
+  color: var(--teal-800);
+}
+
+.season {
+  background: var(--orange-100);
+  color: var(--orange-700);
+}
+
+.body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.rowTitle {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.age {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-quaternary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Two lines. Enough to decide without opening it, not enough to be an essay. */
+.detail {
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: break-word;
+}
+
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--purple-600);
+}
+
+.empty {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-6);
+}
+
+.emptyTitle {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.emptyBody {
+  font-size: var(--text-2xs);
+  line-height: var(--lh-normal);
+  color: var(--text-quaternary);
+}
+
+.foot {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.footNote {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 10.5px;
+  color: var(--text-quaternary);
+}
+
+.footNote svg {
+  flex: none;
+  color: var(--purple-400);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .markAll {
+    transition: none;
+  }
+}

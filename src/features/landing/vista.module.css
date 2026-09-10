@@ -1,0 +1,307 @@
+/*
+ * The vista's layers.
+ *
+ * Every layer is bottom-anchored and sized as a percentage of the viewport,
+ * so the horizon, the ridge and the crest stay in the same relationship to
+ * each other at any window size. The numbers below are not arbitrary — they
+ * are a set, and moving one without the others breaks the composition:
+ *
+ *   clouds   54% tall  → first cloud pixels land ~60% down the viewport
+ *   hill     40% tall  → the ridge crosses centre at ~27% from the bottom
+ *   figure   33vh      → seated at 8.5%, so her chest meets that ridge
+ *   meadow   17% tall  → its crest at ~12%, covering the base of her robe
+ *
+ * That leaves the top half for type, which is the content budget the hero is
+ * written to. Text is never placed over the cloud sea: white type on a lit
+ * cloud is the one place this palette cannot hold contrast.
+ *
+ * The scene is completely static. The environment's rule applies here too —
+ * colour is compositional, and the only motion in this product belongs to
+ * the map camera. A drifting sky would also mean re-rasterising four large
+ * Gaussian blurs for the life of the page.
+ */
+
+.vista {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Painted back-to-front by DOM order; no layer needs a z-index. */
+}
+
+/* ------------------------------------------------------------------------- */
+/* Sky                                                                       */
+/* ------------------------------------------------------------------------- */
+
+/*
+ * The gradient is compressed toward the middle of the frame: a linear sky
+ * spread evenly over 100dvh puts the warm end off the bottom of the screen,
+ * where the clouds already cover it, and the visible half reads as flat blue.
+ *
+ * TO SWAP IN A COMMISSIONED ILLUSTRATION: replace this whole block with
+ *   background: url("/vista.jpg") center bottom / cover no-repeat;
+ * and delete the layers in vista.tsx you no longer want behind it.
+ */
+.sky {
+  position: absolute;
+  inset: 0;
+  background-image:
+    /* The dawn itself — low, central, and the brightest thing on the page. */
+    radial-gradient(
+      132% 52% at 50% 60%,
+      rgba(255, 231, 192, 0.88) 0%,
+      rgba(252, 205, 172, 0.46) 34%,
+      rgba(214, 163, 178, 0) 68%
+    ),
+    linear-gradient(
+      to bottom,
+      #3c6192 0%,
+      #476c97 9%,
+      #5f78a4 20%,
+      #7a7fac 30%,
+      #977fae 38%,
+      #b48ba9 45%,
+      #d3a0a2 50%,
+      #eec0a4 55%,
+      #fadcbc 60%,
+      #fdeacd 70%,
+      #fdf0d8 100%
+    );
+}
+
+/*
+ * Stars keep uniform scaling and crop instead. They are the one layer made of
+ * circles, and a circle is the one shape that cannot survive a non-uniform
+ * scale — stretched, the sky fills with tiny vertical dashes. Losing a few
+ * stars off the sides costs nothing.
+ */
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 58%;
+}
+
+/*
+ * The reason white type works at the top of this page.
+ *
+ * A dusty-blue sky is around #4a6c96 — roughly 3.4:1 against white, which is
+ * under AA for the lede. This wash takes the top third down far enough to
+ * clear it, and is gone by the time the horizon starts glowing so it never
+ * dirties the dawn.
+ */
+.veil {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(17, 30, 57, 0.46) 0%,
+      rgba(17, 30, 57, 0.28) 18%,
+      rgba(17, 30, 57, 0.1) 34%,
+      rgba(17, 30, 57, 0) 50%
+    ),
+    radial-gradient(
+      86% 46% at 50% 22%,
+      rgba(14, 26, 52, 0.24) 0%,
+      rgba(14, 26, 52, 0) 72%
+    );
+}
+
+/* ------------------------------------------------------------------------- */
+/* Scenery bands                                                             */
+/* ------------------------------------------------------------------------- */
+
+/*
+ * HOW THESE ARE SIZED, AND WHY IT IS NOT JUST `width: 100%`.
+ *
+ * The three scenery bands render with `preserveAspectRatio="none"`, so their
+ * on-screen aspect ratio decides how much the artwork distorts. On a 16:10
+ * desktop each band lands almost exactly on its viewBox ratio, which is what
+ * those viewBoxes were drawn for. On a portrait phone the same band is around
+ * 1:1 — a near-threefold vertical stretch, which turned the cloud billows
+ * into vertical flames. That was a real bug, visible on any phone.
+ *
+ * So each band's width is floored at `height × its own viewBox ratio`:
+ *
+ *   width: max(100%, calc(<height> * 1dvh * <ratio>))
+ *
+ * Wide viewport → `100%` wins and the art stretches HORIZONTALLY, which for
+ * a band of clouds or a hillside is invisible and arguably flattering.
+ * Narrow viewport → the calc wins, the band grows wider than the screen and
+ * centres, and the aspect ratio is pinned to the viewBox so vertical
+ * distortion is mathematically impossible. You see less of the scene's width
+ * on a phone, which is exactly what a camera does when you turn it upright.
+ *
+ * A breakpoint could not have fixed this: the distortion is a function of
+ * aspect ratio, and every combination of width and height has a different
+ * one. Only the media queries below, which retune `--band-h`, are needed.
+ */
+.clouds,
+.hill,
+.meadow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: var(--band-h);
+  width: max(100%, var(--band-w));
+  /*
+   * globals.css resets every `svg` to `max-width: 100%`, which silently
+   * clamped these bands back to the viewport width and reinstated the phone
+   * distortion twice over. On a 16:10 desktop the clamp is a no-op — 100%
+   * *is* the designed width — so the symptom only ever appeared on a phone.
+   */
+  max-width: none;
+}
+
+/*
+ * `--band-w` is the band's height in dvh multiplied by its viewBox ratio,
+ * worked out here rather than in the stylesheet. It was originally written as
+ * `max(100%, calc(var(--h) * 1dvh * var(--ratio)))`, which computed to 100%
+ * in Chromium and left the phone bug exactly as it was — a `calc()` chaining
+ * two `var()` multiplications around a length is not reliably resolved. Two
+ * plain values cannot fail, and the arithmetic is one comment away.
+ */
+.clouds {
+  /* 54 × 2.963 (1600/540) */
+  --band-h: 54%;
+  --band-w: 160dvh;
+}
+
+.hill {
+  /* 40 × 4 (1600/400) */
+  --band-h: 40%;
+  --band-w: 160dvh;
+}
+
+.meadow {
+  /* 17 × 8.889 (1600/180) */
+  --band-h: 17%;
+  --band-w: 151dvh;
+}
+
+/* She has proportions, so she alone keeps uniform scaling. */
+.figure {
+  position: absolute;
+  bottom: 8.5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  max-width: none;
+  height: clamp(180px, 33vh, 370px);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Supplied artwork                                                          */
+/* ------------------------------------------------------------------------- */
+
+/*
+ * Used only by `vista-image.tsx`, when a file exists at `public/vista.*`.
+ *
+ * `bottom` rather than `center`: every layer of the drawn scene is anchored
+ * to the horizon and the ground, and a hero photograph of a landscape has to
+ * crop the same way or the composition detaches from the type as the window
+ * changes. On a short window the sky is what should be lost, not the ground.
+ */
+.photo {
+  object-fit: cover;
+  object-position: center bottom;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Grain                                                                     */
+/* ------------------------------------------------------------------------- */
+
+/*
+ * Same treatment as the discovery environment: a gradient this large and
+ * this smooth bands visibly on wide-gamut displays, and a little fractal
+ * noise both removes the banding and gives the sky some material.
+ */
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ------------------------------------------------------------------------- */
+/* Responsive                                                                */
+/* ------------------------------------------------------------------------- */
+
+/*
+ * Portrait phones. The type needs four lines where it needed three, so the
+ * horizon comes UP to meet it — left where it was, the gap between the last
+ * line of copy and the first cloud opened into a dead band of flat peach.
+ */
+@media (max-width: 640px) {
+  .clouds {
+    --band-h: 56%;
+    --band-w: 166dvh;
+  }
+
+  .hill {
+    --band-h: 36%;
+    --band-w: 144dvh;
+  }
+
+  .meadow {
+    --band-h: 17%;
+    --band-w: 151dvh;
+  }
+
+  .figure {
+    bottom: 9%;
+    height: clamp(150px, 25vh, 260px);
+  }
+
+  .veil {
+    background-image: linear-gradient(
+      to bottom,
+      rgba(17, 30, 57, 0.5) 0%,
+      rgba(17, 30, 57, 0.32) 22%,
+      rgba(17, 30, 57, 0.12) 40%,
+      rgba(17, 30, 57, 0) 58%
+    );
+  }
+}
+
+/*
+ * A short window is the real constraint on this page, not a narrow one — the
+ * scene needs the bottom half and the type needs the top. The land gives up
+ * height first: a compressed foreground still reads as a hillside, while a
+ * compressed sky just reads as a blue bar.
+ */
+@media (max-height: 760px) {
+  .clouds {
+    --band-h: 46%;
+    --band-w: 136dvh;
+  }
+
+  .hill {
+    --band-h: 34%;
+    --band-w: 136dvh;
+  }
+
+  .meadow {
+    --band-h: 15%;
+    --band-w: 133dvh;
+  }
+
+  .figure {
+    height: clamp(150px, 27vh, 280px);
+  }
+
+  .veil {
+    background-image: linear-gradient(
+      to bottom,
+      rgba(17, 30, 57, 0.48) 0%,
+      rgba(17, 30, 57, 0.3) 20%,
+      rgba(17, 30, 57, 0.1) 38%,
+      rgba(17, 30, 57, 0) 54%
+    );
+  }
+}
