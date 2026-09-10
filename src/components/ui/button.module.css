@@ -11,11 +11,11 @@
   position: relative;
   border: 1px solid transparent;
   transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    transform var(--dur-instant) var(--ease-out);
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
   /* Buttons hold their own width while loading rather than collapsing. */
   min-width: fit-content;
 }
@@ -120,27 +120,27 @@
 /* ------------------------------------------------------------------------- */
 
 .primary {
-  background: var(--brand-600);
-  color: var(--paper-0);
+  background: var(--purple-600);
+  color: var(--slate-0);
   box-shadow:
     var(--shadow-xs),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .primary:hover:not(:disabled) {
-  background: var(--brand-700);
+  background: var(--purple-700);
   box-shadow:
     var(--shadow-sm),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .primary:active:not(:disabled) {
-  background: var(--brand-800);
+  background: var(--purple-800);
 }
 
 .primary:disabled {
-  background: var(--paper-200);
-  color: var(--paper-400);
+  background: var(--slate-200);
+  color: var(--slate-400);
   box-shadow: none;
 }
 
@@ -156,18 +156,18 @@
 }
 
 .secondary:hover:not(:disabled) {
-  background: var(--paper-50);
+  background: var(--slate-50);
   border-color: var(--border-strong);
 }
 
 .secondary:active:not(:disabled) {
-  background: var(--paper-100);
+  background: var(--slate-100);
 }
 
 .secondary:disabled {
-  background: var(--paper-50);
+  background: var(--slate-50);
   border-color: var(--border-subtle);
-  color: var(--paper-400);
+  color: var(--slate-400);
   box-shadow: none;
 }
 
@@ -176,22 +176,22 @@
 /* ------------------------------------------------------------------------- */
 
 .subtle {
-  background: var(--paper-150);
+  background: var(--slate-150);
   color: var(--text-secondary);
 }
 
 .subtle:hover:not(:disabled) {
-  background: var(--paper-200);
+  background: var(--slate-200);
   color: var(--text-primary);
 }
 
 .subtle:active:not(:disabled) {
-  background: var(--paper-300);
+  background: var(--slate-300);
 }
 
 .subtle:disabled {
-  background: var(--paper-100);
-  color: var(--paper-400);
+  background: var(--slate-100);
+  color: var(--slate-400);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -213,7 +213,7 @@
 }
 
 .ghost:disabled {
-  color: var(--paper-400);
+  color: var(--slate-400);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -235,7 +235,7 @@
 }
 
 .danger:disabled {
-  color: var(--paper-400);
+  color: var(--slate-400);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -16,15 +16,15 @@
 }
 
 .ring_strong {
-  --ring-color: var(--accent-500);
+  --ring-color: var(--teal-500);
 }
 
 .ring_fair {
-  --ring-color: var(--energy-400);
+  --ring-color: var(--orange-400);
 }
 
 .ring_weak {
-  --ring-color: var(--paper-400);
+  --ring-color: var(--slate-400);
 }
 
 .ringValue {
@@ -69,7 +69,7 @@
 .factorTrack {
   height: 5px;
   border-radius: var(--radius-full);
-  background: var(--paper-200);
+  background: var(--slate-200);
   overflow: hidden;
 }
 
@@ -80,15 +80,15 @@
 }
 
 .fill_strong {
-  background: var(--accent-500);
+  background: var(--teal-500);
 }
 
 .fill_fair {
-  background: var(--energy-400);
+  background: var(--orange-400);
 }
 
 .fill_weak {
-  background: var(--paper-400);
+  background: var(--slate-400);
 }
 
 .factorDetail {
@@ -121,7 +121,7 @@
   display: block;
   width: 3px;
   border-radius: 1px;
-  background: var(--paper-300);
+  background: var(--slate-300);
 }
 
 .confBar:nth-child(1) {
@@ -135,7 +135,7 @@
 }
 
 .confBarOn {
-  background: var(--accent-500);
+  background: var(--teal-500);
 }
 
 .confidenceLabel {
@@ -164,12 +164,12 @@
   display: block;
   width: 100%;
   border-radius: 2px;
-  background: var(--paper-250, var(--paper-200));
-  transition: background-color var(--dur-fast) var(--ease-out);
+  background: var(--slate-250, var(--slate-200));
+  transition: background-color var(--dur-micro) var(--ease-out);
 }
 
 .sparkBarOn {
-  background: var(--accent-400);
+  background: var(--teal-400);
 }
 
 .sparkLabels {
@@ -184,6 +184,6 @@
 }
 
 .sparkLabelOn {
-  color: var(--accent-700);
+  color: var(--teal-700);
   font-weight: var(--weight-bold);
 }

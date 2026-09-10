@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, UserPlus } from "lucide-react";
+import { Mail, Plus, UserPlus } from "lucide-react";
 
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/controls";
-import { Modal, Popover } from "@/components/ui/overlay";
+import { Modal } from "@/components/ui/overlay";
 import { Tag } from "@/components/ui/chip";
 import { cn } from "@/lib/utils";
 import type { Trip, Traveller } from "@/lib/types";
@@ -27,7 +27,25 @@ import styles from "./collaborators.module.css";
  *
  * Pending invitations stay visible in the plan. An honest incomplete state is
  * more useful than a tidy one that hides who has not replied.
+ *
+ * This used to live entirely inside a popover hung off four avatars in the top
+ * bar, which made collaboration read as decoration. It is now a named section
+ * of the context rail — permanently present, collapsed to one line until you
+ * want it — and the same panel is what a phone opens in a sheet.
  */
+
+/**
+ * People the organiser has travelled with before.
+ *
+ * Deterministic demo data, and the reason it exists: inviting by typing an
+ * email is the slow path. Most trips are planned with people you have already
+ * planned a trip with, and that shortcut is the difference between a
+ * collaboration feature and a collaboration form.
+ */
+const CONNECTIONS: { label: string; initials: string; colorIndex: number; note: string }[] = [
+  { label: "Nina Okafor", initials: "NO", colorIndex: 4, note: "Lisbon, 2024" },
+  { label: "Theo Lindqvist", initials: "TL", colorIndex: 5, note: "Kyoto, 2023" },
+];
 
 const ROLE_LABELS: Record<Traveller["role"], string> = {
   owner: "Organiser",
@@ -43,136 +61,172 @@ const ROLE_NOTES: Record<Traveller["role"], string> = {
   viewer: "Can follow along, cannot edit",
 };
 
-export interface PresenceBarProps {
+export interface PresenceChipProps {
   trip: Trip;
   invited: string[];
-  onInvite: () => void;
-  onFocusItem: (itemId: string) => void;
+  expanded: boolean;
+  onToggle: () => void;
 }
 
-export function PresenceBar({
+/**
+ * The top bar's presence read. A control that reveals the rail's travellers
+ * section rather than a second, competing surface for the same information.
+ */
+export function PresenceChip({
   trip,
   invited,
-  onInvite,
-  onFocusItem,
-}: PresenceBarProps) {
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  const [open, setOpen] = useState(false);
-
+  expanded,
+  onToggle,
+}: PresenceChipProps) {
   const online = trip.travellers.filter((t) => t.online);
 
   return (
-    <>
-      <button
-        type="button"
-        ref={setAnchor}
-        className={styles.trigger}
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        <AvatarStack travellers={trip.travellers} size="sm" max={4} showPresence />
-        <span className={styles.triggerMeta}>
-          {online.length > 0 ? `${online.length} online` : `${trip.travellers.length} people`}
-        </span>
-      </button>
+    <button
+      type="button"
+      className={cn(styles.trigger, expanded && styles.triggerOn)}
+      onClick={onToggle}
+      aria-expanded={expanded}
+      aria-label={`${trip.travellers.length} travellers, ${online.length} online${
+        invited.length > 0 ? `, ${invited.length} invited` : ""
+      }. Show travellers`}
+    >
+      <AvatarStack travellers={trip.travellers} size="sm" max={4} showPresence />
+      <span className={styles.triggerMeta}>
+        {online.length > 0 ? `${online.length} online` : `${trip.travellers.length}`}
+      </span>
+    </button>
+  );
+}
 
-      <Popover
-        open={open}
-        onClose={() => setOpen(false)}
-        anchor={anchor}
-        placement="bottom"
-        align="end"
-        width={318}
-        label="Travellers"
-      >
-        <div className={styles.panel}>
-          <header className={styles.panelHead}>
-            <h4 className={styles.panelTitle}>Who&rsquo;s on this trip</h4>
-            <p className={styles.panelSub}>
-              {trip.travellers.length} people
-              {invited.length > 0 ? ` · ${invited.length} invited` : ""}
-            </p>
-          </header>
+export interface TravellersPanelProps {
+  trip: Trip;
+  invited: string[];
+  onInvite: () => void;
+  onInviteConnection: (label: string) => void;
+  onFocusItem: (itemId: string) => void;
+}
 
-          <ul className={styles.people}>
-            {trip.travellers.map((traveller) => {
-              const viewing = traveller.viewingItemId
-                ? trip.items.find((i) => i.id === traveller.viewingItemId)
-                : null;
+/**
+ * Who is on the trip, what they are looking at, and who has not replied yet.
+ */
+export function TravellersPanel({
+  trip,
+  invited,
+  onInvite,
+  onInviteConnection,
+  onFocusItem,
+}: TravellersPanelProps) {
+  const unInvited = CONNECTIONS.filter((c) => !invited.includes(c.label));
 
-              return (
-                <li key={traveller.id} className={styles.person}>
-                  <Avatar traveller={traveller} size="md" showPresence />
-                  <div className={styles.personBody}>
-                    <div className={styles.personTop}>
-                      <span className={styles.personName}>{traveller.name}</span>
-                      <Tag tone={traveller.role === "advisor" ? "accent" : "neutral"}>
-                        {ROLE_LABELS[traveller.role]}
-                      </Tag>
-                    </div>
-                    {/*
-                     * "Looking at X" is the lightest possible presence signal
-                     * and the one that actually changes behaviour — it stops
-                     * two people editing the same dinner.
-                     */}
-                    {traveller.online && viewing ? (
-                      <button
-                        type="button"
-                        className={styles.personViewing}
-                        onClick={() => {
-                          onFocusItem(viewing.id);
-                          setOpen(false);
-                        }}
-                      >
-                        Looking at {viewing.title}
-                      </button>
-                    ) : (
-                      <span className={styles.personRole}>
-                        {traveller.online
-                          ? "Online now"
-                          : ROLE_NOTES[traveller.role]}
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
+  return (
+    <div className={styles.panel}>
+      <ul className={styles.people}>
+        {trip.travellers.map((traveller) => {
+          const viewing = traveller.viewingItemId
+            ? trip.items.find((i) => i.id === traveller.viewingItemId)
+            : null;
 
-            {invited.map((email) => (
-              <li key={email} className={cn(styles.person, styles.personPending)}>
-                <span className={styles.pendingAvatar} aria-hidden>
-                  <Mail size={13} strokeWidth={2} />
-                </span>
-                <div className={styles.personBody}>
-                  <div className={styles.personTop}>
-                    <span className={styles.personName}>{email}</span>
-                    <Tag tone="warning">Invited</Tag>
-                  </div>
-                  <span className={styles.personRole}>
-                    Waiting on them to accept
-                  </span>
+          return (
+            <li key={traveller.id} className={styles.person}>
+              <Avatar traveller={traveller} size="md" showPresence />
+              <div className={styles.personBody}>
+                <div className={styles.personTop}>
+                  <span className={styles.personName}>{traveller.name}</span>
+                  <Tag tone={traveller.role === "advisor" ? "accent" : "neutral"}>
+                    {ROLE_LABELS[traveller.role]}
+                  </Tag>
                 </div>
+                {/*
+                 * "Looking at X" is the lightest possible presence signal and
+                 * the one that actually changes behaviour — it stops two
+                 * people editing the same dinner.
+                 */}
+                {traveller.online && viewing ? (
+                  <button
+                    type="button"
+                    className={styles.personViewing}
+                    onClick={() => onFocusItem(viewing.id)}
+                  >
+                    Looking at {viewing.title}
+                  </button>
+                ) : (
+                  <span className={styles.personRole}>
+                    {traveller.online ? "Online now" : ROLE_NOTES[traveller.role]}
+                  </span>
+                )}
+              </div>
+            </li>
+          );
+        })}
+
+        {invited.map((label) => (
+          <li key={label} className={cn(styles.person, styles.personPending)}>
+            <span className={styles.pendingAvatar} aria-hidden>
+              <Mail size={13} strokeWidth={2} />
+            </span>
+            <div className={styles.personBody}>
+              <div className={styles.personTop}>
+                <span className={styles.personName}>{label}</span>
+                <Tag tone="warning">Invited</Tag>
+              </div>
+              <span className={styles.personRole}>
+                Waiting on them to accept
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {unInvited.length > 0 ? (
+        <div className={styles.connections}>
+          <p className={styles.connectionsLabel}>You&rsquo;ve travelled with</p>
+          <ul className={styles.connectionsList}>
+            {unInvited.map((connection) => (
+              <li key={connection.label}>
+                <button
+                  type="button"
+                  className={styles.connection}
+                  onClick={() => onInviteConnection(connection.label)}
+                >
+                  <span
+                    className={styles.connectionAvatar}
+                    style={{
+                      ["--who" as string]: `var(--who-${connection.colorIndex % 6})`,
+                    }}
+                    aria-hidden
+                  >
+                    {connection.initials}
+                  </span>
+                  <span className={styles.connectionBody}>
+                    <span className={styles.connectionName}>
+                      {connection.label}
+                    </span>
+                    <span className={styles.connectionNote}>
+                      {connection.note}
+                    </span>
+                  </span>
+                  <span className={styles.connectionAdd} aria-hidden>
+                    <Plus size={12} strokeWidth={2.6} />
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
-
-          <footer className={styles.panelFoot}>
-            <Button
-              variant="secondary"
-              size="sm"
-              block
-              iconLeft={<UserPlus size={13} strokeWidth={2.1} />}
-              onClick={() => {
-                setOpen(false);
-                onInvite();
-              }}
-            >
-              Invite someone
-            </Button>
-          </footer>
         </div>
-      </Popover>
-    </>
+      ) : null}
+
+      <footer className={styles.panelFoot}>
+        <Button
+          variant="secondary"
+          size="sm"
+          block
+          iconLeft={<UserPlus size={13} strokeWidth={2.1} />}
+          onClick={onInvite}
+        >
+          Invite by email
+        </Button>
+      </footer>
+    </div>
   );
 }
 

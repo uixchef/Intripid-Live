@@ -1,0 +1,25 @@
+.root {
+  display: inline-block;
+  flex: none;
+  line-height: 0;
+}
+
+.root svg {
+  overflow: visible;
+  transition: transform var(--dur-surface) var(--ease-out);
+}
+
+/*
+ * The signature hold. A hummingbird sustains a hover; it does not spin. Small
+ * amplitude, high frequency, and always accompanied by real progress
+ * elsewhere on screen — never used as an indeterminate spinner.
+ */
+.hovering svg {
+  animation: intripidHover 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hovering svg {
+    animation: none;
+  }
+}

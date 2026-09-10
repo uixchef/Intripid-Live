@@ -5,23 +5,38 @@
 }
 
 .head {
-  display: grid;
-  gap: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.bird {
+  margin: -8px -4px -8px -8px;
+}
+
+.eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--purple-700);
 }
 
 .title {
-  font-family: var(--font-serif);
-  font-size: var(--text-3xl);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   line-height: 1.08;
   letter-spacing: var(--tracking-tight);
   color: var(--text-primary);
-  margin-top: -0.06em;
+  margin-top: 2px;
+  text-wrap: balance;
 }
 
+/* Real progress. This bar is driven by completed stages, not by a timer. */
 .track {
   height: 3px;
   border-radius: var(--radius-full);
-  background: var(--paper-200);
+  background: var(--slate-200);
   overflow: hidden;
 }
 
@@ -29,12 +44,17 @@
   display: block;
   height: 100%;
   border-radius: var(--radius-full);
-  background: var(--brand-600);
+  background: linear-gradient(
+    90deg,
+    var(--purple-500) 0%,
+    var(--pink-400) 70%,
+    var(--orange-400) 100%
+  );
 }
 
 .lines {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-5);
 }
 
 .line {
@@ -54,29 +74,32 @@
 }
 
 .bulletDone {
-  background: var(--accent-100);
-  color: var(--accent-700);
+  background: var(--purple-100);
+  color: var(--purple-700);
 }
 
 .bulletActive {
-  background: var(--brand-100);
-  color: var(--brand-700);
+  background: var(--purple-600);
+  color: var(--slate-0);
 }
 
-.bulletActive svg {
-  animation: spin 0.75s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+/*
+ * A pulsing dot for the stage in flight. Not a spinner: the bird already
+ * carries the waiting, and this only marks position in the list.
+ */
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  animation: intripidPulse 1.1s ease-in-out infinite;
 }
 
 .lineBody {
   display: grid;
   gap: 1px;
   min-width: 0;
+  flex: 1;
 }
 
 .lineText {
@@ -93,8 +116,19 @@
   line-height: var(--lh-normal);
 }
 
+/* The live count. This is the number the map is showing. */
+.count {
+  flex: none;
+  min-width: 26px;
+  text-align: right;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--purple-700);
+  padding-top: 1px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .bulletActive svg {
+  .dot {
     animation: none;
   }
 }

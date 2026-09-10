@@ -1,8 +1,8 @@
 @import "../styles/tokens.css";
 
 /*
- * Global stylesheet: reset, document defaults, and a small set of genuinely
- * global primitives. Component styling lives in colocated *.module.css files.
+ * Reset, document defaults, and the small set of genuinely global primitives.
+ * Component styling lives in colocated *.module.css files.
  *
  * Third-party stylesheets (mapbox-gl.css) are imported by the client module
  * that needs them, not here — global CSS is never unloaded on navigation.
@@ -19,7 +19,6 @@
 }
 
 html {
-  /* Committed light theme — see tokens.css. */
   color-scheme: light;
   -webkit-text-size-adjust: 100%;
   font-size: 16px;
@@ -109,13 +108,9 @@ hr {
   border-radius: var(--radius-xs);
 }
 
-/* ------------------------------------------------------------------------- */
-/* Selection                                                                 */
-/* ------------------------------------------------------------------------- */
-
 ::selection {
-  background: var(--brand-200);
-  color: var(--brand-950);
+  background: var(--purple-200);
+  color: var(--purple-950);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -124,7 +119,7 @@ hr {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--paper-300) transparent;
+  scrollbar-color: var(--slate-300) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -137,14 +132,20 @@ hr {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--paper-300);
+  background: var(--slate-300);
   border-radius: var(--radius-full);
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--paper-400);
+  background: var(--slate-400);
+  background-clip: content-box;
+}
+
+/* Scrollbars inside the discovery environment need to read on dark. */
+.onEnv *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
   background-clip: content-box;
 }
 
@@ -165,15 +166,18 @@ hr {
   border: 0;
 }
 
-/** Editorial display type. Serif, tight, warm. */
+/**
+ * Display type. Reserved for discovery questions, destination names and the
+ * day date — never for operational labels, controls or data.
+ */
 .display {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: var(--weight-normal);
   line-height: var(--lh-tight);
   letter-spacing: var(--tracking-tight);
 }
 
-/** Small all-caps label used for section headers and metadata. */
+/** Small all-caps label for section headers and metadata. */
 .eyebrow {
   font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
@@ -186,6 +190,35 @@ hr {
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Motion primitives                                                         */
+/* ------------------------------------------------------------------------- */
+
+/**
+ * The hummingbird hold: a small, high-frequency hover rather than a spin.
+ * Waiting states in this product never rotate — the bird hovers in place and
+ * real progress is reported alongside it.
+ */
+@keyframes intripidHover {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes intripidPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* ------------------------------------------------------------------------- */

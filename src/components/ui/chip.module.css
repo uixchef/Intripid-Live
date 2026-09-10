@@ -12,11 +12,11 @@
   cursor: pointer;
   box-shadow: var(--shadow-xs);
   transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-hover);
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
 .md {
@@ -46,18 +46,18 @@
 }
 
 .selected {
-  background: var(--brand-600);
-  border-color: var(--brand-600);
-  color: var(--paper-0);
+  background: var(--purple-600);
+  border-color: var(--purple-600);
+  color: var(--slate-0);
   box-shadow:
     var(--shadow-xs),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .selected:hover {
-  background: var(--brand-700);
-  border-color: var(--brand-700);
-  color: var(--paper-0);
+  background: var(--purple-700);
+  border-color: var(--purple-700);
+  color: var(--slate-0);
 }
 
 .label {
@@ -85,20 +85,20 @@
   border: 1.5px solid var(--border-strong);
   color: transparent;
   transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
 }
 
 .check svg {
   transform: scale(0.7);
-  transition: transform var(--dur-fast) var(--ease-hover);
+  transition: transform var(--dur-micro) var(--ease-out);
 }
 
 .selected .check {
-  background: var(--paper-0);
-  border-color: var(--paper-0);
-  color: var(--brand-700);
+  background: var(--slate-0);
+  border-color: var(--slate-0);
+  color: var(--purple-700);
 }
 
 .selected .check svg {
@@ -133,32 +133,32 @@
 }
 
 .tone_neutral {
-  background: var(--paper-150);
+  background: var(--slate-150);
   color: var(--text-secondary);
 }
 
 .tone_brand {
-  background: var(--brand-50);
-  color: var(--brand-700);
-  border-color: var(--brand-100);
+  background: var(--purple-50);
+  color: var(--purple-700);
+  border-color: var(--purple-100);
 }
 
 .tone_accent {
-  background: var(--accent-50);
-  color: var(--accent-700);
-  border-color: var(--accent-100);
+  background: var(--teal-50);
+  color: var(--teal-700);
+  border-color: var(--teal-100);
 }
 
 .tone_energy {
-  background: var(--energy-50);
-  color: var(--energy-700);
-  border-color: var(--energy-100);
+  background: var(--orange-50);
+  color: var(--orange-700);
+  border-color: var(--orange-100);
 }
 
 .tone_success {
-  background: var(--success-50);
-  color: var(--success-700);
-  border-color: var(--success-100);
+  background: var(--positive-50);
+  color: var(--positive-700);
+  border-color: var(--positive-100);
 }
 
 .tone_warning {

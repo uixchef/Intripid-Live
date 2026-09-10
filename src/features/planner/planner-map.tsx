@@ -93,7 +93,13 @@ export function PlannerMap({
           center={camera.center}
           zoom={camera.zoom}
           fit={camera.fit}
-          padding={padding ?? { top: 56, right: 48, bottom: 56, left: 48 }}
+          /*
+           * Tight padding, because the rail's map pane is 264px tall: at 48px
+           * a side the camera had to zoom out past New Jersey to satisfy the
+           * fit, which put the whole day's route in the middle third of the
+           * frame.
+           */
+          padding={padding ?? { top: 26, right: 24, bottom: 26, left: 24 }}
           maxZoom={15}
         />
 

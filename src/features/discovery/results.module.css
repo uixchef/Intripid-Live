@@ -1,136 +1,228 @@
 /* ------------------------------------------------------------------------- */
-/* Ranked rail                                                               */
+/* The decision — three, with a steep hierarchy                              */
 /* ------------------------------------------------------------------------- */
 
-.rail {
+.results {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-7);
   align-content: start;
 }
 
-.railHead {
+.resultsHead {
   display: grid;
   gap: var(--space-3);
 }
 
-.railTitle {
-  font-family: var(--font-serif);
+.resultsEyebrow {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--purple-700);
+}
+
+.resultsTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  line-height: 1.06;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+  margin-top: -0.04em;
+  text-wrap: balance;
+}
+
+.resultsWhy {
+  font-size: var(--text-sm);
+  line-height: var(--lh-relaxed);
+  color: var(--text-secondary);
+  max-width: 40ch;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Best match — the card that leads                                          */
+/* ------------------------------------------------------------------------- */
+
+.bestCard {
+  position: relative;
+  display: grid;
+  gap: var(--space-5);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-8) var(--space-7) var(--space-7);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--purple-200);
+  background: var(--slate-0);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
+}
+
+.bestCard:hover,
+.bestCardHovered {
+  border-color: var(--purple-400);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.bestCardActive {
+  border-color: var(--purple-600);
+  box-shadow:
+    0 0 0 1px var(--purple-600),
+    var(--shadow-md);
+}
+
+/*
+ * The badge sits on the card's top edge. Purple because this is the system
+ * making a call — the whole palette hangs on that distinction.
+ */
+.bestBadge {
+  position: absolute;
+  top: -9px;
+  left: var(--space-7);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 19px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--purple-600);
+  color: var(--slate-0);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  box-shadow: 0 1px 3px rgba(74, 26, 128, 0.35);
+}
+
+.bestTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.bestNameBlock {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bestName {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-family: var(--font-display);
   font-size: var(--text-2xl);
   line-height: 1.1;
   letter-spacing: var(--tracking-tight);
   color: var(--text-primary);
-  margin-top: -0.05em;
-  text-wrap: balance;
+  min-width: 0;
 }
 
-.railWhy {
+.flag {
+  font-size: 0.62em;
+  line-height: 1;
+  flex: none;
+}
+
+.bestWhere {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.bestReason {
   font-size: var(--text-sm);
   line-height: var(--lh-relaxed);
-  color: var(--text-tertiary);
-  max-width: 36ch;
+  color: var(--text-secondary);
 }
 
-.list {
+.bestMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.metaChip {
+  display: inline-flex;
+  align-items: center;
+  height: 21px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--teal-50);
+  border: 1px solid var(--teal-100);
+  color: var(--teal-800);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.metaChipCost {
+  background: var(--slate-100);
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Runners-up — compact, still live                                          */
+/* ------------------------------------------------------------------------- */
+
+.runnersUp {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
-.divider {
+.runnerCard {
   display: flex;
   align-items: center;
   gap: var(--space-5);
-  margin: var(--space-6) 0 var(--space-5);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  min-width: 0;
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.runnerCard:hover,
+.runnerCardHovered {
+  border-color: var(--purple-300);
+  background: var(--slate-0);
+  box-shadow: var(--shadow-sm);
+}
+
+.runnerCardActive {
+  border-color: var(--purple-600);
+  background: var(--slate-0);
+  box-shadow: 0 0 0 1px var(--purple-600);
+}
+
+.runnerPlace {
+  flex: none;
+  width: 3.4rem;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
   color: var(--text-quaternary);
 }
 
-.divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-}
-
-.card {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-5);
-  width: 100%;
-  text-align: left;
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface-raised);
-  cursor: pointer;
-  box-shadow: var(--shadow-xs);
-  transition:
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-hover),
-    opacity var(--dur-fast) var(--ease-out);
-}
-
-.card:hover,
-.cardHovered {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
-
-.cardActive {
-  border-color: var(--brand-500);
-  box-shadow:
-    var(--shadow-sm),
-    0 0 0 1px var(--brand-500);
-}
-
-/* Weak fits stay visible but visibly demoted — honest ranking beats hiding. */
-.cardWeak {
-  opacity: 0.66;
-}
-
-.cardWeak:hover {
-  opacity: 1;
-}
-
-.rank {
-  flex: none;
+.runnerBody {
   display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  margin-top: 1px;
-  border-radius: var(--radius-sm);
-  background: var(--paper-150);
-  color: var(--text-tertiary);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-bold);
-  line-height: 1;
-}
-
-.cardActive .rank {
-  background: var(--brand-600);
-  color: var(--paper-0);
-}
-
-.cardBody {
-  display: grid;
-  gap: var(--space-3);
+  gap: 1px;
   min-width: 0;
   flex: 1;
 }
 
-.cardTop {
-  display: grid;
-  gap: 0;
-  min-width: 0;
-}
-
-.cardName {
+.runnerName {
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
@@ -141,39 +233,50 @@
   min-width: 0;
 }
 
-.flag {
-  font-size: 0.85em;
-  line-height: 1;
-  flex: none;
-}
-
-.cardWhere {
+.runnerReason {
   font-size: var(--text-2xs);
-  color: var(--text-quaternary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cardReason {
-  font-size: var(--text-xs);
   line-height: var(--lh-normal);
-  color: var(--text-secondary);
-  /* Two lines max keeps the list scannable at a glance. */
+  color: var(--text-tertiary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.cardTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.adjust {
+  justify-self: start;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  padding: var(--space-2) 0;
+  cursor: pointer;
+  transition: color var(--dur-micro) var(--ease-out);
 }
 
-.cardRing {
-  margin-top: 1px;
+.adjust:hover {
+  color: var(--purple-700);
+}
+
+/* Empty */
+
+.empty {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  padding: var(--space-8) 0;
+}
+
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--text-primary);
+}
+
+.emptyBody {
+  font-size: var(--text-sm);
+  line-height: var(--lh-relaxed);
+  color: var(--text-tertiary);
+  max-width: 34ch;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -182,19 +285,17 @@
 
 .brief {
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: auto 1fr auto;
   min-height: 0;
   height: 100%;
 }
 
-.briefScroll {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+/* The ranked selector: set size visible, switching is one tap. */
+.briefNav {
   display: grid;
-  gap: var(--space-12);
-  align-content: start;
-  padding-bottom: var(--space-10);
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .backLink {
@@ -206,28 +307,98 @@
   color: var(--text-tertiary);
   cursor: pointer;
   width: fit-content;
-  padding: var(--space-2) 0;
-  transition: color var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-micro) var(--ease-out);
 }
 
 .backLink:hover {
   color: var(--text-primary);
 }
 
-.backIcon {
-  transform: rotate(180deg);
+.slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: 3px;
+  border-radius: var(--radius-lg);
+  background: var(--slate-100);
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: calc(var(--radius-lg) - 3px);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.slot:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.slotOn {
+  background: var(--slate-0);
+  box-shadow: var(--shadow-xs);
+}
+
+.slotRank {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--slate-200);
+  color: var(--text-tertiary);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.slotOn .slotRank {
+  background: var(--purple-600);
+  color: var(--slate-0);
+}
+
+.slotName {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.slotOn .slotName {
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.briefScroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: var(--space-10);
+  align-content: start;
+  padding: var(--space-8) 0 var(--space-8);
 }
 
 .briefHead {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-5);
 }
 
 .briefTitleRow {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-8);
+  gap: var(--space-7);
 }
 
 .briefTitleBlock {
@@ -241,14 +412,14 @@
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  color: var(--brand-700);
+  color: var(--purple-700);
 }
 
 .briefName {
   display: flex;
   align-items: baseline;
   gap: var(--space-4);
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--display-sm);
   line-height: 1.02;
   letter-spacing: var(--tracking-tight);
@@ -257,9 +428,9 @@
 }
 
 .briefFlag {
-  font-size: 0.5em;
+  font-size: 0.48em;
   flex: none;
-  transform: translateY(-0.15em);
+  transform: translateY(-0.18em);
 }
 
 .briefWhere {
@@ -314,8 +485,6 @@
   line-height: var(--lh-normal);
 }
 
-/* Trip fit */
-
 .fitGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -327,7 +496,7 @@
   gap: var(--space-2);
   padding: var(--space-6);
   border-radius: var(--radius-lg);
-  background: var(--bg-surface-sunken);
+  background: var(--slate-50);
   border: 1px solid var(--border-subtle);
   min-width: 0;
 }
@@ -363,10 +532,8 @@
 
 .factors {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-7);
 }
-
-/* Editorial list */
 
 .loveList {
   display: grid;
@@ -389,10 +556,8 @@
   width: 5px;
   height: 5px;
   border-radius: var(--radius-full);
-  background: var(--brand-400);
+  background: var(--purple-400);
 }
-
-/* Attractions */
 
 .attractionList {
   display: grid;
@@ -415,8 +580,8 @@
   width: 7px;
   height: 7px;
   border-radius: var(--radius-full);
-  background: var(--brand-600);
-  box-shadow: 0 0 0 2.5px var(--brand-100);
+  background: var(--purple-600);
+  box-shadow: 0 0 0 2.5px var(--purple-100);
 }
 
 .attractionName {
@@ -431,8 +596,6 @@
   line-height: var(--lh-normal);
   color: var(--text-tertiary);
 }
-
-/* Practical */
 
 .practicalList {
   display: grid;
@@ -467,11 +630,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-8);
-  /* Bottom padding so the commit button never touches the viewport edge. */
-  padding: var(--space-7) 0 var(--space-8);
+  gap: var(--space-7);
+  padding: var(--space-6) 0 var(--space-7);
   border-top: 1px solid var(--border-default);
-  background: var(--bg-surface);
 }
 
 .footerCopy {
@@ -507,9 +668,9 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
-  background: var(--energy-50);
-  color: var(--energy-600);
-  border: 1px solid var(--energy-100);
+  background: var(--purple-50);
+  color: var(--purple-700);
+  border: 1px solid var(--purple-100);
 }
 
 .modalTitle {
@@ -547,32 +708,34 @@
   .briefFooter {
     position: sticky;
     bottom: 0;
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(12px);
     padding-bottom: var(--space-6);
   }
 }
 
-@media (max-width: 460px) {
+@media (max-width: 520px) {
   .fitGrid,
   .practicalList {
     grid-template-columns: 1fr;
-  }
-
-  .briefTitleRow {
-    gap: var(--space-5);
   }
 
   .briefName {
     font-size: var(--text-2xl);
   }
 
-  .briefScore {
-    gap: var(--space-2);
+  .briefTitleRow {
+    gap: var(--space-5);
   }
 
   .briefFooter {
     flex-direction: column;
     align-items: stretch;
     gap: var(--space-5);
+  }
+
+  .runnerPlace {
+    display: none;
   }
 
   .modalActions {
@@ -582,4 +745,58 @@
   .modalActions > * {
     flex: 1;
   }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Ruled out                                                                 */
+/*                                                                           */
+/* The clearest statement the surface can make about how it works, and a     */
+/* real decision aid: knowing Lisbon went out on budget rather than on       */
+/* interests tells you which answer to change.                              */
+/* ------------------------------------------------------------------------- */
+
+.ruledOut {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ruledOutLabel {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+.ruledOutList {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.ruledOutItem {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.ruledOutName {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  /* Struck through, matching how the map shows the same places. */
+  text-decoration: line-through;
+  text-decoration-color: var(--slate-300);
+}
+
+.ruledOutWhy {
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -3,32 +3,31 @@
   grid-template-rows: auto 1fr;
   min-height: 0;
   height: 100%;
-  background: var(--bg-surface);
+  background: var(--bg-canvas);
 }
 
 /* ------------------------------------------------------------------------- */
-/* All-day band                                                              */
+/* All-day band — a stay spans nights, not hours                             */
 /* ------------------------------------------------------------------------- */
 
 .allDay {
   display: grid;
   grid-template-columns: var(--gutter-w) 1fr;
   align-items: center;
-  gap: 0;
-  border-bottom: 1px solid var(--border-default);
-  background: var(--bg-surface-sunken);
-  padding: var(--space-3) var(--space-4) var(--space-3) 0;
+  border-bottom: 1px solid var(--grid-day);
+  background: var(--bg-surface);
+  padding: 5px var(--space-4) 5px 0;
   flex: none;
 }
 
 .allDayLabel {
-  font-size: var(--text-2xs);
+  font-size: 9px;
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
   color: var(--text-quaternary);
   text-align: right;
-  padding-right: var(--space-5);
+  padding-right: var(--space-4);
 }
 
 .allDayTrack {
@@ -38,32 +37,31 @@
 .stayBar {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-4);
   width: 100%;
-  padding: var(--space-3) var(--space-6);
+  padding: 4px var(--space-4);
   border-radius: var(--radius-sm);
   background: var(--cat-stay-soft);
-  border: 1px solid color-mix(in srgb, var(--cat-stay) 24%, transparent);
   border-left: 3px solid var(--cat-stay);
   cursor: pointer;
   min-width: 0;
   text-align: left;
   transition:
-    box-shadow var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    box-shadow var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
 }
 
 .stayBar:hover {
-  box-shadow: var(--shadow-sm);
+  background: var(--purple-100);
 }
 
 .stayBarSelected {
-  border-color: var(--brand-500);
-  box-shadow: 0 0 0 1px var(--brand-500);
+  background: var(--slate-0);
+  box-shadow: inset 0 0 0 1.5px var(--purple-600);
 }
 
 .stayName {
-  font-size: var(--text-xs);
+  font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
   color: var(--cat-stay-ink);
   letter-spacing: var(--tracking-tight);
@@ -71,31 +69,42 @@
   overflow: hidden;
   text-overflow: ellipsis;
   flex: none;
-  max-width: 45%;
+  max-width: 42%;
 }
 
 .stayPlace {
-  font-size: var(--text-2xs);
-  color: var(--cat-stay-ink);
-  opacity: 0.7;
+  font-size: 10.5px;
+  color: var(--purple-800);
+  opacity: 0.62;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
 }
 
+/*
+ * The confirmation code is reference data you read once and copy: tabular
+ * figures, not a monospace face, which put a second typeface on the grid for
+ * the sake of eleven characters.
+ */
 .stayBooking {
   margin-left: auto;
   flex: none;
   font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--cat-stay-ink);
-  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  color: var(--purple-800);
+  opacity: 0.55;
   white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------------- */
 /* Grid                                                                      */
+/*                                                                           */
+/* Time geometry people already know how to read: an hour gutter on the left, */
+/* days as columns, one rule per hour and a fainter one per half hour. The    */
+/* rules are near-invisible alone and unmistakable in ranks, which is what    */
+/* lets the grid carry structure without competing with the plan on it.      */
 /* ------------------------------------------------------------------------- */
 
 .scroll {
@@ -111,16 +120,12 @@
   min-width: 0;
 }
 
-/* Hour gutter */
-
 .gutter {
-  position: relative;
-  border-right: 1px solid var(--border-default);
-  background: var(--bg-surface);
-  /* Times stay put while the grid scrolls horizontally on narrow screens. */
   position: sticky;
   left: 0;
-  z-index: 7;
+  z-index: 12;
+  border-right: 1px solid var(--grid-day);
+  background: var(--bg-surface);
 }
 
 .gutterHour {
@@ -128,40 +133,52 @@
   position: relative;
 }
 
+/*
+ * The label sits ON its rule, centred across it, the way every calendar
+ * does it — a label parked inside the band below reads as belonging to the
+ * wrong hour.
+ */
 .gutterLabel {
   position: absolute;
-  top: -0.5em;
+  top: -0.62em;
   right: var(--space-4);
   font-size: 10px;
   font-weight: var(--weight-medium);
   color: var(--text-quaternary);
   white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
+/* Nothing above the first hour, so its label drops below the rule instead. */
 .gutterHour:first-child .gutterLabel {
-  top: var(--space-1);
+  top: 2px;
 }
 
 /* Columns */
 
 .column {
   position: relative;
-  border-right: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--grid-day);
   min-width: 0;
-  transition: background-color var(--dur-fast) var(--ease-out);
+  /*
+   * Days you are not working on recede to the canvas tone; the focused day is
+   * plain white. The previous rule painted both white, so the focused day was
+   * indistinguishable from its neighbours.
+   */
+  background: var(--bg-canvas);
+  transition: background-color var(--dur-micro) var(--ease-out);
 }
 
 .column:last-child {
   border-right: 0;
 }
 
-/* The focused day is lifted by paper, not by a border. */
 .columnActive {
-  background: var(--paper-0);
+  background: var(--bg-surface);
 }
 
 .columnOver {
-  background: var(--brand-50);
+  background: var(--purple-50);
 }
 
 .lines {
@@ -171,8 +188,19 @@
 }
 
 .line {
+  position: relative;
   height: var(--hour-h);
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--grid-hour);
+}
+
+/* The half-hour. Faint enough to ignore, present enough to count against. */
+.line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid var(--grid-half);
 }
 
 .line:first-child {
@@ -201,70 +229,60 @@
 
 .drawing {
   position: absolute;
-  left: 2px;
+  left: 1px;
   right: 3px;
-  z-index: 8;
-  border-radius: var(--radius-md);
-  background: var(--brand-100);
-  border: 1px solid var(--brand-500);
+  z-index: 14;
+  border-radius: var(--radius-sm);
+  background: var(--purple-100);
+  box-shadow: inset 0 0 0 1.5px var(--purple-600);
   display: grid;
   place-items: center;
   pointer-events: none;
 }
 
 .drawing span {
-  font-size: var(--text-2xs);
+  font-size: 10.5px;
   font-weight: var(--weight-semibold);
-  color: var(--brand-800);
+  color: var(--purple-800);
   letter-spacing: var(--tracking-tight);
   padding: 0 var(--space-3);
   text-align: center;
 }
 
 /* ------------------------------------------------------------------------- */
-/* Gap                                                                       */
+/* Gaps — free time, treated as an opportunity                               */
+/*                                                                           */
+/* Empty time is the absence of an object, so it is drawn as an absence: no   */
+/* fill, no border, no hatch. The previous hatched-and-dashed box gave a      */
+/* two-hour gap more visual weight than a two-hour museum visit.             */
 /* ------------------------------------------------------------------------- */
 
 .gap {
   position: absolute;
-  left: 2px;
+  left: 1px;
   right: 3px;
-  border-radius: var(--radius-md);
-  /*
-   * A hairline hatch, not a filled block: empty time should read as available
-   * rather than as another object competing with the real plan.
-   */
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(31, 28, 25, 0.032) 0,
-    rgba(31, 28, 25, 0.032) 1px,
-    transparent 1px,
-    transparent 7px
-  );
-  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-sm);
   display: grid;
   place-items: center;
-  transition:
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-micro) var(--ease-out);
 }
 
 .gap:hover {
-  border-color: var(--brand-300);
-  background-color: rgba(100, 56, 209, 0.035);
+  background: rgba(135, 48, 236, 0.045);
 }
 
 .gapInner {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   justify-items: center;
-  padding: var(--space-3);
+  align-content: center;
+  padding: var(--space-2);
   min-width: 0;
   max-width: 100%;
 }
 
 .gapLabel {
-  font-size: var(--text-2xs);
+  font-size: 10px;
   font-weight: var(--weight-medium);
   color: var(--text-quaternary);
   letter-spacing: var(--tracking-tight);
@@ -281,11 +299,11 @@
 .gapButton {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  height: 22px;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-full);
-  background: var(--bg-surface-raised);
+  gap: 3px;
+  height: 21px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
   border: 1px solid var(--border-default);
   color: var(--text-secondary);
   font-size: 10px;
@@ -295,9 +313,9 @@
   white-space: nowrap;
   box-shadow: var(--shadow-xs);
   transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
 }
 
 .gapButton:hover {
@@ -306,20 +324,21 @@
 }
 
 /*
- * The assistant's channel is the amber "energy" accent — a flat colour, no
- * gradient. The historical gradient AI button is exactly the dated tell to
- * avoid, but the semantic channel is worth keeping.
+ * The advisor's channel is purple, because purple is the system acting — the
+ * same colour that carries its proposals in the rail and its pins on the map.
+ * An earlier pass gave it amber, which collides with origin/departure and with
+ * the tight-connection warning.
  */
 .gapButtonAi {
-  color: var(--energy-700);
-  border-color: var(--energy-200);
-  background: var(--energy-50);
+  color: var(--purple-700);
+  border-color: var(--purple-200);
+  background: var(--purple-50);
 }
 
 .gapButtonAi:hover {
-  background: var(--energy-100);
-  border-color: var(--energy-300);
-  color: var(--energy-800);
+  background: var(--purple-100);
+  border-color: var(--purple-300);
+  color: var(--purple-800);
 }
 
 .gapButton svg {
@@ -328,35 +347,38 @@
 
 /* ------------------------------------------------------------------------- */
 /* Day rail                                                                  */
+/*                                                                           */
+/* Two rows and a load bar. The previous four-row stack spent 110px on five   */
+/* headers before a single hour of the day was visible.                      */
 /* ------------------------------------------------------------------------- */
 
 .dayRail {
   display: grid;
   grid-template-columns: var(--gutter-w) repeat(var(--day-count, 5), minmax(0, 1fr));
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-canvas);
+  border-bottom: 1px solid var(--grid-day);
   flex: none;
 }
 
 /* The gutter column is empty here; the first tab starts after it. */
 .dayRail::before {
   content: "";
-  border-right: 1px solid var(--border-default);
+  border-right: 1px solid var(--grid-day);
+  background: var(--bg-surface);
 }
 
 .dayTab {
   display: grid;
-  gap: var(--space-2);
+  gap: 3px;
   align-content: start;
   padding: var(--space-4) var(--space-5) var(--space-4);
-  border-right: 1px solid var(--border-subtle);
-  border-bottom: 2px solid transparent;
+  border-right: 1px solid var(--grid-day);
   cursor: pointer;
   min-width: 0;
   text-align: left;
   transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    background-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
 }
 
 .dayTab:last-child {
@@ -367,45 +389,12 @@
   background: var(--bg-hover);
 }
 
-.dayTabActive {
-  background: var(--paper-0);
-  border-bottom-color: var(--brand-600);
-}
-
-.dayTabTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.dayIndex {
-  font-size: 9px;
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--text-quaternary);
-  white-space: nowrap;
-}
-
-.dayTabActive .dayIndex {
-  color: var(--brand-700);
-}
-
-.dayConflict {
-  display: grid;
-  place-items: center;
-  flex: none;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
-  border-radius: var(--radius-full);
-  background: var(--danger-500);
-  color: var(--paper-0);
-  font-size: 9px;
-  font-weight: var(--weight-bold);
-  font-variant-numeric: tabular-nums;
+/* The focused day's header is white and continues into its column, so the
+   two read as one object rather than a tab above a grid. */
+.dayTabActive,
+.dayTabActive:hover {
+  background: var(--bg-surface);
+  box-shadow: inset 0 2px 0 var(--purple-600);
 }
 
 .dayDate {
@@ -416,53 +405,108 @@
 }
 
 .dayWeekday {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
   color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
+  letter-spacing: var(--tracking-caps);
 }
 
+/*
+ * The one place display type is allowed in the planner: a date is the
+ * character moment in an otherwise operational surface, and it is a numeral,
+ * so it costs nothing in legibility.
+ */
 .dayNum {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--text-xl);
-  line-height: 0.95;
+  line-height: 0.92;
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
 }
 
+.dayTabActive .dayNum {
+  color: var(--purple-800);
+}
+
 .dayMonth {
-  font-size: var(--text-2xs);
+  font-size: 10.5px;
   color: var(--text-tertiary);
 }
 
+.dayConflict {
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-left: auto;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--danger-500);
+  color: var(--slate-0);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * A tight connection is advice. It gets a small amber dot rather than a red
+ * count, so a day that merely needs attention does not look broken.
+ */
+.dayWarning {
+  flex: none;
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--warning-300);
+}
+
 .dayMeta {
-  font-size: var(--text-2xs);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
   color: var(--text-quaternary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.dayIndex {
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+}
+
+.dayTabActive .dayIndex {
+  color: var(--purple-700);
+}
+
+.dayMetaDot {
+  opacity: 0.6;
 }
 
 .dayLoad {
   display: block;
   height: 2px;
   border-radius: var(--radius-full);
-  background: var(--paper-200);
+  background: var(--slate-150);
   overflow: hidden;
-  margin-top: var(--space-1);
+  margin-top: var(--space-2);
 }
 
 .dayLoadFill {
   display: block;
   height: 100%;
   border-radius: var(--radius-full);
-  background: var(--accent-400);
-  transition: width var(--dur-base) var(--ease-out);
+  background: var(--slate-300);
+  transition: width var(--dur-element) var(--ease-out);
 }
 
 .dayTabActive .dayLoadFill {
-  background: var(--brand-500);
+  background: var(--purple-500);
 }
 
 .dayRailCompact {
@@ -479,7 +523,6 @@
 
 @media (max-width: 900px) {
   .allDay {
-    grid-template-columns: var(--gutter-w) 1fr;
     padding-right: var(--space-3);
   }
 
@@ -487,10 +530,20 @@
     display: none;
   }
 
+  .stayName {
+    max-width: 60%;
+  }
+
+  /*
+   * Day tabs scroll horizontally on a phone. This is the one intentional
+   * horizontal scroll in the product: five days will not fit at 390px and
+   * paging between them is slower than swiping.
+   */
   .dayRail {
     display: flex;
     overflow-x: auto;
     overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
     scrollbar-width: none;
   }
 
@@ -504,19 +557,18 @@
 
   .dayTab {
     flex: none;
-    min-width: 96px;
+    min-width: 92px;
+    padding: var(--space-3) var(--space-4);
     scroll-snap-align: start;
   }
 }
 
-/*
- * A tight connection is advice. It gets a small amber dot rather than a red
- * count, so a day that merely needs attention does not look broken.
- */
-.dayWarning {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--energy-400);
+@media (prefers-reduced-motion: reduce) {
+  .column,
+  .gap,
+  .dayTab,
+  .dayLoadFill,
+  .stayBar {
+    transition: none;
+  }
 }

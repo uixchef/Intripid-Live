@@ -1,39 +1,26 @@
+/*
+ * The doorway. Lives in the discovery environment so the world is visible
+ * before you enter it — the copy sits directly on the atmosphere, the preview
+ * on glass.
+ */
+
 .root {
   position: relative;
   min-height: 100dvh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background: var(--bg-canvas);
   overflow-x: hidden;
-}
-
-/*
- * A very faint plotted grid, like the back of a field notebook. Carries the
- * editorial warmth without resorting to gradient washes.
- */
-.grain {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(to right, rgba(31, 28, 25, 0.028) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(31, 28, 25, 0.028) 1px, transparent 1px);
-  background-size: 30px 30px;
-  mask-image: radial-gradient(
-    120% 90% at 78% 8%,
-    #000 0%,
-    rgba(0, 0, 0, 0.35) 45%,
-    transparent 80%
-  );
 }
 
 .header {
   position: relative;
+  z-index: var(--z-content);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-8);
-  padding: var(--space-10) var(--space-16);
+  padding: var(--space-8) var(--space-16);
+  color: var(--env-text);
 }
 
 .headerLink {
@@ -42,28 +29,27 @@
   gap: var(--space-3);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
-  color: var(--text-secondary);
+  color: var(--env-text);
   letter-spacing: var(--tracking-tight);
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--space-6);
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface-raised);
-  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--env-hairline-strong);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-hover);
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out);
 }
 
 .headerLink:hover {
-  border-color: var(--border-strong);
-  color: var(--text-primary);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.42);
 }
 
 .headerLink svg {
   flex: none;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -72,12 +58,13 @@
 
 .body {
   position: relative;
+  z-index: var(--z-content);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.78fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
   gap: var(--space-32);
   align-items: center;
   width: 100%;
-  max-width: 1240px;
+  max-width: 1260px;
   margin: 0 auto;
   padding: var(--space-8) var(--space-16) var(--space-16);
 }
@@ -88,25 +75,36 @@
   max-width: 34rem;
 }
 
+.eyebrow {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
 .headline {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--display-md);
   line-height: 1.02;
   letter-spacing: var(--tracking-tighter);
-  color: var(--text-primary);
+  color: var(--env-text);
   margin-top: -0.04em;
 }
 
+/*
+ * The one italic emphasis. Warm, not purple — on a purple ground the accent
+ * has to come from the other end of the brand's spectrum to register.
+ */
 .headline em {
   font-style: italic;
-  /* The one place brand colour touches display type. */
-  color: var(--brand-700);
+  color: var(--orange-300);
 }
 
 .lede {
   font-size: var(--text-lg);
   line-height: var(--lh-relaxed);
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.82);
   max-width: 32rem;
 }
 
@@ -120,14 +118,14 @@
 
 .actionsNote {
   font-size: var(--text-xs);
-  color: var(--text-tertiary);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .premise {
   display: grid;
   gap: var(--space-6);
   padding-top: var(--space-8);
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--env-hairline);
   margin-top: var(--space-4);
 }
 
@@ -136,12 +134,12 @@
   gap: var(--space-5);
   font-size: var(--text-sm);
   line-height: var(--lh-relaxed);
-  color: var(--text-tertiary);
+  color: rgba(255, 255, 255, 0.66);
 }
 
 .premise strong {
   font-weight: var(--weight-semibold);
-  color: var(--text-primary);
+  color: var(--env-text);
 }
 
 .premiseIcon {
@@ -151,38 +149,51 @@
   width: 26px;
   height: 26px;
   border-radius: var(--radius-md);
-  background: var(--bg-surface-raised);
-  border: 1px solid var(--border-subtle);
-  color: var(--accent-600);
-  box-shadow: var(--shadow-xs);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--env-hairline-strong);
+  color: var(--teal-300);
   margin-top: 1px;
 }
 
 /* ------------------------------------------------------------------------- */
-/* Preview                                                                   */
+/* Preview — on glass                                                        */
 /* ------------------------------------------------------------------------- */
 
 .preview {
   display: grid;
   gap: var(--space-6);
-  padding: var(--space-10);
-  border-radius: var(--radius-xl);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  box-shadow: var(--shadow-lg);
+  padding: var(--space-8);
+  border-radius: var(--radius-2xl);
   min-width: 0;
+  color: var(--text-primary);
 }
 
 .previewHead {
-  display: grid;
-  gap: var(--space-2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
   padding-bottom: var(--space-5);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.previewEyebrow {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--purple-700);
 }
 
 .previewMeta {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+/* Character is allowed here: a doorway is a low-information moment. */
+.bird {
+  margin: -6px -4px -6px 0;
 }
 
 .previewList {
@@ -190,43 +201,57 @@
   gap: var(--space-4);
 }
 
-.previewCard {
+.previewCard,
+.previewCardBest {
   display: flex;
   align-items: flex-start;
   gap: var(--space-5);
-  padding: var(--space-6);
+  padding: var(--space-5) var(--space-6);
   border-radius: var(--radius-lg);
-  background: var(--bg-surface-raised);
+  background: var(--slate-0);
   border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-xs);
   min-width: 0;
 }
 
-.previewCard:first-child {
-  border-color: var(--brand-200);
+.previewCardBest {
+  position: relative;
+  padding-top: var(--space-7);
+  border-color: var(--purple-300);
   box-shadow:
-    var(--shadow-sm),
-    0 0 0 1px var(--brand-100);
+    0 0 0 1px var(--purple-100),
+    var(--shadow-sm);
 }
 
-.previewRank {
-  flex: none;
+.bestTag {
+  position: absolute;
+  top: -8px;
+  left: var(--space-6);
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--purple-600);
+  color: var(--slate-0);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.rankTag {
   display: grid;
   place-items: center;
-  width: 21px;
-  height: 21px;
+  flex: none;
+  width: 20px;
+  height: 20px;
   margin-top: 1px;
-  border-radius: var(--radius-sm);
-  background: var(--paper-150);
+  border-radius: var(--radius-full);
+  background: var(--slate-150);
   color: var(--text-tertiary);
   font-size: var(--text-2xs);
   font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
-}
-
-.previewCard:first-child .previewRank {
-  background: var(--brand-600);
-  color: var(--paper-0);
 }
 
 .previewBody {
@@ -247,8 +272,14 @@
   min-width: 0;
 }
 
+.previewCardBest .previewName {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-normal);
+}
+
 .previewName span {
-  font-size: 0.82em;
+  font-size: 0.7em;
   flex: none;
 }
 
@@ -266,14 +297,108 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  text-transform: capitalize;
+}
+
+.previewTag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--teal-50);
+  border: 1px solid var(--teal-100);
+  color: var(--teal-800);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
 }
 
 .previewFoot {
   font-size: var(--text-xs);
   color: var(--text-quaternary);
   text-align: center;
-  padding-top: var(--space-2);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Journey strip                                                             */
+/* ------------------------------------------------------------------------- */
+
+.journey {
+  position: relative;
+  z-index: var(--z-content);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  padding: var(--space-7) var(--space-16) var(--space-10);
+  border-top: 1px solid var(--env-hairline);
+  max-width: 1260px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.journeySteps {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.journeySteps li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: rgba(255, 255, 255, 0.44);
+  letter-spacing: var(--tracking-tight);
+}
+
+.journeySteps li:not(:last-child)::after {
+  content: "";
+  width: var(--space-10);
+  height: 1px;
+  background: var(--env-hairline-strong);
+  margin-left: var(--space-5);
+}
+
+.journeyStepOn {
+  color: var(--env-text) !important;
+}
+
+.journeyNum {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.journeyStepOn .journeyNum {
+  background: var(--purple-500);
+  color: var(--slate-0);
+}
+
+/* The brand line, quietly. */
+.tagline {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  /*
+   * 0.5 put it below the ember end of the gradient's own brightness, so the
+   * line the whole page is built around was the least readable thing on it.
+   */
+  color: rgba(255, 255, 255, 0.82);
+  letter-spacing: var(--tracking-tight);
+  max-width: 32ch;
+  text-align: right;
+  text-shadow: 0 1px 12px rgba(40, 14, 70, 0.4);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -283,46 +408,48 @@
 @media (max-width: 1100px) {
   .body {
     gap: var(--space-16);
-    padding: var(--space-12) var(--space-12) var(--space-24);
+    padding: var(--space-8) var(--space-12) var(--space-16);
   }
 
   .headline {
     font-size: var(--display-sm);
   }
 
-  .header {
-    padding: var(--space-8) var(--space-12);
+  .header,
+  .journey {
+    padding-left: var(--space-12);
+    padding-right: var(--space-12);
+  }
+
+  .tagline {
+    display: none;
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 880px) {
   .body {
     grid-template-columns: 1fr;
     align-items: start;
-    gap: var(--space-16);
+    gap: var(--space-14);
   }
 
   .copy {
     max-width: none;
   }
-
-  .grain {
-    mask-image: radial-gradient(120% 60% at 50% 0%, #000 0%, transparent 80%);
-  }
 }
 
 @media (max-width: 640px) {
   .header {
-    padding: var(--space-6) var(--space-6);
+    padding: var(--space-6);
   }
 
   .headerLink {
     font-size: var(--text-xs);
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-5);
   }
 
   .body {
-    padding: var(--space-8) var(--space-6) var(--space-16);
+    padding: var(--space-6) var(--space-6) var(--space-12);
     gap: var(--space-12);
   }
 
@@ -338,105 +465,9 @@
     padding: var(--space-7);
   }
 
-  .actions {
-    gap: var(--space-5);
-  }
-}
-
-@media (max-width: 380px) {
-  .header {
-    gap: var(--space-4);
-  }
-
-  .headerLink span {
-    display: none;
-  }
-
-  .body {
-    padding: var(--space-6) var(--space-5) var(--space-12);
-  }
-
-  .preview {
+  .journey {
     padding: var(--space-6);
-  }
-
-  .previewCard {
-    padding: var(--space-5);
-    gap: var(--space-4);
-  }
-}
-
-/* ------------------------------------------------------------------------- */
-/* Journey strip                                                             */
-/* ------------------------------------------------------------------------- */
-
-.journey {
-  position: relative;
-  padding: var(--space-8) var(--space-16) var(--space-12);
-  border-top: 1px solid var(--border-subtle);
-  max-width: 1240px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.journeySteps {
-  display: flex;
-  align-items: center;
-  gap: var(--space-10);
-  flex-wrap: wrap;
-}
-
-.journeySteps li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-4);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  color: var(--text-quaternary);
-  letter-spacing: var(--tracking-tight);
-}
-
-/* Steps are separated by a rule, so the sequence reads without arrows. */
-.journeySteps li:not(:last-child)::after {
-  content: "";
-  width: var(--space-10);
-  height: 1px;
-  background: var(--border-default);
-  margin-left: var(--space-6);
-}
-
-.journeyStepOn {
-  color: var(--text-secondary) !important;
-}
-
-.journeyNum {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 18px;
-  height: 18px;
-  border-radius: var(--radius-full);
-  background: var(--paper-150);
-  color: var(--text-quaternary);
-  font-size: 10px;
-  font-weight: var(--weight-bold);
-  font-variant-numeric: tabular-nums;
-}
-
-.journeyStepOn .journeyNum {
-  background: var(--brand-600);
-  color: var(--paper-0);
-}
-
-@media (max-width: 1100px) {
-  .journey {
-    padding: var(--space-7) var(--space-12) var(--space-10);
-  }
-}
-
-@media (max-width: 640px) {
-  .journey {
-    padding: var(--space-6) var(--space-6) var(--space-8);
+    padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom, 0px));
   }
 
   .journeySteps {
@@ -445,5 +476,21 @@
 
   .journeySteps li:not(:last-child)::after {
     display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .headerLink span {
+    display: none;
+  }
+
+  .preview {
+    padding: var(--space-6);
+  }
+
+  .previewCard,
+  .previewCardBest {
+    padding: var(--space-5);
+    gap: var(--space-4);
   }
 }

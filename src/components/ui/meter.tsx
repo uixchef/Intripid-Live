@@ -65,7 +65,7 @@ export function ScoreRing({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="var(--paper-200)"
+            stroke="var(--slate-200)"
             strokeWidth={stroke}
           />
           <motion.circle

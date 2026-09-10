@@ -1,0 +1,160 @@
+/*
+ * The Intripid environment.
+ *
+ * Destination Discovery is not a map inside a white app — it is a map inside
+ * an Intripid world. The original product surrounded its globe with a purple
+ * atmosphere warming to orange; this is that idea rebuilt with contemporary
+ * craft.
+ *
+ * Construction, and why it is layered rather than one wash:
+ *  1. A deep violet base so the panel side always has contrast to sit on.
+ *  2. A large violet bloom off the leading edge — the "system" colour,
+ *     weighted toward where the map's content lives.
+ *  3. A magenta/pink band through the middle: the emotional register.
+ *  4. A warm ember horizon low and trailing, which is where the eye rests
+ *     and what stops the whole thing reading as generic AI purple.
+ *  5. A fine grain overlay to kill banding on large gradients.
+ *
+ * No neon, no glow rings, no animated hue rotation. The colour is static and
+ * compositional; the movement in this surface belongs to the map camera.
+ */
+
+.root {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--env-base);
+}
+
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    /* Ember horizon — low, trailing, warm. The resting point. */
+    radial-gradient(
+      118% 74% at 88% 108%,
+      var(--env-glow) 0%,
+      rgba(224, 113, 63, 0.72) 22%,
+      rgba(196, 86, 158, 0.42) 46%,
+      rgba(90, 31, 168, 0) 74%
+    ),
+    /* Pink register through the middle */
+      radial-gradient(
+        96% 68% at 16% 86%,
+        rgba(196, 86, 158, 0.62) 0%,
+        rgba(142, 47, 142, 0.34) 44%,
+        rgba(42, 17, 80, 0) 76%
+      ),
+    /* Violet bloom off the leading edge — the system colour */
+      radial-gradient(
+        86% 96% at 6% 6%,
+        rgba(122, 52, 216, 0.82) 0%,
+        rgba(90, 31, 168, 0.46) 40%,
+        rgba(29, 11, 58, 0) 78%
+      ),
+    /* Deep base so the trailing edge can hold a light panel */
+      linear-gradient(
+        152deg,
+        var(--env-deep) 0%,
+        var(--env-base) 38%,
+        #3a1568 66%,
+        #4a1a72 100%
+      );
+}
+
+/*
+ * Grain. Large gradients band badly on wide gamut displays; a very low
+ * opacity fractal noise removes it and adds a little material quality.
+ */
+.grain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/*
+ * The map well. The map is inset from the environment on desktop so the
+ * atmosphere frames it — this is what makes the map read as *inside* an
+ * Intripid world rather than as the page background. Corners are large but
+ * the inset is modest: the map must stay the dominant object.
+ */
+.well {
+  position: absolute;
+  inset: var(--well-inset, 0);
+  z-index: 2;
+  border-radius: var(--radius-3xl);
+  overflow: hidden;
+  /* A hairline of light along the top edge reads as a lit surface. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 60px -20px rgba(20, 8, 42, 0.6),
+    0 60px 120px -60px rgba(20, 8, 42, 0.7);
+}
+
+/*
+ * A soft vignette inside the well. It seats the map into the environment and
+ * gives the trailing edge, where the console sits, extra separation.
+ */
+.wellVignette {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      to left,
+      rgba(29, 11, 58, 0.34) 0%,
+      rgba(29, 11, 58, 0.1) 26%,
+      rgba(29, 11, 58, 0) 52%
+    ),
+    radial-gradient(
+      120% 100% at 50% 50%,
+      rgba(29, 11, 58, 0) 52%,
+      rgba(29, 11, 58, 0.26) 100%
+    );
+}
+
+/* ------------------------------------------------------------------------- */
+/* Glass surface                                                             */
+/* ------------------------------------------------------------------------- */
+
+/*
+ * The console. A near-white frosted panel, not a tinted lilac card: text
+ * legibility beats spectacle, and a clean light surface over saturated colour
+ * is what separates this from a 2021 glassmorphic treatment.
+ */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner-top);
+}
+
+/* Fallback for engines without backdrop-filter: go opaque rather than washy. */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass {
+    background: rgba(255, 255, 255, 0.97);
+  }
+}
+
+/* A darker glass for chrome that sits ON the environment, not on the map. */
+.glassDim {
+  background: rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--env-hairline-strong);
+  color: var(--env-text);
+}
+
+@media (min-width: 901px) {
+  .root {
+    --well-inset: 0;
+  }
+}

@@ -1,42 +1,85 @@
 "use client";
 
 import { useMemo } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Home } from "lucide-react";
 
 import { MapCamera, MapMarker, MapSurface } from "@/components/map/map-surface";
 import { cn } from "@/lib/utils";
-import type { LngLat, Recommendation } from "@/lib/types";
+import type { LngLat, RecommendationSet } from "@/lib/types";
 
 import styles from "./discovery-map.module.css";
 import type { DiscoveryStage, DiscoveryStep } from "@/stores/discovery-store";
 
 /**
- * The discovery canvas.
+ * The discovery canvas — and the protagonist of the surface.
  *
- * The map is not a backdrop: it reframes for every question, so the traveller
- * can always see the spatial consequence of what they just said. Dates open on
- * the whole world, choosing an origin flies to it, and once preferences start
- * landing the camera pulls back to hold the candidates that are actually
- * winning. Candidate pins scale and gain colour with their score, which is how
- * "recommendations respond to preferences" becomes something you watch rather
- * than something you are told.
+ * The map is the answer surface, not decoration. It reframes for every
+ * question, and it carries the palette's semantics: teal for the raw
+ * candidate world (your data), purple for survivors (the system's call),
+ * orange for the origin (you are here).
+ *
+ * During the search the map narrows visibly: candidates culled by each filter
+ * fade out in the order the reasoning happened, which is what makes the
+ * intelligence perceptible rather than asserted.
  */
+
+/**
+ * De-stack labels that would collide.
+ *
+ * DOM markers do not participate in Mapbox's label collision system, so two
+ * cities a few hundred kilometres apart draw their pills on top of each other
+ * at world zoom — Mexico City and Oaxaca did exactly that. This walks the
+ * field north to south and drops each pin into the first vertical slot that
+ * is not already claimed by a neighbour, which is what a cartographer does by
+ * hand and costs one pass over nine items.
+ *
+ * The thresholds are in degrees, so at close zoom the test stops matching and
+ * everything returns to its true position.
+ */
+const STACK_STEP = 16;
+
+function stackOffsets(
+  coords: { id: string; lng: number; lat: number }[],
+): Map<string, [number, number]> {
+  const offsets = new Map<string, [number, number]>();
+  const placed: { lng: number; lat: number; slot: number }[] = [];
+
+  for (const point of [...coords].sort((a, b) => b.lat - a.lat)) {
+    let slot = 0;
+    while (
+      placed.some(
+        (other) =>
+          other.slot === slot &&
+          Math.abs(other.lat - point.lat) < 7 &&
+          Math.abs(other.lng - point.lng) < 11,
+      )
+    ) {
+      slot += 1;
+    }
+    placed.push({ lng: point.lng, lat: point.lat, slot });
+    if (slot > 0) offsets.set(point.id, [0, slot * STACK_STEP]);
+  }
+
+  return offsets;
+}
 
 export interface DiscoveryMapProps {
   stage: DiscoveryStage;
   step: DiscoveryStep;
   origin: LngLat | null;
   originLabel: string | null;
-  recommendations: Recommendation[];
-  /** How many candidates to draw. Grows as confidence grows. */
-  visibleCount: number;
+  originConfirmed: boolean;
+  result: RecommendationSet;
+  /** How many narrated filter stages have completed. */
+  processingStage: number;
   activeId: string | null;
   hoveredId: string | null;
   onSelect: (id: string) => void;
   onHover: (id: string | null) => void;
-  /** Left-hand console width, so the camera frames the visible half. */
-  insetLeft: number;
+  /** Console width, so the camera frames the visible part of the canvas. */
+  insetRight: number;
+  reduceMotion: boolean;
 }
 
 export function DiscoveryMap({
@@ -44,83 +87,192 @@ export function DiscoveryMap({
   step,
   origin,
   originLabel,
-  recommendations,
-  visibleCount,
+  originConfirmed,
+  result,
+  processingStage,
   activeId,
   hoveredId,
   onSelect,
   onHover,
-  insetLeft,
+  insetRight,
+  reduceMotion,
 }: DiscoveryMapProps) {
-  const reduceMotion = useReducedMotion();
-
-  const candidates = useMemo(
-    () => recommendations.slice(0, visibleCount),
-    [recommendations, visibleCount],
-  );
-
   const active = activeId
-    ? recommendations.find((r) => r.destination.id === activeId)
+    ? result.ranked.find((r) => r.destination.id === activeId)
     : null;
+
+  /**
+   * Which pins to draw, and in what state.
+   *
+   * While questions are being answered the map shows the whole live field:
+   * survivors in purple, everything already ruled out dimmed. During the
+   * search it culls progressively, stage by stage. At results it shows only
+   * the three.
+   */
+  const pins = useMemo(() => {
+    if (stage === "results") {
+      return result.top.map((r, index) => ({
+        recommendation: r,
+        state: index === 0 ? ("best" as const) : ("top" as const),
+        rank: index + 1,
+      }));
+    }
+
+    if (stage === "processing") {
+      // Everything eliminated by a stage we have already narrated is gone.
+      const culled = new Set<string>();
+      result.stages.slice(0, processingStage).forEach((s) => {
+        s.removedIds.forEach((id) => culled.add(id));
+      });
+      return result.ranked
+        .concat(
+          result.eliminated.map((e) => ({
+            destination: e.destination,
+            score: 0,
+            confidence: 0,
+            factors: [],
+            matchedInterests: [],
+            estimatedBudgetUsd: null,
+            rank: 0,
+          })),
+        )
+        .filter((r) => !culled.has(r.destination.id))
+        .map((r) => ({
+          recommendation: r,
+          state: r.rank > 0 ? ("candidate" as const) : ("doomed" as const),
+          rank: r.rank,
+        }));
+    }
+
+    const survivors = result.ranked.map((r) => ({
+      recommendation: r,
+      state: ("candidate" as const),
+      rank: r.rank,
+    }));
+    const gone = result.eliminated.map((e) => ({
+      recommendation: {
+        destination: e.destination,
+        score: 0,
+        confidence: 0,
+        factors: [],
+        matchedInterests: [],
+        estimatedBudgetUsd: null,
+        rank: 0,
+      },
+      state: ("culled" as const),
+      rank: 0,
+    }));
+    return [...gone, ...survivors];
+  }, [stage, result, processingStage]);
+
+  const pinOffsets = useMemo(
+    () =>
+      stackOffsets(
+        pins.map(({ recommendation }) => ({
+          id: recommendation.destination.id,
+          lng: recommendation.destination.coords.lng,
+          lat: recommendation.destination.coords.lat,
+        })),
+      ),
+    [pins],
+  );
 
   /** Camera intent per stage — the map's half of the conversation. */
   const camera = useMemo(() => {
-    // A chosen destination owns the frame.
     if (active) {
       return {
         center: active.destination.coords,
         zoom: active.destination.zoom,
-        fit: null,
+        fit: null as LngLat[] | null,
       };
     }
 
-    // Dates: the world is still open.
+    if (stage === "results") {
+      const points = result.top.map((r) => r.destination.coords);
+      if (origin) points.push(origin);
+      return { center: null, zoom: undefined, fit: points };
+    }
+
+    /*
+     * Dates: the world is still open, so frame the whole field rather than a
+     * fixed centre. A fixed centre ignores the console's width, which parked
+     * Tokyo underneath it — the one thing the opening view must not do is
+     * hide part of the world it is claiming to show.
+     */
     if (stage === "questions" && step === "dates") {
-      return { center: { lng: 6, lat: 26 }, zoom: 1.35, fit: null };
+      return {
+        center: null,
+        zoom: undefined,
+        fit: result.ranked
+          .concat(
+            result.eliminated.map((e) => ({
+              destination: e.destination,
+              score: 0,
+              confidence: 0,
+              factors: [],
+              matchedInterests: [],
+              estimatedBudgetUsd: null,
+              rank: 0,
+            })),
+          )
+          .map((r) => r.destination.coords),
+      };
     }
 
     // Origin: come down to where they're starting from.
-    if (stage === "questions" && step === "origin") {
+    if (stage === "questions" && (step === "origin" || step === "scope")) {
       return origin
-        ? { center: origin, zoom: 3.6, fit: null }
-        : { center: { lng: 6, lat: 26 }, zoom: 1.35, fit: null };
+        ? { center: origin, zoom: originConfirmed ? 4.6 : 3.8, fit: null }
+        : { center: { lng: 8, lat: 28 }, zoom: 1.5, fit: null };
     }
 
-    // Everything after: hold the live candidates, plus the origin for context.
-    const points = candidates.map((r) => r.destination.coords);
+    // Everything after: hold the live survivors plus the origin.
+    const points = result.ranked.slice(0, 6).map((r) => r.destination.coords);
     if (origin) points.push(origin);
     if (points.length >= 2) return { center: null, zoom: undefined, fit: points };
 
-    return { center: { lng: 6, lat: 26 }, zoom: 1.6, fit: null };
-  }, [active, stage, step, origin, candidates]);
+    return { center: { lng: 8, lat: 28 }, zoom: 1.8, fit: null };
+  }, [active, stage, step, origin, originConfirmed, result]);
 
   return (
     <div className={styles.root}>
       <MapSurface
-        center={{ lng: 6, lat: 26 }}
-        zoom={1.35}
-        /* Neighbourhood names help; highway shields fight our pins. */
+        center={{ lng: 8, lat: 28 }}
+        zoom={1.5}
         labels={{ poi: false, roads: false, places: true }}
+        /* Dusk: belongs to the environment, keeps its contrast. */
+        lightPreset="dusk"
         onBackgroundClick={() => onHover(null)}
       >
         <MapCamera
           center={camera.center}
           zoom={camera.zoom}
           fit={camera.fit}
-          maxZoom={active ? active.destination.zoom : 4.4}
-          /* Pins must clear the console entirely, not sit against its edge. */
+          maxZoom={active ? active.destination.zoom : 4.6}
           padding={{
-            top: 104,
-            right: 150,
-            bottom: 130,
-            left: insetLeft + 130,
+            top: 96,
+            right: insetRight + 96,
+            bottom: 108,
+            left: 96,
           }}
         />
 
+        {/* Origin. Orange is the beak — the part that points and speaks. */}
         {origin ? (
-          <MapMarker coords={origin} z={2} anchor="center" label={originLabel ?? "Origin"}>
-            <span className={styles.originPin} title={originLabel ?? undefined}>
-              <Home size={11} strokeWidth={2.4} />
+          <MapMarker
+            coords={origin}
+            z={40}
+            anchor="center"
+            label={originLabel ?? "Origin"}
+          >
+            <span
+              className={cn(
+                styles.originPin,
+                originConfirmed && styles.originPinConfirmed,
+              )}
+              title={originLabel ?? undefined}
+            >
+              <Home size={11} strokeWidth={2.5} />
               {originLabel ? (
                 <span className={styles.originLabel}>{originLabel}</span>
               ) : null}
@@ -128,88 +280,127 @@ export function DiscoveryMap({
           </MapMarker>
         ) : null}
 
-        {/* Attractions of the chosen destination, so the brief has geography. */}
+        {/* Attractions of the open destination — geography for the brief. */}
         {active
           ? active.destination.attractions.map((attraction) => (
               <MapMarker
                 key={attraction.name}
                 coords={attraction.coords}
-                z={3}
+                z={6}
                 anchor="center"
               >
                 <span className={styles.attractionPin} title={attraction.name}>
                   <span className={styles.attractionDot} />
-                  <span className={styles.attractionName}>{attraction.name}</span>
+                  <span className={styles.attractionName}>
+                    {attraction.name}
+                  </span>
                 </span>
               </MapMarker>
             ))
           : null}
 
-        {!active
-          ? candidates.map((recommendation) => {
-              const { destination, rank, score } = recommendation;
+        {/* The field. */}
+        {!active ? (
+          <AnimatePresence>
+            {pins.map(({ recommendation, state, rank }) => {
+              const { destination } = recommendation;
               const isHovered = hoveredId === destination.id;
-              const tone =
-                score >= 78 ? "strong" : score >= 58 ? "fair" : "weak";
+              const interactive = state === "best" || state === "top";
 
               return (
                 <MapMarker
                   key={destination.id}
                   coords={destination.coords}
-                  z={isHovered ? 40 : 30 - rank}
+                  z={
+                    state === "best"
+                      ? 34
+                      : isHovered
+                        ? 32
+                        : state === "top"
+                          ? 30 - rank
+                          : state === "candidate"
+                            ? 12
+                            : 4
+                  }
                   anchor="bottom"
-                  label={`${destination.name}, match ${Math.round(score)} of 100`}
-                  onClick={() => onSelect(destination.id)}
+                  offset={pinOffsets.get(destination.id)}
+                  label={
+                    interactive
+                      ? `${destination.name}, match ${Math.round(recommendation.score)} of 100`
+                      : destination.name
+                  }
+                  onClick={
+                    interactive ? () => onSelect(destination.id) : undefined
+                  }
                 >
                   <motion.span
                     className={cn(
-                      styles.candidate,
-                      styles[`candidate_${tone}`],
-                      isHovered && styles.candidateHovered,
+                      styles.pin,
+                      state === "best" && styles.pinBest,
+                      state === "top" && styles.pinTop,
+                      state === "candidate" && styles.pinCandidate,
+                      (state === "culled" || state === "doomed") &&
+                        styles.pinCulled,
+                      isHovered && interactive && styles.pinHovered,
                     )}
-                    onPointerEnter={() => onHover(destination.id)}
-                    onPointerLeave={() => onHover(null)}
-                    initial={
-                      reduceMotion
-                        ? { opacity: 0 }
-                        : { opacity: 0, scale: 0.6, y: 6 }
+                    onPointerEnter={
+                      interactive ? () => onHover(destination.id) : undefined
                     }
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    onPointerLeave={
+                      interactive ? () => onHover(null) : undefined
+                    }
+                    initial={{ opacity: 0, scale: 0.55, y: 5 }}
+                    animate={{
+                      opacity: state === "culled" ? 0.34 : 1,
+                      scale: 1,
+                      y: 0,
+                    }}
+                    exit={{ opacity: 0, scale: 0.6, y: 3 }}
                     transition={{
-                      duration: reduceMotion ? 0.15 : 0.36,
-                      ease: [0.34, 1.4, 0.64, 1],
-                      delay: reduceMotion ? 0 : Math.min(rank * 0.045, 0.32),
+                      duration: reduceMotion ? 0.12 : 0.26,
+                      ease: [0.2, 0, 0, 1],
+                      delay:
+                        reduceMotion || stage !== "results"
+                          ? 0
+                          : Math.min(rank * 0.06, 0.2),
                     }}
                   >
-                    <span className={cn(styles.candidateRank, "tabular")}>
-                      {rank}
-                    </span>
-                    <span className={styles.candidateName}>
-                      {destination.name}
-                    </span>
-                    <span className={cn(styles.candidateScore, "tabular")}>
-                      {Math.round(score)}
-                    </span>
+                    {interactive ? (
+                      <>
+                        <span className={cn(styles.pinRank, "tabular")}>
+                          {rank}
+                        </span>
+                        <span className={styles.pinName}>
+                          {destination.name}
+                        </span>
+                        <span className={cn(styles.pinScore, "tabular")}>
+                          {Math.round(recommendation.score)}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className={styles.pinDot} />
+                        <span className={styles.pinNameQuiet}>
+                          {destination.name}
+                        </span>
+                      </>
+                    )}
                   </motion.span>
                 </MapMarker>
               );
-            })
-          : null}
+            })}
+          </AnimatePresence>
+        ) : null}
       </MapSurface>
 
       {/*
-       * At world zoom the basemap's ocean cyan and vegetation green are far
-       * more saturated than anything else in the product. A warm wash pulls
-       * the whole canvas onto the paper palette without hiding geography.
+       * The basemap has to belong to the environment. Mapbox's stock ocean
+       * cyan and vegetation green are far more saturated than anything else
+       * in the product, so this desaturates the whole canvas and shifts it
+       * toward the surrounding violet — the map stays fully legible, it just
+       * stops shouting over the atmosphere it sits inside.
        */}
-      <div className={styles.paperWash} aria-hidden />
-
-      {/* Softens the console's edge against the map without hiding geography. */}
-      <div
-        className={styles.consoleScrim}
-        style={{ width: insetLeft + 80 }}
-        aria-hidden
-      />
+      <div className={styles.tint} aria-hidden />
     </div>
   );
 }

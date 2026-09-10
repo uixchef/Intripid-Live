@@ -6,7 +6,7 @@
   position: relative;
   display: grid;
   grid-template-columns: repeat(var(--seg-count), 1fr);
-  background: var(--paper-150);
+  background: var(--slate-150);
   border-radius: var(--radius-md);
   padding: 2px;
   isolation: isolate;
@@ -32,7 +32,7 @@
   background: var(--bg-surface-raised);
   border-radius: calc(var(--radius-md) - 2px);
   box-shadow: var(--shadow-xs);
-  transition: transform var(--dur-base) var(--ease-out);
+  transition: transform var(--dur-element) var(--ease-out);
 }
 
 .seg_sm .thumb {
@@ -54,7 +54,7 @@
   cursor: pointer;
   white-space: nowrap;
   padding: 0 var(--space-4);
-  transition: color var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-micro) var(--ease-out);
 }
 
 .segment:hover {
@@ -117,8 +117,8 @@
   min-width: 0;
   box-shadow: var(--shadow-xs);
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out);
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
 }
 
 .input_md {
@@ -135,8 +135,8 @@
 }
 
 .inputWrap:focus-within {
-  border-color: var(--brand-500);
-  box-shadow: 0 0 0 3px var(--brand-100);
+  border-color: var(--purple-500);
+  box-shadow: 0 0 0 3px var(--purple-100);
 }
 
 .inputInvalid {
@@ -190,8 +190,8 @@
   outline: none;
   box-shadow: var(--shadow-xs);
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out);
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
 }
 
 .textarea::placeholder {
@@ -203,8 +203,8 @@
 }
 
 .textarea:focus {
-  border-color: var(--brand-500);
-  box-shadow: 0 0 0 3px var(--brand-100);
+  border-color: var(--purple-500);
+  box-shadow: 0 0 0 3px var(--purple-100);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -224,10 +224,10 @@
   cursor: pointer;
   box-shadow: var(--shadow-xs);
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-hover);
+    border-color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
 .option:hover {
@@ -241,15 +241,15 @@
 }
 
 .optionSelected {
-  border-color: var(--brand-500);
-  background: var(--brand-50);
+  border-color: var(--purple-500);
+  background: var(--purple-50);
   box-shadow:
     var(--shadow-xs),
-    0 0 0 1px var(--brand-500);
+    0 0 0 1px var(--purple-500);
 }
 
 .optionSelected:hover {
-  border-color: var(--brand-600);
+  border-color: var(--purple-600);
 }
 
 .optionGlyph {
@@ -259,18 +259,18 @@
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
-  background: var(--paper-100);
+  background: var(--slate-100);
   color: var(--text-secondary);
   font-size: var(--text-lg);
   line-height: 1;
   transition:
-    background-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
 }
 
 .optionSelected .optionGlyph {
-  background: var(--brand-600);
-  color: var(--paper-0);
+  background: var(--purple-600);
+  color: var(--slate-0);
 }
 
 .optionBody {
@@ -316,7 +316,7 @@
 }
 
 .optionSelected .optionMeta {
-  color: var(--brand-700);
+  color: var(--purple-700);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -342,7 +342,7 @@
   font-size: var(--text-md);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background-color var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-micro) var(--ease-out);
 }
 
 .stepperButton:hover:not(:disabled) {

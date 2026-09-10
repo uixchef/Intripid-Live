@@ -23,35 +23,111 @@ import styles from "./assistant.module.css";
  * until accepted, and changes can be taken one at a time.
  *
  * No gradient chrome. The historical gradient "AI" button is exactly the dated
- * tell to avoid — the semantic channel survives as a flat amber accent.
+ * tell to avoid — the semantic channel survives as flat purple, the same
+ * colour that carries every other system decision in the product.
  */
 
 export interface AssistantOffersProps {
   offers: AssistantOffer[];
   onRequest: (intent: AssistantPlan["intent"]) => void;
+  /** The day the advisor is reading, so it can show its working. */
+  reading?: {
+    label: string;
+    stops: number;
+    errorCount: number;
+    warningCount: number;
+    freeMinutes: number;
+    travelMinutes: number;
+    costUsd: number;
+  };
+}
+
+/**
+ * What the advisor is looking at.
+ *
+ * Offers on their own are three buttons in a large empty panel, and they ask
+ * you to trust a judgement whose basis you cannot see. These are the numbers
+ * the offers were derived from — the same reading, stated plainly — which
+ * both fills the panel with something useful and makes the suggestions
+ * checkable rather than oracular.
+ */
+function DayReading({
+  reading,
+}: {
+  reading: NonNullable<AssistantOffersProps["reading"]>;
+}) {
+  const rows: { label: string; value: string; tone?: "bad" | "warn" }[] = [
+    { label: "Stops", value: String(reading.stops) },
+    {
+      label: "Clashes",
+      value: String(reading.errorCount),
+      tone: reading.errorCount > 0 ? "bad" : undefined,
+    },
+    {
+      label: "Tight connections",
+      value: String(reading.warningCount),
+      tone: reading.warningCount > 0 ? "warn" : undefined,
+    },
+    { label: "Unscheduled", value: durationText(reading.freeMinutes) },
+    { label: "Travel time", value: durationText(reading.travelMinutes) },
+    { label: "Estimated cost", value: `$${reading.costUsd.toLocaleString()}` },
+  ];
+
+  return (
+    <div className={styles.reading}>
+      <p className={styles.readingLabel}>Reading {reading.label}</p>
+      <dl className={styles.readingGrid}>
+        {rows.map((row) => (
+          <div key={row.label} className={styles.readingRow}>
+            <dt>{row.label}</dt>
+            <dd
+              className={cn(
+                "tabular",
+                row.tone === "bad" && styles.readingBad,
+                row.tone === "warn" && styles.readingWarn,
+              )}
+            >
+              {row.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function durationText(minutes: number): string {
+  if (minutes <= 0) return "none";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 /** The affordances, shown only when there is something specific to offer. */
-export function AssistantOffers({ offers, onRequest }: AssistantOffersProps) {
-  if (offers.length === 0) {
-    return (
-      <div className={styles.quiet}>
-        <span className={styles.quietIcon} aria-hidden>
-          <Check size={13} strokeWidth={2.4} />
-        </span>
-        <div>
-          <p className={styles.quietTitle}>This day holds up</p>
-          <p className={styles.quietBody}>
-            No clashes, no impossible hops, no dead afternoons. Nothing worth
-            changing.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+export function AssistantOffers({
+  offers,
+  onRequest,
+  reading,
+}: AssistantOffersProps) {
   return (
-    <ul className={styles.offers}>
+    <div className={styles.offersWrap}>
+      {offers.length === 0 ? (
+        <div className={styles.quiet}>
+          <span className={styles.quietIcon} aria-hidden>
+            <Check size={13} strokeWidth={2.4} />
+          </span>
+          <div>
+            <p className={styles.quietTitle}>This day holds up</p>
+            <p className={styles.quietBody}>
+              No clashes, no impossible hops, no dead afternoons. Nothing worth
+              changing.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <ul className={styles.offers}>
       {offers.map((offer) => (
         <li key={offer.intent}>
           <button
@@ -69,11 +145,19 @@ export function AssistantOffers({ offers, onRequest }: AssistantOffersProps) {
               <span className={styles.offerLabel}>{offer.label}</span>
               <span className={styles.offerDetail}>{offer.detail}</span>
             </span>
-            <ArrowRight size={13} strokeWidth={2.2} className={styles.offerArrow} />
+            <ArrowRight
+              size={13}
+              strokeWidth={2.2}
+              className={styles.offerArrow}
+            />
           </button>
         </li>
-      ))}
-    </ul>
+          ))}
+        </ul>
+      )}
+
+      {reading ? <DayReading reading={reading} /> : null}
+    </div>
   );
 }
 

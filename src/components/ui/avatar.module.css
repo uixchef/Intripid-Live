@@ -4,8 +4,8 @@
   place-items: center;
   flex: none;
   border-radius: var(--radius-full);
-  background: var(--avatar-color, var(--brand-600));
-  color: var(--paper-0);
+  background: var(--avatar-color, var(--purple-600));
+  color: var(--slate-0);
   font-weight: var(--weight-semibold);
   letter-spacing: 0.01em;
   /*
@@ -47,7 +47,7 @@
 }
 
 .overflow {
-  background: var(--paper-200);
+  background: var(--slate-200);
   color: var(--text-secondary);
 }
 
@@ -64,7 +64,7 @@
   min-width: 7px;
   min-height: 7px;
   border-radius: var(--radius-full);
-  background: var(--success-500);
+  background: var(--positive-500);
   box-shadow: 0 0 0 1.5px var(--bg-surface-raised);
 }
 

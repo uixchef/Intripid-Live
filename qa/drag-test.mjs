@@ -60,7 +60,7 @@ results.push({
 /* -------------------------------------------------------------------------- */
 
 // The move above selected an item, which flips the panel to Details.
-await page.getByRole("radio", { name: /^Ideas/ }).click();
+await page.getByRole("tab", { name: /Ideas/ }).click();
 await page.waitForTimeout(400);
 
 const ideasBefore = await page.locator("[data-idea]").count();
@@ -91,7 +91,7 @@ const toast = await page
 const eventsAfter = await page.locator("[data-event]").count();
 
 // Reopen the rail to confirm the idea left the backlog.
-await page.getByRole("radio", { name: /^Ideas/ }).click().catch(() => {});
+await page.getByRole("tab", { name: /Ideas/ }).click().catch(() => {});
 await page.waitForTimeout(400);
 const ideasAfter = await page.locator("[data-idea]").count();
 

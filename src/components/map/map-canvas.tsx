@@ -39,6 +39,12 @@ export interface MapCanvasProps {
    * neighbourhoods but no highway shields competing with its own pins.
    */
   labels?: { poi?: boolean; roads?: boolean; places?: boolean };
+  /**
+   * Basemap light preset. Discovery uses `dusk` so the map belongs to its
+   * purple environment while keeping full land/water contrast — washing a
+   * daylight basemap toward violet destroyed the geography instead.
+   */
+  lightPreset?: "dawn" | "day" | "dusk" | "night";
   /** Disable all user interaction — used for decorative/preview maps. */
   interactive?: boolean;
   /** Padding used by fitBounds callers, in px. */
@@ -53,6 +59,7 @@ export function MapCanvas({
   zoom,
   children,
   labels,
+  lightPreset = "day",
   interactive = true,
   className,
   onReady,
@@ -119,7 +126,7 @@ export function MapCanvas({
 
       // `faded` desaturates the basemap so routes, pins and overlays lead.
       setConfig("theme", "faded");
-      setConfig("lightPreset", "day");
+      setConfig("lightPreset", lightPreset);
       setConfig("show3dObjects", false);
       setConfig("showPointOfInterestLabels", labels?.poi ?? false);
       setConfig("showTransitLabels", false);
@@ -159,10 +166,11 @@ export function MapCanvas({
       map.setConfigProperty("basemap", "showPointOfInterestLabels", labels?.poi ?? false);
       map.setConfigProperty("basemap", "showPlaceLabels", labels?.places ?? true);
       map.setConfigProperty("basemap", "showRoadLabels", labels?.roads ?? true);
+      map.setConfigProperty("basemap", "lightPreset", lightPreset);
     } catch {
       /* style without these config keys */
     }
-  }, [map, ready, labels?.poi, labels?.places, labels?.roads]);
+  }, [map, ready, labels?.poi, labels?.places, labels?.roads, lightPreset]);
 
   return (
     <div className={className ? `${styles.root} ${className}` : styles.root}>

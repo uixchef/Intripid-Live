@@ -53,10 +53,12 @@ const shots = [
     async run(page) {
       await page.waitForSelector("text=When do you want to travel?");
       await page.getByRole("button", { name: "Continue" }).click();
-      await page.getByRole("radio", { name: /London/ }).click();
-      await page.getByRole("radio", { name: "Go abroad" }).click();
+      await page.getByRole("radio", { name: /Go abroad/ }).click();
       await page.getByRole("button", { name: "Continue" }).click();
-      await page.waitForSelector("text=Premium");
+      await page.getByRole("radio", { name: /London/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("button", { name: /Looks good/i }).click();
+      await page.waitForSelector("text=/What's your budget/");
       await page.getByRole("radio", { name: /Premium/ }).click();
       await settleMap(page);
     },
@@ -78,6 +80,70 @@ const shots = [
       await runDiscoveryToResults(page);
       await page.getByRole("button", { name: /New York City/ }).first().click();
       await page.waitForSelector("text=Why it placed here");
+      await settleMap(page);
+    },
+  },
+  {
+    // The origin map-confirm loop — restored from the original product.
+    name: "25-discovery-origin-confirm",
+    viewport: DESKTOP,
+    url: "/discover",
+    async run(page) {
+      await page.waitForSelector("text=When do you want to travel?");
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /Go abroad/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /London/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.waitForSelector("text=Did we find you?");
+      await settleMap(page);
+    },
+  },
+  {
+    // The narrated search, mid-flight, with the map culling candidates.
+    name: "26-discovery-processing",
+    viewport: DESKTOP,
+    url: "/discover",
+    async run(page) {
+      await page.waitForSelector("text=When do you want to travel?");
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /Go abroad/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /London/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("button", { name: /Looks good/i }).click();
+      await page.getByRole("radio", { name: /Premium/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page
+        .getByRole("button", { name: /Skip — use typical local costs/ })
+        .click();
+      await page.getByRole("button", { name: /Live city life/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("button", { name: /Find my matches/ }).click();
+      // Catch it mid-narration rather than after it resolves.
+      await page.waitForTimeout(1500);
+    },
+  },
+  {
+    // The must-have experiences filter, with its verb-led options.
+    name: "27-discovery-experiences",
+    viewport: DESKTOP,
+    url: "/discover",
+    async run(page) {
+      await page.waitForSelector("text=When do you want to travel?");
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /Go abroad/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /London/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("button", { name: /Looks good/i }).click();
+      await page.getByRole("radio", { name: /Premium/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page
+        .getByRole("button", { name: /Skip — use typical local costs/ })
+        .click();
+      await page.getByRole("button", { name: /Live city life/ }).click();
+      await page.getByRole("button", { name: /Steep in culture/ }).click();
       await settleMap(page);
     },
   },
@@ -137,6 +203,85 @@ const shots = [
         await resolve.click();
         await page.waitForTimeout(900);
       }
+    },
+  },
+  {
+    name: "28-planner-collaboration",
+    viewport: DESKTOP,
+    url: "/trip/nyc-spring",
+    async run(page) {
+      await page.waitForSelector("[data-planner-ready]");
+      await settleMap(page, 2000);
+      // The presence chip reveals the rail's travellers section.
+      await page.getByRole("button", { name: /Show travellers/ }).click();
+      await page.waitForTimeout(700);
+    },
+  },
+  {
+    name: "29-planner-advisor-rail",
+    viewport: DESKTOP,
+    url: "/trip/nyc-spring",
+    async run(page) {
+      await page.waitForSelector("[data-planner-ready]");
+      await settleMap(page, 2000);
+      await page.getByRole("tab", { name: /Advisor/ }).click();
+      await page.waitForTimeout(600);
+    },
+  },
+  {
+    name: "30-planner-conflict",
+    viewport: DESKTOP,
+    url: "/trip/nyc-spring",
+    async run(page) {
+      await page.waitForSelector("[data-planner-ready]");
+      await settleMap(page, 2000);
+      // Day 4 carries a seeded overlap; select one of the two that collide.
+      await page.locator("[data-day-tab]").nth(3).click();
+      await page.waitForTimeout(600);
+      const clashing = page
+        .locator('[data-event-card][class*="conflicted"]')
+        .first();
+      if (await clashing.count()) {
+        await clashing.click();
+        await page.waitForTimeout(900);
+      }
+    },
+  },
+  {
+    name: "31-planner-gap-fill",
+    viewport: DESKTOP,
+    url: "/trip/nyc-spring",
+    async run(page) {
+      await page.waitForSelector("[data-planner-ready]");
+      await settleMap(page, 2000);
+      await page.getByRole("tab", { name: /Advisor/ }).click();
+      await page.waitForTimeout(500);
+      const fill = page.getByRole("button", { name: /Fill the gap/i }).first();
+      if (await fill.count()) {
+        await fill.click();
+        await page.waitForTimeout(900);
+      }
+    },
+  },
+  {
+    name: "32-planner-reduced-motion",
+    viewport: DESKTOP,
+    url: "/trip/nyc-spring",
+    reducedMotion: true,
+    async run(page) {
+      await page.waitForSelector("[data-planner-ready]");
+      await settleMap(page, 2000);
+      await page.locator("[data-event-card]").first().click();
+      await page.waitForTimeout(900);
+    },
+  },
+  {
+    name: "33-discovery-reduced-motion",
+    viewport: DESKTOP,
+    url: "/discover",
+    reducedMotion: true,
+    async run(page) {
+      await settleMap(page);
     },
   },
   {
@@ -233,9 +378,11 @@ const shots = [
     async run(page) {
       await page.waitForSelector("text=When do you want to travel?");
       await page.getByRole("button", { name: "Continue" }).click();
-      await page.getByRole("radio", { name: /London/ }).click();
-      await page.getByRole("radio", { name: "Go abroad" }).click();
+      await page.getByRole("radio", { name: /Go abroad/ }).click();
       await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /London/ }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("button", { name: /Looks good/i }).click();
       await page.getByRole("radio", { name: /Premium/ }).click();
       await settleMap(page);
     },
@@ -251,25 +398,37 @@ const shots = [
   },
 ];
 
-/** Walks the discovery flow to the results stage. */
+/** Walks the six-question discovery flow to the results stage. */
 async function runDiscoveryToResults(page) {
   await page.waitForSelector("text=When do you want to travel?");
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("radio", { name: /London/ }).click();
-  await page.getByRole("radio", { name: "Go abroad" }).click();
+
+  // Scope
+  await page.getByRole("radio", { name: /Go abroad/ }).click();
   await page.getByRole("button", { name: "Continue" }).click();
+
+  // Origin, then the map-confirm gate
+  await page.getByRole("radio", { name: /London/ }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: /Looks good/i }).click();
+
+  // Budget, then the optional income refinement
   await page.getByRole("radio", { name: /Premium/ }).click();
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: /^City/ }).click();
-  await page.getByRole("button", { name: /^Culture/ }).click();
-  await page.getByRole("button", { name: /^Food/ }).click();
+  await page.getByRole("button", { name: /Skip — use typical local costs/ }).click();
+
+  // Must-have experiences (filter)
+  await page.getByRole("button", { name: /Live city life/ }).click();
+  await page.getByRole("button", { name: /Steep in culture/ }).click();
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: /Museums/ }).click();
+
+  // Activities (rank)
+  await page.getByRole("button", { name: /Museums & galleries/ }).click();
   await page.getByRole("button", { name: /Fine dining/ }).click();
-  await page.getByRole("button", { name: "See matches" }).click();
-  // The processing narration runs, then the ranked rail appears.
-  await page.waitForSelector("text=/worth your time|Nothing scored well/", {
-    timeout: 20000,
+  await page.getByRole("button", { name: /Find my matches/ }).click();
+
+  await page.waitForSelector("text=/places that fit|Closest matches|Nothing fits/", {
+    timeout: 25000,
   });
 }
 

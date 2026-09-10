@@ -1,19 +1,22 @@
 "use client";
 
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { createStore } from "zustand/vanilla";
 
 import { DESTINATIONS } from "@/data/destinations";
-import { recommend } from "@/lib/discovery/scoring";
+import { recommend, resolvedDates, tripNights } from "@/lib/discovery/scoring";
 import type {
   BudgetTier,
   DateMode,
   DiscoveryPreferences,
+  IncomeBand,
   Interest,
   Origin,
   Recommendation,
+  RecommendationSet,
   TripScope,
   TripStyle,
+  WeekendShape,
 } from "@/lib/types";
 
 import { createStoreContext } from "./create-store-context";
@@ -21,35 +24,64 @@ import { createStoreContext } from "./create-store-context";
 /**
  * Destination Discovery state.
  *
- * The historical product learned that too many questions created friction, so
- * this flow is deliberately short — five steps, two of which are optional —
- * and it recomputes recommendations after EVERY answer. The traveller can
- * bail out to results at any point from step two onward, which is what makes
- * the reduced question set honest rather than merely shorter.
+ * Six questions, in the original product's order, each one labelled as a
+ * FILTER (it narrows the field) or a RANK (it orders it). Three of them carry
+ * clarifying sub-steps that the previous build had dropped:
+ *
+ *   dates       → weekend shape, or month + nights when flexible
+ *   origin      → confirm the pin on the map before we trust it
+ *   budget      → optional, once-per-session income normalisation
+ *
+ * The premise never moves: the product does not ask where you want to go.
+ * Destination is an output.
  */
 
 export type DiscoveryStep =
   | "dates"
+  | "scope"
   | "origin"
   | "budget"
-  | "style"
-  | "interests";
+  | "experiences"
+  | "activities";
 
 export const DISCOVERY_STEPS: readonly DiscoveryStep[] = [
   "dates",
+  "scope",
   "origin",
   "budget",
-  "style",
-  "interests",
+  "experiences",
+  "activities",
 ] as const;
+
+/** Whether answering this question eliminates candidates or merely orders them. */
+export const STEP_KIND: Record<DiscoveryStep, "filter" | "rank"> = {
+  dates: "filter",
+  scope: "filter",
+  origin: "filter",
+  budget: "filter",
+  experiences: "filter",
+  activities: "rank",
+};
+
+export const STEP_LABEL: Record<DiscoveryStep, string> = {
+  dates: "Dates",
+  scope: "How far",
+  origin: "Origin",
+  budget: "Budget",
+  experiences: "Must-haves",
+  activities: "Activities",
+};
 
 export type DiscoveryStage = "intro" | "questions" | "processing" | "results";
 
-/** Steps after which the traveller has enough signal to see useful results. */
+/** Sub-step within the current question, when one applies. */
+export type DiscoverySubStep = null | "weekend-shape" | "confirm-origin" | "income";
+
+/** Enough signal to show a real answer. */
 const MIN_STEPS_BEFORE_RESULTS = 2;
 
-export const ORIGIN_OPTIONS: Origin[] = [
-  { city: "London", country: "United Kingdom", countryCode: "GB", coords: { lng: -0.1276, lat: 51.5072 } },
+export const ORIGIN_OPTIONS: (Origin & { label?: string })[] = [
+  { label: "Home", city: "London", country: "United Kingdom", countryCode: "GB", coords: { lng: -0.1276, lat: 51.5072 } },
   { city: "San Francisco", country: "United States", countryCode: "US", coords: { lng: -122.4194, lat: 37.7749 } },
   { city: "Chicago", country: "United States", countryCode: "US", coords: { lng: -87.6298, lat: 41.8781 } },
   { city: "Berlin", country: "Germany", countryCode: "DE", coords: { lng: 13.405, lat: 52.52 } },
@@ -60,21 +92,27 @@ export const ORIGIN_OPTIONS: Origin[] = [
 ];
 
 /**
- * Default dates: a week-long trip starting a comfortable distance out. Fixed
- * rather than relative to "today" so the seeded experience is deterministic
- * and the NYC trip's April dates always line up.
+ * Fixed defaults rather than relative-to-today, so the seeded experience is
+ * deterministic and lines up with the April NYC trip.
  */
 const DEFAULT_START = "2026-04-14";
 const DEFAULT_END = "2026-04-18";
+/** The next Friday, for the "this weekend" shortcut. */
+const DEFAULT_WEEKEND_START = "2026-04-17";
 
 function emptyPreferences(): DiscoveryPreferences {
   return {
-    dateMode: "exact",
+    dateMode: "specific",
     startDate: DEFAULT_START,
     endDate: DEFAULT_END,
+    weekendShape: "fri-sun",
+    flexibleMonth: 3,
+    flexibleNights: 5,
     origin: null,
+    originConfirmed: false,
     scope: null,
     budget: null,
+    incomeBand: null,
     styles: [],
     interests: [],
   };
@@ -83,28 +121,37 @@ function emptyPreferences(): DiscoveryPreferences {
 export interface DiscoveryState {
   stage: DiscoveryStage;
   step: DiscoveryStep;
-  /** Steps the traveller has answered, in order. Drives progress and escape. */
+  subStep: DiscoverySubStep;
   answered: DiscoveryStep[];
   prefs: DiscoveryPreferences;
-  recommendations: Recommendation[];
-  /** Which recommendation is open in the detail surface. */
+  result: RecommendationSet;
+  /** Which of the top three is open in the detail surface. */
   activeId: string | null;
-  /** Hover coupling between the map and the result list. */
   hoveredId: string | null;
-  /** Narrated processing steps, revealed one at a time. */
-  processingIndex: number;
+  /** How far through the narrated filter stages we are. */
+  processingStage: number;
+  /** Whether the income normaliser has already been offered this session. */
+  incomeAsked: boolean;
 
   begin: () => void;
   goToStep: (step: DiscoveryStep) => void;
   next: () => void;
   back: () => void;
+  setSubStep: (subStep: DiscoverySubStep) => void;
+
   setDateMode: (mode: DateMode) => void;
   setDates: (start: string | null, end: string | null) => void;
-  setOrigin: (origin: Origin) => void;
+  setWeekendShape: (shape: WeekendShape) => void;
+  setFlexible: (month: number, nights: number) => void;
   setScope: (scope: TripScope) => void;
+  setOrigin: (origin: Origin) => void;
+  confirmOrigin: () => void;
+  reopenOrigin: () => void;
   setBudget: (budget: BudgetTier) => void;
+  setIncomeBand: (band: IncomeBand | null) => void;
   toggleStyle: (style: TripStyle) => void;
   toggleInterest: (interest: Interest) => void;
+
   startProcessing: () => void;
   advanceProcessing: () => void;
   showResults: () => void;
@@ -113,7 +160,7 @@ export interface DiscoveryState {
   reset: () => void;
 }
 
-function recomputeFrom(prefs: DiscoveryPreferences): Recommendation[] {
+function recomputeFrom(prefs: DiscoveryPreferences): RecommendationSet {
   return recommend(DESTINATIONS, prefs);
 }
 
@@ -130,79 +177,147 @@ export function makeDiscoveryStore() {
   return createStore<DiscoveryState>()((set, get) => ({
     stage: "intro",
     step: "dates",
+    subStep: null,
     answered: [],
     prefs,
-    recommendations: recomputeFrom(prefs),
+    result: recomputeFrom(prefs),
     activeId: null,
     hoveredId: null,
-    processingIndex: 0,
+    processingStage: 0,
+    incomeAsked: false,
 
-    begin: () => set({ stage: "questions", step: "dates" }),
+    begin: () => set({ stage: "questions", step: "dates", subStep: null }),
 
-    goToStep: (step) => set({ stage: "questions", step }),
+    goToStep: (step) => set({ stage: "questions", step, subStep: null }),
+
+    setSubStep: (subStep) => set({ subStep }),
 
     next: () => {
-      const { step, answered } = get();
+      const state = get();
+      const { step, subStep, prefs: p } = state;
+
+      /*
+       * Sub-steps are gates, not decoration. Origin in particular must end in
+       * a map confirmation — origin accuracy silently determines every
+       * recommendation, so it is never trusted untyped.
+       */
+      if (step === "dates" && subStep === null && p.dateMode === "weekend") {
+        set({ subStep: "weekend-shape" });
+        return;
+      }
+      if (step === "origin" && subStep === null && p.origin && !p.originConfirmed) {
+        set({ subStep: "confirm-origin" });
+        return;
+      }
+      if (
+        step === "budget" &&
+        subStep === null &&
+        p.budget &&
+        !state.incomeAsked
+      ) {
+        set({ subStep: "income", incomeAsked: true });
+        return;
+      }
+
       const index = DISCOVERY_STEPS.indexOf(step);
-      const nextAnswered = markAnswered(answered, step);
+      const nextAnswered = markAnswered(state.answered, step);
 
       if (index >= DISCOVERY_STEPS.length - 1) {
-        set({ answered: nextAnswered });
+        set({ answered: nextAnswered, subStep: null });
         get().startProcessing();
         return;
       }
 
-      set({ step: DISCOVERY_STEPS[index + 1], answered: nextAnswered });
+      set({
+        step: DISCOVERY_STEPS[index + 1],
+        subStep: null,
+        answered: nextAnswered,
+      });
     },
 
+    /** Back is never a lesser action — every step reverses cleanly. */
     back: () => {
-      const { step, stage } = get();
+      const { step, subStep, stage } = get();
+
       if (stage === "results") {
-        set({ stage: "questions", step: "interests", activeId: null });
+        set({ stage: "questions", step: "activities", subStep: null, activeId: null });
         return;
       }
+      if (subStep !== null) {
+        set({ subStep: null });
+        return;
+      }
+
       const index = DISCOVERY_STEPS.indexOf(step);
       if (index <= 0) {
         set({ stage: "intro" });
         return;
       }
-      set({ step: DISCOVERY_STEPS[index - 1] });
+      set({ step: DISCOVERY_STEPS[index - 1], subStep: null });
     },
 
     setDateMode: (dateMode) => {
       const current = get().prefs;
-      // "The Weekend" is a concrete shortcut, not just a mode: pick the next one.
       const next: DiscoveryPreferences =
         dateMode === "weekend"
-          ? {
-              ...current,
-              dateMode,
-              startDate: "2026-04-17",
-              endDate: "2026-04-19",
-            }
-          : { ...current, dateMode };
+          ? { ...current, dateMode, startDate: DEFAULT_WEEKEND_START, endDate: null }
+          : dateMode === "specific"
+            ? {
+                ...current,
+                dateMode,
+                startDate: current.startDate ?? DEFAULT_START,
+                endDate: current.endDate ?? DEFAULT_END,
+              }
+            : { ...current, dateMode };
 
-      set({ prefs: next, recommendations: recomputeFrom(next) });
+      set({ prefs: next, result: recomputeFrom(next) });
     },
 
     setDates: (startDate, endDate) => {
       const next = { ...get().prefs, startDate, endDate };
-      set({ prefs: next, recommendations: recomputeFrom(next) });
+      set({ prefs: next, result: recomputeFrom(next) });
     },
 
-    setOrigin: (origin) => {
-      const next = { ...get().prefs, origin };
-      set({ prefs: next, recommendations: recomputeFrom(next) });
+    setWeekendShape: (weekendShape) => {
+      const next = { ...get().prefs, weekendShape };
+      set({ prefs: next, result: recomputeFrom(next) });
+    },
+
+    setFlexible: (flexibleMonth, flexibleNights) => {
+      const next = { ...get().prefs, flexibleMonth, flexibleNights };
+      set({ prefs: next, result: recomputeFrom(next) });
     },
 
     setScope: (scope) => {
       const next = { ...get().prefs, scope };
-      set({ prefs: next, recommendations: recomputeFrom(next) });
+      set({ prefs: next, result: recomputeFrom(next) });
+    },
+
+    setOrigin: (origin) => {
+      // A new origin invalidates the previous confirmation.
+      const next = { ...get().prefs, origin, originConfirmed: false };
+      set({ prefs: next, result: recomputeFrom(next) });
+    },
+
+    confirmOrigin: () => {
+      const next = { ...get().prefs, originConfirmed: true };
+      set({ prefs: next, subStep: null, result: recomputeFrom(next) });
+      get().next();
+    },
+
+    reopenOrigin: () => {
+      const next = { ...get().prefs, originConfirmed: false };
+      set({ prefs: next, subStep: null, result: recomputeFrom(next) });
     },
 
     setBudget: (budget) => {
       const next = { ...get().prefs, budget };
-      set({ prefs: next, recommendations: recomputeFrom(next) });
+      set({ prefs: next, result: recomputeFrom(next) });
+    },
+
+    setIncomeBand: (incomeBand) => {
+      const next = { ...get().prefs, incomeBand };
+      set({ prefs: next, result: recomputeFrom(next) });
     },
 
     toggleStyle: (style) => {
@@ -211,7 +326,7 @@ export function makeDiscoveryStore() {
         ? current.styles.filter((s) => s !== style)
         : [...current.styles, style];
       const next = { ...current, styles };
-      set({ prefs: next, recommendations: recomputeFrom(next) });
+      set({ prefs: next, result: recomputeFrom(next) });
     },
 
     toggleInterest: (interest) => {
@@ -220,25 +335,25 @@ export function makeDiscoveryStore() {
         ? current.interests.filter((i) => i !== interest)
         : [...current.interests, interest];
       const next = { ...current, interests };
-      set({ prefs: next, recommendations: recomputeFrom(next) });
+      set({ prefs: next, result: recomputeFrom(next) });
     },
 
     startProcessing: () =>
-      set({ stage: "processing", processingIndex: 0, activeId: null }),
+      set({ stage: "processing", processingStage: 0, activeId: null }),
 
     advanceProcessing: () =>
-      set((state) => ({ processingIndex: state.processingIndex + 1 })),
+      set((state) => ({ processingStage: state.processingStage + 1 })),
 
+    /*
+     * Land on the ranked three, not inside the winner. Seeing the set is what
+     * makes the choice a choice.
+     */
     showResults: () => {
       const { answered, step } = get();
-      /*
-       * Deliberately does NOT open the top result. Landing straight in the
-       * winner's brief hides the fact that there was a ranked field at all,
-       * and the comparison is the product.
-       */
       set({
         stage: "results",
         answered: markAnswered(answered, step),
+        subStep: null,
         activeId: null,
       });
     },
@@ -251,12 +366,14 @@ export function makeDiscoveryStore() {
       set({
         stage: "intro",
         step: "dates",
+        subStep: null,
         answered: [],
         prefs: fresh,
-        recommendations: recomputeFrom(fresh),
+        result: recomputeFrom(fresh),
         activeId: null,
         hoveredId: null,
-        processingIndex: 0,
+        processingStage: 0,
+        incomeAsked: false,
       });
     },
   }));
@@ -283,19 +400,13 @@ export const useDiscoveryApi = context.useStoreApi;
 /* Selectors                                                                 */
 /* -------------------------------------------------------------------------- */
 
-/** Whether the traveller has answered enough to jump straight to results. */
 export function canSkipToResults(state: DiscoveryState): boolean {
   return state.answered.length >= MIN_STEPS_BEFORE_RESULTS;
 }
 
-/** How strongly the current results are supported, as a 0..1 fraction. */
-export function answeredFraction(state: DiscoveryState): number {
-  return state.answered.length / DISCOVERY_STEPS.length;
-}
-
-/** Destinations scoring well enough to be worth showing, for the live count. */
-export function strongMatchCount(state: DiscoveryState): number {
-  return state.recommendations.filter((r) => r.score >= 60).length;
+/** Survivors still in the running — what the map should be showing. */
+export function survivingCount(state: DiscoveryState): number {
+  return state.result.ranked.length;
 }
 
 export function activeRecommendation(
@@ -303,25 +414,32 @@ export function activeRecommendation(
 ): Recommendation | null {
   if (!state.activeId) return null;
   return (
-    state.recommendations.find((r) => r.destination.id === state.activeId) ??
-    null
+    state.result.ranked.find((r) => r.destination.id === state.activeId) ?? null
   );
 }
 
 /** A readable label for the chosen dates, used in summary chips. */
 export function dateSummary(prefs: DiscoveryPreferences): string {
+  if (prefs.dateMode === "weekend") {
+    const dates = resolvedDates(prefs);
+    if (!dates) return "This weekend";
+    const start = new Date(`${dates.start}T00:00:00`);
+    const end = new Date(`${dates.end}T00:00:00`);
+    return `${format(start, "d")}–${format(end, "d MMM")}`;
+  }
+
+  if (prefs.dateMode === "flexible") {
+    const month = new Date(2026, prefs.flexibleMonth, 1);
+    return `${prefs.flexibleNights} nights in ${format(month, "MMMM")}`;
+  }
+
   if (!prefs.startDate) return "Any time";
   const start = new Date(`${prefs.startDate}T00:00:00`);
   if (!prefs.endDate) return format(start, "d MMM");
   const end = new Date(`${prefs.endDate}T00:00:00`);
-  const sameMonth = start.getMonth() === end.getMonth();
-  const suffix = prefs.dateMode === "flexible" ? " · flexible" : "";
-  return sameMonth
-    ? `${format(start, "d")}–${format(end, "d MMM")}${suffix}`
-    : `${format(start, "d MMM")} – ${format(end, "d MMM")}${suffix}`;
+  return start.getMonth() === end.getMonth()
+    ? `${format(start, "d")}–${format(end, "d MMM")}`
+    : `${format(start, "d MMM")} – ${format(end, "d MMM")}`;
 }
 
-/** Default end date when the traveller picks only a start. */
-export function defaultEndFor(start: string): string {
-  return format(addDays(new Date(`${start}T00:00:00`), 4), "yyyy-MM-dd");
-}
+export { tripNights };

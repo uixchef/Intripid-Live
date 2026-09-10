@@ -173,7 +173,7 @@ function IdeaCard({
 
         <div className={styles.ideaFoot}>
           {fromAssistant ? (
-            <Tag tone="energy" icon={<Sparkles size={9} strokeWidth={2.4} />}>
+            <Tag tone="brand" icon={<Sparkles size={9} strokeWidth={2.4} />}>
               Suggested
             </Tag>
           ) : author ? (
@@ -204,6 +204,8 @@ export interface DetailsPanelProps {
   onDuplicate: () => void;
   onUnschedule: () => void;
   onToggleAssignee: (travellerId: string) => void;
+  /** Hand the clash to the advisor. Absent where there is nowhere to send it. */
+  onResolveConflict?: () => void;
 }
 
 /**
@@ -222,6 +224,7 @@ export function DetailsPanel({
   onDuplicate,
   onUnschedule,
   onToggleAssignee,
+  onResolveConflict,
 }: DetailsPanelProps) {
   const reduceMotion = useReducedMotion();
   const meta = categoryMeta(item.category);
@@ -265,10 +268,25 @@ export function DetailsPanel({
         {conflicts.length > 0 ? (
           <div className={styles.detailsConflict} role="alert">
             <AlertTriangle size={13} strokeWidth={2.2} />
-            <div>
+            <div className={styles.detailsConflictBody}>
               {conflicts.map((conflict) => (
                 <p key={conflict.message}>{conflict.message}</p>
               ))}
+              {/*
+               * Stating a problem without offering the fix makes the panel a
+               * bystander. This is the same advisor action the day tab and the
+               * rail offer, reached from the card that has the problem.
+               */}
+              {onResolveConflict ? (
+                <button
+                  type="button"
+                  className={styles.detailsConflictAction}
+                  onClick={onResolveConflict}
+                >
+                  <Sparkles size={11} strokeWidth={2.4} aria-hidden />
+                  Ask the advisor to fix it
+                </button>
+              ) : null}
             </div>
           </div>
         ) : null}

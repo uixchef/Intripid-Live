@@ -46,8 +46,28 @@ export const BUDGET_TIERS: readonly BudgetTier[] = [
 /** How far the traveller is willing to go. `open` means "surprise me". */
 export type TripScope = "domestic" | "international" | "open";
 
-/** How the dates were expressed. Flexible dates widen seasonal scoring. */
-export type DateMode = "exact" | "flexible" | "weekend";
+/**
+ * How the dates were expressed. Three modes, restored from the original
+ * product: a specific window, an open month, or "this weekend" — which was
+ * first-class because weekend trips are a quarter of global bookings.
+ */
+export type DateMode = "specific" | "flexible" | "weekend";
+
+/** What "the weekend" means to this traveller. Asked as a clarifying sub-step. */
+export type WeekendShape = "fri-sun" | "sat-mon" | "sat-sun";
+
+/**
+ * Income band, used once per session to normalise what a budget tier means.
+ * Two-layer budget — qualitative posture, quantitatively normalised — was one
+ * of the original product's better ideas. It is always optional and never
+ * blocks the flow.
+ */
+export type IncomeBand =
+  | "under-40"
+  | "40-75"
+  | "75-125"
+  | "125-200"
+  | "over-200";
 
 /**
  * Trip style — the single "what kind of trip is this?" axis. Deliberately kept
@@ -122,10 +142,25 @@ export interface DiscoveryPreferences {
   dateMode: DateMode;
   startDate: string | null;
   endDate: string | null;
+  /** Only meaningful when dateMode is "weekend". */
+  weekendShape: WeekendShape;
+  /** Only meaningful when dateMode is "flexible": 0-indexed month. */
+  flexibleMonth: number;
+  /** Only meaningful when dateMode is "flexible". */
+  flexibleNights: number;
   origin: Origin | null;
+  /** True once the traveller has confirmed the origin pin on the map. */
+  originConfirmed: boolean;
   scope: TripScope | null;
   budget: BudgetTier | null;
+  /** Optional refinement of what the chosen tier means for this traveller. */
+  incomeBand: IncomeBand | null;
+  /**
+   * Must-have experiences. These FILTER: a city that cannot support one is
+   * removed from the running, not merely ranked lower.
+   */
   styles: TripStyle[];
+  /** Preferred activities. These RANK the survivors; they never eliminate. */
   interests: Interest[];
 }
 
@@ -205,6 +240,47 @@ export interface ScoreFactor {
   weight: number;
   /** Human explanation, e.g. "Premium goes a long way here". */
   detail: string;
+}
+
+/**
+ * One hard-filter stage and what it eliminated.
+ *
+ * The original product narrated its filtering with live counts rather than
+ * showing a spinner, and every question was labelled as narrowing or ordering
+ * the results. Both need this data to be real rather than decorative.
+ */
+export interface FilterStage {
+  key: "dates" | "scope" | "reach" | "afford" | "experiences";
+  /** Present tense, what we are doing. */
+  label: string;
+  /** Why it takes a moment. */
+  detail: string;
+  /** How many candidates entered this stage. */
+  entered: number;
+  /** How many this stage eliminated. */
+  removed: number;
+  /** Ids eliminated here, so the map can cull them in the right order. */
+  removedIds: string[];
+}
+
+/**
+ * The full result of a discovery pass: which candidates survived each hard
+ * filter, and the ranked survivors.
+ */
+export interface RecommendationSet {
+  /** Hard-filter stages in execution order. */
+  stages: FilterStage[];
+  /** Survivors, ranked. */
+  ranked: Recommendation[];
+  /** The decisive answer. Exactly three, or fewer if that is the truth. */
+  top: Recommendation[];
+  /** Everything that was eliminated, with the stage that did it. */
+  eliminated: { destination: Destination; stage: FilterStage["key"] }[];
+  /**
+   * True when filtering would have emptied the set and we ranked instead.
+   * Surfaced in the UI — a silent fallback would be dishonest.
+   */
+  relaxed: boolean;
 }
 
 export interface Recommendation {

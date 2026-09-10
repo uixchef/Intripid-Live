@@ -59,7 +59,7 @@
   width: 34px;
   height: 4px;
   border-radius: var(--radius-full);
-  background: var(--paper-300);
+  background: var(--slate-300);
 }
 
 .grabber:active {
@@ -135,13 +135,13 @@
 }
 
 .toast_info {
-  background: var(--paper-900);
-  color: var(--paper-25);
+  background: var(--slate-900);
+  color: var(--slate-25);
 }
 
 .toast_success {
-  background: var(--paper-900);
-  color: var(--paper-25);
+  background: var(--slate-900);
+  color: var(--slate-25);
 }
 
 /* The tone shows as an inset bar rather than a full colour wash, so a
@@ -149,12 +149,12 @@
 .toast_success {
   box-shadow:
     var(--shadow-lg),
-    inset 3px 0 0 var(--success-500);
+    inset 3px 0 0 var(--positive-500);
 }
 
 .toast_warning {
-  background: var(--paper-900);
-  color: var(--paper-25);
+  background: var(--slate-900);
+  color: var(--slate-25);
   box-shadow:
     var(--shadow-lg),
     inset 3px 0 0 var(--warning-500);

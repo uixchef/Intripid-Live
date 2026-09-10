@@ -12,7 +12,6 @@ import {
   gapsForDay,
   itemsForDay,
   layOutDay,
-  routeForDay,
   stayForDay,
   summariseDay,
 } from "@/lib/trip/schedule";
@@ -37,9 +36,11 @@ import styles from "./calendar.module.css";
  * is derived from the trip's items so the grid, the map and the list can never
  * disagree.
  *
- * Departures from the historical execution: no grey Google-Calendar chrome, no
- * pastel-tinted cards, and empty time is a real affordance (drag to create,
- * or take the assistant's suggestion) rather than blank space.
+ * The grid's job is to disappear. Hour rules are near-invisible in isolation
+ * and unmistakable in ranks; day boundaries are one step stronger; nothing
+ * else draws a line. What Intripid adds on top of that familiar geometry is
+ * the reasoning: commutes between stops, free time as a real affordance
+ * rather than blank space, and clashes stated on the two cards that collide.
  */
 
 /** Visible window. Deliberately not 00:00–24:00 — nobody plans at 4am. */
@@ -219,12 +220,6 @@ function DayColumn({
   const laidOut = useMemo(() => layOutDay(items), [items]);
   const conflicts = useMemo(() => conflictIdsForDay(trip, day), [trip, day]);
   const gaps = useMemo(() => gapsForDay(trip, day), [trip, day]);
-  const letters = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const stop of routeForDay(trip, day)) map.set(stop.item.id, stop.letter);
-    return map;
-  }, [trip, day]);
-
   const pxPerMin = hourHeight / 60;
   const toPx = (minutes: number) => (minutes - DAY_START_MIN) * pxPerMin;
 
@@ -331,7 +326,12 @@ function DayColumn({
             item={item}
             trip={trip}
             top={toPx(startMinutes)}
-            height={Math.max(22, (endMinutes - startMinutes) * pxPerMin)}
+            /*
+             * A floor of 26px, not 22: below that an 11px title has nowhere
+             * to sit, and a card you cannot read is worse than one that
+             * slightly overstates its length.
+             */
+            height={Math.max(26, (endMinutes - startMinutes) * pxPerMin)}
             column={column}
             columns={columns}
             selected={selectedItemId === item.id}
@@ -344,7 +344,6 @@ function DayColumn({
               item.kind !== "commute"
             }
             dragging={draggingId === item.id}
-            letter={letters.get(item.id)}
             onSelect={() => onSelect(item.id)}
             onOpen={() => onOpen(item.id)}
             onHover={onHover}
@@ -372,7 +371,6 @@ interface DraggableEventProps {
   warned: boolean;
   dimmed: boolean;
   dragging: boolean;
-  letter?: string;
   onSelect: () => void;
   onOpen: () => void;
   onHover: (id: string | null) => void;
@@ -391,7 +389,6 @@ function DraggableEvent({
   warned,
   dimmed,
   dragging,
-  letter,
   onSelect,
   onOpen,
   onHover,
@@ -409,10 +406,23 @@ function DraggableEvent({
     data: { kind: "item", item },
   });
 
-  // Overlapping items share the column width, inset slightly so the one
-  // behind stays visible and clickable.
-  const widthPct = 100 / columns;
-  const leftPct = column * widthPct;
+  /*
+   * Overlap geometry.
+   *
+   * Equal columns with a small deliberate overlap, rather than the cascade
+   * some calendars use: a cascade hides the start time of everything behind
+   * it, and start time is the one fact a clash is about. The 5% overlap is
+   * what makes the layering visible at all — without it two abutting cards
+   * read as one wide card split by a hairline.
+   *
+   * Whichever card is selected or hovered comes to the front, so you can
+   * always read the whole of the one you are working on.
+   */
+  const step = 100 / columns;
+  const overlapPct = columns > 1 ? 5 : 0;
+  const leftPct = column * step;
+  const widthPct = Math.min(step + overlapPct, 100 - leftPct);
+  const behind = columns > 1 && column < columns - 1;
 
   return (
     <div
@@ -420,9 +430,9 @@ function DraggableEvent({
       style={{
         top,
         height,
-        left: `calc(${leftPct}% + 2px)`,
-        width: `calc(${widthPct}% - ${columns > 1 ? 5 : 4}px)`,
-        zIndex: selected ? 6 : hovered ? 5 : columns > 1 ? 2 + column : 1,
+        left: `calc(${leftPct}% + 1px)`,
+        width: `calc(${widthPct}% - ${columns > 1 ? 3 : 3}px)`,
+        zIndex: selected ? 9 : hovered ? 8 : columns > 1 ? 2 + column : 1,
       }}
       onPointerEnter={() => onHover(item.id)}
       onPointerLeave={() => onHover(null)}
@@ -438,7 +448,7 @@ function DraggableEvent({
         warned={warned}
         dimmed={dimmed}
         dragging={dragging || isDragging}
-        letter={letter}
+        stacked={behind}
         onSelect={onSelect}
         onOpen={onOpen}
         className={styles.eventFill}
@@ -474,7 +484,13 @@ function GapSlot({
 }) {
   const reduceMotion = useReducedMotion();
   const [hovered, setHovered] = useState(false);
-  const roomy = height >= 96;
+  /*
+   * Under 45 minutes a gap is just breathing room between two stops and needs
+   * no label at all — labelling every one of them put "22m free" on the grid
+   * more often than it put activities there.
+   */
+  const worthLabelling = minutes >= 45;
+  const roomy = height >= 92;
 
   return (
     <div
@@ -484,18 +500,18 @@ function GapSlot({
       onPointerLeave={() => setHovered(false)}
     >
       <div className={styles.gapInner}>
-        <span className={styles.gapLabel}>
-          {durationLabel(minutes)} free
-        </span>
+        {worthLabelling ? (
+          <span className={styles.gapLabel}>{durationLabel(minutes)} free</span>
+        ) : null}
 
         <AnimatePresence>
-          {hovered || !roomy ? (
+          {hovered ? (
             <motion.div
               className={styles.gapActions}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 3 }}
-              transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
+              transition={{ duration: reduceMotion ? 0.1 : 0.14 }}
             >
               <button
                 type="button"
@@ -572,8 +588,15 @@ export function DayRail({
             aria-current={isActive}
             className={cn(styles.dayTab, isActive && styles.dayTabActive)}
           >
-            <span className={styles.dayTabTop}>
-              <span className={styles.dayIndex}>Day {index + 1}</span>
+            {/*
+             * Two rows, not four. The previous stack — index, date, count,
+             * bar — spent 110px of vertical space on five headers before a
+             * single hour of the day was visible.
+             */}
+            <span className={styles.dayDate}>
+              <span className={styles.dayWeekday}>{parts.weekday}</span>
+              <span className={cn(styles.dayNum, "tabular")}>{parts.dayNum}</span>
+              <span className={styles.dayMonth}>{parts.month}</span>
               {summary.errorCount > 0 ? (
                 <span className={styles.dayConflict} title="Scheduling clash">
                   {summary.errorCount}
@@ -592,15 +615,13 @@ export function DayRail({
               ) : null}
             </span>
 
-            <span className={styles.dayDate}>
-              <span className={styles.dayWeekday}>{parts.weekday}</span>
-              <span className={cn(styles.dayNum, "tabular")}>{parts.dayNum}</span>
-              <span className={styles.dayMonth}>{parts.month}</span>
-            </span>
-
             <span className={styles.dayMeta}>
+              <span className={styles.dayIndex}>Day {index + 1}</span>
+              <span className={styles.dayMetaDot} aria-hidden>
+                ·
+              </span>
               {activities.length === 0
-                ? "Nothing planned"
+                ? "nothing planned"
                 : `${activities.length} ${activities.length === 1 ? "stop" : "stops"}`}
             </span>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
@@ -13,31 +13,36 @@ import {
   X,
 } from "lucide-react";
 
+import { Hummingbird } from "@/components/brand/hummingbird";
 import { Logo } from "@/components/brand/mark";
 import { Button } from "@/components/ui/button";
 import { NYC_TRIP_ID } from "@/data/nyc-trip";
+import { useIsCompact } from "@/lib/use-media-query";
 import { BUDGET_META, INTEREST_META, STYLE_META } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import {
   DISCOVERY_STEPS,
+  STEP_KIND,
+  STEP_LABEL,
   activeRecommendation,
   canSkipToResults,
   dateSummary,
-  strongMatchCount,
+  survivingCount,
   useDiscovery,
   useDiscoveryApi,
-  type DiscoveryStep,
 } from "@/stores/discovery-store";
 
 import { DiscoveryMap } from "./discovery-map";
+import env from "./environment.module.css";
 import { Processing } from "./processing";
-import { DestinationBrief, ResultsRail } from "./results";
+import { DestinationBrief, Results } from "./results";
 import {
+  ActivitiesStep,
   BudgetStep,
   DatesStep,
-  InterestsStep,
+  ExperiencesStep,
   OriginStep,
-  StyleStep,
+  ScopeStep,
 } from "./steps";
 
 import styles from "./discovery-experience.module.css";
@@ -45,75 +50,57 @@ import styles from "./discovery-experience.module.css";
 /**
  * Destination Discovery.
  *
- * Structure: a full-bleed map canvas with a single console on the left. The
- * console asks one question at a time; the map answers spatially, reframing
- * and re-pinning after every input. That pairing is the argument for the
- * widget-driven approach the original team prototyped against a plain form —
- * on a form, "budget: premium" is a value in a field; here it visibly moves
- * which cities are winning.
+ * A full-screen takeover: the map is the entire canvas, and it lives inside
+ * an Intripid atmosphere rather than a white app chrome. There is no
+ * destination field anywhere here — destination is an output.
  *
- * The escape hatch matters as much as the questions. Results are reachable
- * from step two onward, so the short flow is a genuine offer rather than a
- * shorter questionnaire you still have to finish.
+ * The console sits on the trailing edge as a light frosted panel, which is
+ * where the original product put it and where the environment is deepest, so
+ * the glass has real contrast to sit on. One question at a time, six in all,
+ * each labelled as narrowing or ordering the field.
  */
 
-const STEP_LABELS: Record<DiscoveryStep, string> = {
-  dates: "Dates",
-  origin: "Origin",
-  budget: "Budget",
-  style: "Style",
-  interests: "Interests",
-};
-
 export function DiscoveryExperience() {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion() ?? false;
+  const isCompact = useIsCompact();
   const api = useDiscoveryApi();
 
   const stage = useDiscovery((s) => s.stage);
   const step = useDiscovery((s) => s.step);
+  const subStep = useDiscovery((s) => s.subStep);
   const prefs = useDiscovery((s) => s.prefs);
   const answered = useDiscovery((s) => s.answered);
-  const recommendations = useDiscovery((s) => s.recommendations);
+  const result = useDiscovery((s) => s.result);
   const activeId = useDiscovery((s) => s.activeId);
   const hoveredId = useDiscovery((s) => s.hoveredId);
-  const strongCount = useDiscovery(strongMatchCount);
+  const processingStage = useDiscovery((s) => s.processingStage);
+  const surviving = useDiscovery(survivingCount);
   const canSkip = useDiscovery(canSkipToResults);
   const active = useDiscovery(activeRecommendation);
 
   /** Mobile: whether the map is expanded over the console. */
   const [mapExpanded, setMapExpanded] = useState(false);
 
-  // Entering the flow directly should not sit on the intro stage.
   useEffect(() => {
     if (api.getState().stage === "intro") api.getState().begin();
   }, [api]);
 
   const stepIndex = DISCOVERY_STEPS.indexOf(step);
+  const consoleWidth = active ? 560 : stage === "results" ? 440 : 428;
 
-  /**
-   * How many candidates the map shows. Early on, a full board of pins would
-   * imply more certainty than two answers can support, so the map reveals
-   * more of the field as the traveller tells us more.
+  /*
+   * On a phone the console sits BELOW the map, so it steals no horizontal
+   * room. Feeding it the desktop console width as camera padding asked
+   * Mapbox to reserve 524px on a 390px-wide map, and the fit collapsed onto
+   * whichever two pins survived the clamp — at the opening question that
+   * showed Lisbon and Marrakesh instead of the world.
    */
-  const visibleCount = useMemo(() => {
-    if (stage === "results") return recommendations.length;
-    if (answered.length <= 1) return 3;
-    if (answered.length === 2) return 5;
-    return recommendations.length;
-  }, [stage, answered.length, recommendations.length]);
-
-  const topDailyByTier = recommendations[0]?.destination.dailyBudgetUsd ?? null;
-
-  const consoleWidth = active ? 560 : stage === "results" ? 440 : 420;
+  const mapInsetRight = isCompact ? 0 : consoleWidth;
 
   const handleSelect = useCallback(
     (id: string) => {
       const state = api.getState();
-      if (state.stage !== "results") {
-        // Selecting a pin mid-flow is a legitimate shortcut: show results with
-        // that destination open rather than ignoring the click.
-        state.showResults();
-      }
+      if (state.stage !== "results") state.showResults();
       state.setActive(id);
       setMapExpanded(false);
     },
@@ -125,100 +112,136 @@ export function DiscoveryExperience() {
     [api],
   );
 
+  /* The sub-step gates change what the primary action means. */
+  const primaryLabel =
+    subStep === "income"
+      ? "Use this"
+      : subStep === "weekend-shape"
+        ? "That's the one"
+        : stepIndex === DISCOVERY_STEPS.length - 1
+          ? "Find my matches"
+          : "Continue";
+
+  /* Origin confirmation owns its own buttons, so hide the generic nav. */
+  const hideNav = step === "origin" && subStep === "confirm-origin";
+
   return (
-    <div className={styles.root}>
-      {/* -------------------------------------------------------------- */}
-      {/* Top bar                                                        */}
-      {/* -------------------------------------------------------------- */}
+    <div className={cn(styles.root, env.root, "onEnv")}>
+      {/* The Intripid world the map lives inside. */}
+      <div className={env.atmosphere} aria-hidden />
+      <div className={env.grain} aria-hidden />
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Top bar — floats on the environment, not a solid app header       */}
+      {/* ---------------------------------------------------------------- */}
       <header className={styles.topbar}>
         <Link href="/" className={styles.brand} aria-label="Intripid home">
-          <Logo size={19} />
+          <Logo size={20} />
         </Link>
 
-        <div className={styles.topbarCentre}>
-          {stage === "questions" ? (
-            <ol className={styles.stepper} aria-label="Discovery progress">
-              {DISCOVERY_STEPS.map((item, index) => {
-                const isDone = answered.includes(item);
-                const isCurrent = item === step;
-                return (
-                  <li key={item}>
-                    <button
-                      type="button"
-                      className={cn(
-                        styles.stepPip,
-                        isCurrent && styles.stepPipCurrent,
-                        isDone && !isCurrent && styles.stepPipDone,
+        {stage === "questions" ? (
+          <ol className={styles.stepper} aria-label="Progress">
+            {DISCOVERY_STEPS.map((item, index) => {
+              const isDone = answered.includes(item);
+              const isCurrent = item === step;
+              return (
+                <li key={item}>
+                  <button
+                    type="button"
+                    className={cn(
+                      styles.pip,
+                      isCurrent && styles.pipCurrent,
+                      isDone && !isCurrent && styles.pipDone,
+                    )}
+                    onClick={() => api.getState().goToStep(item)}
+                    aria-current={isCurrent}
+                    title={`${STEP_LABEL[item]} — ${
+                      STEP_KIND[item] === "filter"
+                        ? "narrows results"
+                        : "orders results"
+                    }`}
+                  >
+                    <span className={styles.pipDot} aria-hidden>
+                      {isDone && !isCurrent ? (
+                        <Check size={9} strokeWidth={3.6} />
+                      ) : (
+                        index + 1
                       )}
-                      onClick={() => api.getState().goToStep(item)}
-                      aria-current={isCurrent}
-                    >
-                      <span className={styles.stepPipDot} aria-hidden>
-                        {isDone && !isCurrent ? (
-                          <Check size={9} strokeWidth={3.4} />
-                        ) : (
-                          index + 1
-                        )}
-                      </span>
-                      <span className={styles.stepPipLabel}>
-                        {STEP_LABELS[item]}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-          ) : stage === "results" ? (
-            <p className={styles.topbarTitle}>
-              {active ? active.destination.name : "Your matches"}
-            </p>
-          ) : null}
-        </div>
+                    </span>
+                    <span className={styles.pipLabel}>{STEP_LABEL[item]}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <p className={styles.topbarTitle}>
+            {stage === "processing"
+              ? "Searching"
+              : active
+                ? active.destination.name
+                : "Your matches"}
+          </p>
+        )}
 
         <div className={styles.topbarEnd}>
+          {/* A live count of what is still in the running. */}
+          {stage === "questions" ? (
+            <span className={styles.liveCount} aria-live="polite">
+              <span className={cn(styles.liveNumber, "tabular")}>
+                {surviving}
+              </span>
+              still in the running
+            </span>
+          ) : null}
           {stage === "results" ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              iconLeft={<SlidersHorizontal size={13} strokeWidth={2} />}
+            <button
+              type="button"
+              className={styles.envButton}
               onClick={() => {
                 api.getState().setActive(null);
-                api.getState().goToStep("style");
+                api.getState().goToStep("experiences");
               }}
             >
+              <SlidersHorizontal size={13} strokeWidth={2.1} />
               Adjust
-            </Button>
+            </button>
           ) : null}
-          {/* A link, not a button-in-link: nesting interactive elements is invalid. */}
           <Link href="/" className={styles.exitLink} aria-label="Leave discovery">
-            <X size={15} strokeWidth={2} />
+            <X size={15} strokeWidth={2.2} />
           </Link>
         </div>
       </header>
 
-      {/* -------------------------------------------------------------- */}
-      {/* Canvas                                                         */}
-      {/* -------------------------------------------------------------- */}
+      {/* ---------------------------------------------------------------- */}
+      {/* Canvas                                                            */}
+      {/* ---------------------------------------------------------------- */}
       <div className={styles.body}>
         <div
-          className={cn(styles.mapWrap, mapExpanded && styles.mapWrapExpanded)}
+          className={cn(
+            styles.mapWrap,
+            env.well,
+            mapExpanded && styles.mapWrapExpanded,
+          )}
         >
           <DiscoveryMap
             stage={stage}
             step={step}
             origin={prefs.origin?.coords ?? null}
             originLabel={prefs.origin?.city ?? null}
-            recommendations={recommendations}
-            visibleCount={visibleCount}
+            originConfirmed={prefs.originConfirmed}
+            result={result}
+            processingStage={processingStage}
             activeId={activeId}
             hoveredId={hoveredId}
             onSelect={handleSelect}
             onHover={handleHover}
-            insetLeft={consoleWidth}
+            insetRight={mapInsetRight}
+            reduceMotion={reduceMotion}
           />
+          <div className={env.wellVignette} aria-hidden />
         </div>
 
-        {/* Mobile map/console toggle */}
         <button
           type="button"
           className={styles.mapToggle}
@@ -237,14 +260,36 @@ export function DiscoveryExperience() {
           )}
         </button>
 
+        {/* -------------------------------------------------------------- */}
+        {/* Console — trailing edge, light frosted glass                    */}
+        {/* -------------------------------------------------------------- */}
         <motion.aside
-          className={cn(styles.console, mapExpanded && styles.consoleHidden)}
+          className={cn(
+            styles.console,
+            env.glass,
+            /*
+             * The console wraps its content rather than running the full
+             * height of the well in the two stages that do not fill it.
+             *
+             * At results: three cards and a ruled-out list do not fill 780px,
+             * and a panel with 380px of empty glass under it reads as an
+             * unfinished layout rather than as breathing room.
+             *
+             * While searching it earns something better than tidiness — the
+             * panel grows by one line as each stage of reasoning lands, so
+             * the search visibly accumulates instead of sitting inside a
+             * fixed frame waiting to be filled.
+             */
+            ((stage === "results" && !active) || stage === "processing") &&
+              styles.consoleFit,
+            mapExpanded && styles.consoleHidden,
+          )}
           animate={{ width: consoleWidth }}
           initial={false}
           transition={
             reduceMotion
               ? { duration: 0 }
-              : { duration: 0.34, ease: [0.2, 0.8, 0.2, 1] }
+              : { duration: 0.26, ease: [0.2, 0, 0, 1] }
           }
         >
           {/* Answered summary — state you can see and jump back into. */}
@@ -282,7 +327,7 @@ export function DiscoveryExperience() {
                   key={style}
                   type="button"
                   className={styles.summaryChip}
-                  onClick={() => api.getState().goToStep("style")}
+                  onClick={() => api.getState().goToStep("experiences")}
                 >
                   {STYLE_META[style].label}
                 </button>
@@ -291,7 +336,7 @@ export function DiscoveryExperience() {
                 <button
                   type="button"
                   className={styles.summaryChip}
-                  onClick={() => api.getState().goToStep("style")}
+                  onClick={() => api.getState().goToStep("experiences")}
                 >
                   +{prefs.styles.length - 2}
                 </button>
@@ -299,31 +344,39 @@ export function DiscoveryExperience() {
               {prefs.interests.length > 0 ? (
                 <button
                   type="button"
-                  className={styles.summaryChip}
-                  onClick={() => api.getState().goToStep("interests")}
+                  className={cn(styles.summaryChip, styles.summaryChipYours)}
+                  onClick={() => api.getState().goToStep("activities")}
                 >
                   {prefs.interests.length === 1
                     ? INTEREST_META[prefs.interests[0]].label
-                    : `${prefs.interests.length} interests`}
+                    : `${prefs.interests.length} activities`}
                 </button>
               ) : null}
             </div>
           ) : null}
 
-          <div className={styles.consoleScroll}>
+          <div
+            className={cn(
+              styles.consoleScroll,
+              active && styles.consoleScrollBrief,
+            )}
+          >
             <AnimatePresence mode="wait" initial={false}>
               {stage === "processing" ? (
                 <motion.div
                   key="processing"
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
-                  transition={{ duration: reduceMotion ? 0.12 : 0.26 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: reduceMotion ? 0.1 : 0.2 }}
                 >
                   <Processing
                     prefs={prefs}
-                    recommendations={recommendations}
+                    result={result}
+                    stage={processingStage}
+                    onAdvance={() => api.getState().advanceProcessing()}
                     onDone={() => api.getState().showResults()}
+                    reduceMotion={reduceMotion}
                   />
                 </motion.div>
               ) : stage === "results" && active ? (
@@ -331,60 +384,103 @@ export function DiscoveryExperience() {
                   key={`brief-${active.destination.id}`}
                   recommendation={active}
                   prefs={prefs}
+                  top={result.top}
                   onBack={() => api.getState().setActive(null)}
-                  tripId={active.destination.id === "nyc" ? NYC_TRIP_ID : null}
+                  onSelect={(id) => api.getState().setActive(id)}
+                  tripId={
+                    active.destination.id === "nyc" ? NYC_TRIP_ID : null
+                  }
                 />
               ) : stage === "results" ? (
                 <motion.div
                   key="results"
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
-                  transition={{ duration: reduceMotion ? 0.12 : 0.28 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: reduceMotion ? 0.1 : 0.22 }}
                 >
-                  <ResultsRail
-                    recommendations={recommendations}
+                  <Results
+                    result={result}
                     activeId={activeId}
                     hoveredId={hoveredId}
                     onSelect={handleSelect}
                     onHover={handleHover}
+                    onAdjust={() => api.getState().goToStep("experiences")}
                   />
                 </motion.div>
               ) : (
                 <motion.div
-                  key={step}
-                  initial={{ opacity: 0, x: 18 }}
+                  key={`${step}-${subStep ?? "main"}`}
+                  initial={{ opacity: 0, x: 14 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -18 }}
-                  transition={{ duration: reduceMotion ? 0.12 : 0.26, ease: [0.2, 0.8, 0.2, 1] }}
+                  exit={{ opacity: 0, x: -14 }}
+                  transition={{
+                    duration: reduceMotion ? 0.1 : 0.2,
+                    ease: [0.2, 0, 0, 1],
+                  }}
                 >
                   {step === "dates" ? (
                     <DatesStep
                       prefs={prefs}
+                      subStep={subStep}
                       onModeChange={(mode) => api.getState().setDateMode(mode)}
                       onDatesChange={(start, end) =>
                         api.getState().setDates(start, end)
                       }
+                      onWeekendShape={(shape) =>
+                        api.getState().setWeekendShape(shape)
+                      }
+                      onFlexible={(month, nights) =>
+                        api.getState().setFlexible(month, nights)
+                      }
+                    />
+                  ) : step === "scope" ? (
+                    <ScopeStep
+                      prefs={prefs}
+                      onScopeChange={(scope) => api.getState().setScope(scope)}
                     />
                   ) : step === "origin" ? (
                     <OriginStep
                       prefs={prefs}
-                      onOriginChange={(origin) => api.getState().setOrigin(origin)}
-                      onScopeChange={(scope) => api.getState().setScope(scope)}
+                      subStep={subStep}
+                      onOriginChange={(origin) =>
+                        api.getState().setOrigin(origin)
+                      }
+                      onConfirm={() => api.getState().confirmOrigin()}
+                      onReopen={() => api.getState().reopenOrigin()}
                     />
                   ) : step === "budget" ? (
                     <BudgetStep
                       prefs={prefs}
-                      topDailyByTier={topDailyByTier}
-                      onBudgetChange={(budget) => api.getState().setBudget(budget)}
+                      subStep={subStep}
+                      topDailyByTier={
+                        result.ranked[0]?.destination.dailyBudgetUsd ?? null
+                      }
+                      onBudgetChange={(budget) =>
+                        api.getState().setBudget(budget)
+                      }
+                      onIncomeBand={(band) =>
+                        api.getState().setIncomeBand(band)
+                      }
+                      onSkipIncome={() => {
+                        api.getState().setIncomeBand(null);
+                        api.getState().setSubStep(null);
+                        api.getState().next();
+                      }}
                     />
-                  ) : step === "style" ? (
-                    <StyleStep
+                  ) : step === "experiences" ? (
+                    <ExperiencesStep
                       prefs={prefs}
-                      onToggleStyle={(style) => api.getState().toggleStyle(style)}
+                      removedCount={
+                        result.stages.find((s) => s.key === "experiences")
+                          ?.removed ?? 0
+                      }
+                      onToggleStyle={(style) =>
+                        api.getState().toggleStyle(style)
+                      }
                     />
                   ) : (
-                    <InterestsStep
+                    <ActivitiesStep
                       prefs={prefs}
                       onToggleInterest={(interest) =>
                         api.getState().toggleInterest(interest)
@@ -397,56 +493,67 @@ export function DiscoveryExperience() {
           </div>
 
           {/*
-           * The live front-runners. This is the whole argument for asking
-           * questions on a map instead of in a form: the answer is already
-           * forming, and you can watch your last input move it.
+           * The console is full height, and the early questions are short. On
+           * the very first one that space carries the product's premise — a
+           * low-information moment, which is exactly where the character is
+           * allowed. From the second question on it carries the live
+           * front-runners, so every answer visibly moves the answer.
            */}
-          {stage === "questions" && answered.length >= 1 && !active ? (
-            <div className={styles.liveMatches}>
-              <div className={styles.liveHead}>
-                <span className="eyebrow">Leading right now</span>
-                <span className={styles.liveCount}>
-                  {strongCount > 0
-                    ? `${strongCount} strong`
-                    : `${recommendations.length} candidates`}
-                </span>
+          {stage === "questions" && subStep === null ? (
+            answered.length === 0 ? (
+              <div className={styles.premise}>
+                <Hummingbird mood="curious" size={52} className={styles.premiseBird} />
+                <p className={styles.premiseText}>
+                  We&rsquo;ll never ask where you want to go. That&rsquo;s the
+                  answer, not the question.
+                </p>
               </div>
-              <ol className={styles.liveList}>
-                {recommendations.slice(0, 3).map((recommendation) => (
-                  <li key={recommendation.destination.id}>
-                    <button
-                      type="button"
-                      className={styles.liveItem}
-                      onPointerEnter={() =>
-                        handleHover(recommendation.destination.id)
-                      }
-                      onPointerLeave={() => handleHover(null)}
-                      onClick={() => handleSelect(recommendation.destination.id)}
-                    >
-                      <span className={cn(styles.liveRank, "tabular")}>
-                        {recommendation.rank}
-                      </span>
-                      <span className={styles.liveName}>
-                        {recommendation.destination.name}
-                      </span>
-                      <span className={cn(styles.liveScore, "tabular")}>
-                        {Math.round(recommendation.score)}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            ) : (
+              <div className={styles.leaders}>
+                <div className={styles.leadersHead}>
+                  <span className={styles.leadersLabel}>Leading right now</span>
+                  <span className={styles.leadersCount}>
+                    {surviving} in the running
+                  </span>
+                </div>
+                <ol className={styles.leadersList}>
+                  {result.ranked.slice(0, 3).map((recommendation, index) => (
+                    <li key={recommendation.destination.id}>
+                      <button
+                        type="button"
+                        className={styles.leader}
+                        onPointerEnter={() =>
+                          handleHover(recommendation.destination.id)
+                        }
+                        onPointerLeave={() => handleHover(null)}
+                        onClick={() =>
+                          handleSelect(recommendation.destination.id)
+                        }
+                      >
+                        <span className={cn(styles.leaderRank, "tabular")}>
+                          {index + 1}
+                        </span>
+                        <span className={styles.leaderName}>
+                          {recommendation.destination.name}
+                        </span>
+                        <span className={cn(styles.leaderScore, "tabular")}>
+                          {Math.round(recommendation.score)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )
           ) : null}
 
-          {/* Question navigation */}
-          {stage === "questions" ? (
+          {stage === "questions" && !hideNav ? (
             <footer className={styles.consoleFooter}>
               <div className={styles.navRow}>
                 <Button
                   variant="ghost"
                   size="md"
-                  iconLeft={<ArrowLeft size={14} strokeWidth={2} />}
+                  iconLeft={<ArrowLeft size={14} strokeWidth={2.1} />}
                   onClick={() => api.getState().back()}
                 >
                   Back
@@ -454,32 +561,30 @@ export function DiscoveryExperience() {
                 <Button
                   variant="primary"
                   size="md"
-                  iconRight={<ArrowRight size={14} strokeWidth={2} />}
+                  iconRight={<ArrowRight size={14} strokeWidth={2.1} />}
                   onClick={() => api.getState().next()}
                 >
-                  {stepIndex === DISCOVERY_STEPS.length - 1
-                    ? "See matches"
-                    : "Continue"}
+                  {primaryLabel}
                 </Button>
               </div>
 
               {/*
-               * The reason a five-step flow is honest: you can leave at any
-               * point and still get a real answer.
+               * The escape hatch. A short flow is only honest if you can leave
+               * it at any point and still get a real answer.
                */}
-              {canSkip && stepIndex < DISCOVERY_STEPS.length - 1 ? (
+              {canSkip &&
+              stepIndex < DISCOVERY_STEPS.length - 1 &&
+              subStep === null ? (
                 <button
                   type="button"
                   className={styles.skip}
                   onClick={() => api.getState().startProcessing()}
                 >
-                  <span className={styles.skipCount}>
-                    {strongCount > 0 ? strongCount : recommendations.length}
+                  <span className={cn(styles.skipCount, "tabular")}>
+                    {surviving}
                   </span>
                   <span className={styles.skipLabel}>
-                    {strongCount > 0
-                      ? `strong ${strongCount === 1 ? "match" : "matches"} already — skip ahead`
-                      : "candidates so far — skip ahead"}
+                    places still fit — show me the best three now
                   </span>
                   <ChevronRight size={14} strokeWidth={2.2} />
                 </button>

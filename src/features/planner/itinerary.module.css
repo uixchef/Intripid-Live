@@ -9,6 +9,13 @@
    * fills the space it is given.
    */
   max-width: 60rem;
+  /*
+   * Centred inside the panel. Left-aligned, the cap left a 140px dead strip
+   * against the rail that read as an unfinished layout rather than as a
+   * measure.
+   */
+  margin-inline: auto;
+  width: 100%;
   padding: var(--space-10);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -34,7 +41,7 @@
 }
 
 .dayTitle {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--text-2xl);
   line-height: 1.1;
   letter-spacing: var(--tracking-tight);
@@ -104,7 +111,7 @@
   flex: none;
   width: 0;
   align-self: stretch;
-  border-left: 1px dashed var(--paper-300);
+  border-left: 1px dashed var(--slate-300);
   margin-left: 0;
 }
 
@@ -143,9 +150,9 @@
   cursor: pointer;
   min-width: 0;
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out);
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
 }
 
 .stop:hover,
@@ -155,9 +162,9 @@
 }
 
 .stopSelected {
-  border-color: var(--brand-500);
+  border-color: var(--purple-500);
   box-shadow:
-    0 0 0 1px var(--brand-500),
+    0 0 0 1px var(--purple-500),
     var(--shadow-md);
 }
 
@@ -176,7 +183,7 @@
   margin-top: 1px;
   border-radius: var(--radius-full);
   background: var(--cat-color);
-  color: var(--paper-0);
+  color: var(--slate-0);
   font-size: 10px;
   font-weight: var(--weight-bold);
   line-height: 1;
@@ -211,7 +218,7 @@
   line-height: var(--lh-snug);
   min-width: 0;
   /* Long venue names wrap rather than clip in the list view. */
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .stopWarn {
@@ -231,9 +238,9 @@
   cursor: pointer;
   opacity: 0;
   transition:
-    opacity var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+    opacity var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
 }
 
 .stop:hover .stopMore,
@@ -270,7 +277,7 @@
 
 .stopPlace span {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .stopMeta {
@@ -307,7 +314,7 @@
   margin-top: var(--space-2);
   border-radius: var(--radius-sm);
   background: var(--bg-surface-sunken);
-  border-left: 2px solid var(--paper-300);
+  border-left: 2px solid var(--slate-300);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -319,8 +326,8 @@
   gap: var(--space-6);
   padding: var(--space-7);
   border-radius: var(--radius-lg);
-  background: var(--energy-50);
-  border: 1px solid var(--energy-100);
+  background: var(--purple-50);
+  border: 1px solid var(--purple-100);
 }
 
 .gapCopy {
@@ -331,14 +338,14 @@
 .gapTitle {
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
-  color: var(--energy-900);
+  color: var(--purple-900);
   letter-spacing: var(--tracking-tight);
 }
 
 .gapBody {
   font-size: var(--text-xs);
   line-height: var(--lh-relaxed);
-  color: var(--energy-800);
+  color: var(--purple-800);
   opacity: 0.86;
 }
 
@@ -373,8 +380,8 @@
 }
 
 .emptyTitle {
-  font-family: var(--font-serif);
-  font-size: var(--text-xl);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
 }
@@ -426,18 +433,22 @@
   }
 }
 
-/* Warning-level issues stay on paper; only real errors get the danger wash. */
+/*
+ * Warning-level issues stay on paper; only real errors get the danger wash.
+ * These use the warning ramp rather than the orange ramp: orange means origin
+ * and departure in this palette, and one hue cannot mean two things.
+ */
 .stopWarned {
-  border-color: var(--energy-200);
+  border-color: var(--warning-100);
 }
 
 .stopWarnAmber {
-  color: var(--energy-600);
+  color: var(--warning-600);
 }
 
 /* Warnings-only: same shape, calmer colour. */
 .conflictBannerAdvisory {
-  background: var(--energy-50);
-  border-color: var(--energy-100);
-  color: var(--energy-800);
+  background: var(--warning-50);
+  border-color: var(--warning-100);
+  color: var(--warning-700);
 }

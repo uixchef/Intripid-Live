@@ -1,6 +1,13 @@
+/*
+ * Question surfaces. These sit on glass inside the discovery environment, so
+ * every value assumes a near-white translucent panel over saturated colour:
+ * borders are a little stronger than in the planner, and selected fills lean
+ * on the purple family rather than neutral grey.
+ */
+
 .step {
   display: grid;
-  gap: var(--space-10);
+  gap: var(--space-8);
   align-content: start;
 }
 
@@ -9,13 +16,62 @@
   gap: var(--space-3);
 }
 
+.stepMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.ordinal {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--purple-700);
+}
+
+/*
+ * The filter/rank badge — the core algorithmic IA made visible. An answer
+ * either eliminates candidates or merely sorts them, and the traveller should
+ * never have to guess which.
+ */
+.kind {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+}
+
+.kindFilter {
+  background: var(--purple-100);
+  color: var(--purple-800);
+}
+
+.kindRank {
+  background: var(--teal-100);
+  color: var(--teal-800);
+}
+
+.optional {
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  color: var(--text-quaternary);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* The question itself is one of the few places display type earns its keep. */
 .stepTitle {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--text-3xl);
-  line-height: 1.08;
+  line-height: 1.06;
   letter-spacing: var(--tracking-tight);
   color: var(--text-primary);
-  /* Serif display sits high; pull it back onto the eyebrow's baseline grid. */
   margin-top: -0.06em;
   text-wrap: balance;
 }
@@ -23,21 +79,13 @@
 .stepWhy {
   font-size: var(--text-sm);
   line-height: var(--lh-relaxed);
-  color: var(--text-tertiary);
-  max-width: 34ch;
+  color: var(--text-secondary);
+  max-width: 38ch;
 }
 
 .stepBody {
   display: grid;
-  gap: var(--space-8);
-}
-
-.subLabel {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  color: var(--text-secondary);
-  letter-spacing: var(--tracking-tight);
-  margin-bottom: var(--space-4);
+  gap: var(--space-7);
 }
 
 .readout {
@@ -54,49 +102,198 @@
   color: var(--text-primary);
 }
 
-.readoutIcon {
+.skipLink {
+  justify-self: start;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--purple-700);
+  padding: var(--space-2) 0;
+  cursor: pointer;
+  border-bottom: 1px solid var(--purple-200);
+  transition: color var(--dur-micro) var(--ease-out);
+}
+
+.skipLink:hover {
+  color: var(--purple-800);
+  border-bottom-color: var(--purple-400);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Rows — the single-select list pattern                                     */
+/* ------------------------------------------------------------------------- */
+
+.stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.66);
+  cursor: pointer;
+  min-width: 0;
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.rowTight {
+  padding: var(--space-5) var(--space-6);
+}
+
+.row:hover {
+  border-color: var(--purple-300);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.rowOn {
+  border-color: var(--purple-500);
+  background: var(--purple-50);
+  box-shadow: 0 0 0 1px var(--purple-500);
+}
+
+.rowIcon {
+  display: grid;
+  place-items: center;
   flex: none;
-  color: var(--energy-500);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--slate-100);
+  color: var(--text-tertiary);
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.rowOn .rowIcon {
+  background: var(--purple-600);
+  color: var(--slate-0);
+}
+
+.rowBody {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rowTitle {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.rowBlurb {
+  font-size: var(--text-xs);
+  line-height: var(--lh-snug);
+  color: var(--text-tertiary);
+}
+
+.rowOn .rowBlurb {
+  color: var(--purple-700);
+}
+
+.rowCheck {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-strong);
+  color: transparent;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.rowOn .rowCheck {
+  background: var(--purple-600);
+  border-color: var(--purple-600);
+  color: var(--slate-0);
 }
 
 /* ------------------------------------------------------------------------- */
 /* Dates                                                                     */
 /* ------------------------------------------------------------------------- */
 
-.dateRow {
+.pairRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-6);
+  gap: var(--space-5);
 }
 
-.weekendNote {
+.select {
+  height: 34px;
+  width: 100%;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--slate-0);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  min-width: 0;
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.select:hover {
+  border-color: var(--border-strong);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--purple-500);
+  box-shadow: 0 0 0 3px var(--purple-100);
+}
+
+.note {
   display: flex;
   gap: var(--space-5);
   padding: var(--space-6);
   border-radius: var(--radius-lg);
-  background: var(--accent-50);
-  border: 1px solid var(--accent-100);
+  background: var(--teal-50);
+  border: 1px solid var(--teal-100);
 }
 
-.weekendNote svg {
+.noteIcon {
+  display: grid;
+  place-items: center;
   flex: none;
-  color: var(--accent-600);
-  margin-top: 1px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-md);
+  background: var(--slate-0);
+  color: var(--teal-600);
+  border: 1px solid var(--teal-100);
 }
 
-.weekendTitle {
+.noteTitle {
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
-  color: var(--accent-900);
+  color: var(--teal-900);
   letter-spacing: var(--tracking-tight);
 }
 
-.weekendBody {
+.noteBody {
   font-size: var(--text-xs);
   line-height: var(--lh-normal);
-  color: var(--accent-800);
+  color: var(--teal-800);
   margin-top: 2px;
-  opacity: 0.85;
+  opacity: 0.86;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -110,33 +307,45 @@
 }
 
 .originItem {
+  position: relative;
   display: grid;
   gap: 1px;
   text-align: left;
   padding: var(--space-5) var(--space-6);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
-  background: var(--bg-surface-raised);
+  background: rgba(255, 255, 255, 0.66);
   cursor: pointer;
-  box-shadow: var(--shadow-xs);
   min-width: 0;
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-hover);
+    border-color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
 }
 
 .originItem:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-1px);
+  border-color: var(--purple-300);
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .originItemOn {
-  border-color: var(--brand-500);
-  background: var(--brand-50);
-  box-shadow:
-    var(--shadow-xs),
-    0 0 0 1px var(--brand-500);
+  border-color: var(--purple-500);
+  background: var(--purple-50);
+  box-shadow: 0 0 0 1px var(--purple-500);
+}
+
+/*
+ * A saved address is called out: the original product made the known-origin
+ * path materially shorter, and that should be visible.
+ */
+.savedTag {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-4);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--teal-700);
 }
 
 .originCity {
@@ -158,11 +367,75 @@
 }
 
 .originItemOn .originCountry {
-  color: var(--brand-700);
+  color: var(--purple-700);
 }
 
-.scopeBlock {
-  padding-top: var(--space-2);
+.addAddress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  grid-column: 1 / -1;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-quaternary);
+  cursor: default;
+}
+
+/* Origin confirmation */
+
+.confirmCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--orange-50);
+  border: 1px solid var(--orange-200);
+}
+
+/* Orange is the origin colour: the beak, the part that points. */
+.confirmPin {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--orange-500);
+  color: var(--slate-0);
+  box-shadow: 0 0 0 3px var(--orange-100);
+}
+
+.confirmBody {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.confirmCity {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--orange-900);
+  letter-spacing: var(--tracking-tight);
+}
+
+.confirmCountry {
+  font-size: var(--text-xs);
+  color: var(--orange-800);
+  opacity: 0.8;
+}
+
+.confirmActions {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.confirmActions > * {
+  flex: 1;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -175,95 +448,244 @@
   gap: var(--space-4);
 }
 
+.budgetCard {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.66);
+  cursor: pointer;
+  min-width: 0;
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
+}
+
+.budgetCard:hover {
+  border-color: var(--purple-300);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.budgetCardOn {
+  border-color: var(--purple-500);
+  background: var(--purple-50);
+  box-shadow: 0 0 0 1px var(--purple-500);
+}
+
+.budgetTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.budgetName {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+}
+
+.budgetRate {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  flex: none;
+}
+
+.budgetCardOn .budgetRate {
+  color: var(--purple-700);
+}
+
+.budgetBlurb {
+  font-size: var(--text-xs);
+  line-height: var(--lh-snug);
+  color: var(--text-tertiary);
+}
+
+.budgetCardOn .budgetBlurb {
+  color: var(--purple-700);
+}
+
 /* ------------------------------------------------------------------------- */
-/* Style                                                                     */
+/* Experiences — verb-led, with definitions                                  */
 /* ------------------------------------------------------------------------- */
 
-.styleGrid {
+.experienceGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
-.styleCard {
-  display: grid;
-  gap: 2px;
+.expCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
   text-align: left;
-  padding: var(--space-5) var(--space-6);
+  padding: var(--space-5);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
-  background: var(--bg-surface-raised);
+  background: rgba(255, 255, 255, 0.66);
   cursor: pointer;
-  box-shadow: var(--shadow-xs);
   min-width: 0;
-  position: relative;
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-hover);
+    border-color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
 }
 
-.styleCard:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-1px);
+.expCard:hover {
+  border-color: var(--purple-300);
+  background: rgba(255, 255, 255, 0.88);
 }
 
-.styleCardOn {
-  border-color: var(--brand-500);
-  background: var(--brand-50);
-  box-shadow:
-    var(--shadow-xs),
-    0 0 0 1px var(--brand-500);
+.expCardOn {
+  border-color: var(--purple-500);
+  background: var(--purple-50);
+  box-shadow: 0 0 0 1px var(--purple-500);
 }
 
-.styleTitle {
-  font-size: var(--text-base);
+.expCheck {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border-radius: var(--radius-xs);
+  border: 1.5px solid var(--border-strong);
+  color: transparent;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.expCardOn .expCheck {
+  background: var(--purple-600);
+  border-color: var(--purple-600);
+  color: var(--slate-0);
+}
+
+.expBody {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.expTitle {
+  font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
 }
 
-.styleBlurb {
+.expBlurb {
   font-size: var(--text-2xs);
   line-height: var(--lh-snug);
   color: var(--text-tertiary);
 }
 
-.styleCardOn .styleBlurb {
-  color: var(--brand-700);
+.expCardOn .expBlurb {
+  color: var(--purple-700);
 }
 
 /* ------------------------------------------------------------------------- */
-/* Interests                                                                 */
+/* Activities — grouped chips                                                */
 /* ------------------------------------------------------------------------- */
 
-.interestWrap {
+.activityGroups {
+  display: grid;
+  gap: var(--space-7);
+}
+
+.activityGroup {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.groupLabel {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+.chipWrap {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
 }
 
+.activityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.activityChip:hover {
+  border-color: var(--teal-300);
+  background: var(--slate-0);
+  color: var(--text-primary);
+}
+
+/*
+ * Teal, not purple. Activities are YOUR data — the thing you chose — and the
+ * palette's purple-versus-teal split is system-versus-you.
+ */
+.activityChipOn {
+  background: var(--teal-600);
+  border-color: var(--teal-600);
+  color: var(--slate-0);
+}
+
+.activityChipOn:hover {
+  background: var(--teal-700);
+  border-color: var(--teal-700);
+  color: var(--slate-0);
+}
+
 /* ------------------------------------------------------------------------- */
-/* Narrow console                                                            */
+/* Narrow                                                                    */
 /* ------------------------------------------------------------------------- */
 
-@media (max-width: 460px) {
+@media (max-width: 520px) {
   .stepTitle {
     font-size: var(--text-2xl);
   }
 
-  .dateRow,
+  .pairRow,
   .originGrid,
   .budgetGrid,
-  .styleGrid {
+  .experienceGrid {
     grid-template-columns: 1fr;
   }
 }
 
-/* At 320px the option cards' glyph + text + meta row needs to give way. */
-@media (max-width: 340px) {
+@media (max-width: 360px) {
+  .row,
   .originItem,
-  .styleCard {
-    padding: var(--space-4) var(--space-5);
+  .budgetCard {
+    padding: var(--space-5);
   }
 }

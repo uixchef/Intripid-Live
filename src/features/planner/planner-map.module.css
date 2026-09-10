@@ -17,7 +17,7 @@
   gap: var(--space-3);
   cursor: pointer;
   transform-origin: bottom center;
-  transition: opacity var(--dur-fast) var(--ease-out);
+  transition: opacity var(--dur-micro) var(--ease-out);
 }
 
 .stopLetter {
@@ -27,8 +27,8 @@
   width: 22px;
   height: 22px;
   border-radius: var(--radius-full);
-  background: var(--stop-color, var(--brand-600));
-  color: var(--paper-0);
+  background: var(--stop-color, var(--purple-600));
+  color: var(--slate-0);
   font-size: 11px;
   font-weight: var(--weight-bold);
   line-height: 1;
@@ -36,9 +36,9 @@
     0 0 0 2px var(--map-pin-ring),
     var(--shadow-md);
   transition:
-    width var(--dur-fast) var(--ease-hover),
-    height var(--dur-fast) var(--ease-hover),
-    box-shadow var(--dur-fast) var(--ease-out);
+    width var(--dur-micro) var(--ease-out),
+    height var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
 }
 
 .stopSelected .stopLetter {
@@ -69,8 +69,8 @@
   gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  background: var(--paper-900);
-  color: var(--paper-25);
+  background: var(--slate-900);
+  color: var(--slate-25);
   box-shadow: var(--shadow-lg);
   white-space: nowrap;
   pointer-events: none;
@@ -108,12 +108,12 @@
   box-shadow:
     0 0 0 2px var(--map-pin-ring),
     var(--shadow-md);
-  transition: box-shadow var(--dur-fast) var(--ease-out);
+  transition: box-shadow var(--dur-micro) var(--ease-out);
 }
 
 .stayPinSelected {
   background: var(--cat-stay);
-  color: var(--paper-0);
+  color: var(--slate-0);
   box-shadow:
     0 0 0 2.5px var(--map-pin-ring),
     0 0 0 7px var(--map-halo),

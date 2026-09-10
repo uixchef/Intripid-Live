@@ -8,13 +8,23 @@
   border: 1px solid transparent;
   cursor: pointer;
   transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    background-color var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out);
 }
 
 .trigger:hover {
   background: var(--bg-hover);
   border-color: var(--border-subtle);
+}
+
+/* Pressed-in while the rail's travellers section is open. */
+.triggerOn {
+  background: var(--purple-50);
+  border-color: var(--purple-200);
+}
+
+.triggerOn .triggerMeta {
+  color: var(--purple-700);
 }
 
 .triggerMeta {
@@ -33,32 +43,10 @@
   display: grid;
 }
 
-.panelHead {
-  display: grid;
-  gap: 1px;
-  padding: var(--space-6) var(--space-6) var(--space-4);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.panelTitle {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
-}
-
-.panelSub {
-  font-size: var(--text-2xs);
-  color: var(--text-quaternary);
-}
-
 .people {
   display: grid;
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   gap: 1px;
-  max-height: 19rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .person {
@@ -85,7 +73,7 @@
   width: 30px;
   height: 30px;
   border-radius: var(--radius-full);
-  background: var(--paper-150);
+  background: var(--slate-150);
   color: var(--text-quaternary);
   border: 1px dashed var(--border-strong);
 }
@@ -125,24 +113,23 @@
 
 .personViewing {
   font-size: var(--text-2xs);
-  color: var(--accent-700);
+  color: var(--teal-700);
   font-weight: var(--weight-medium);
   cursor: pointer;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-micro) var(--ease-out);
 }
 
 .personViewing:hover {
-  color: var(--accent-800);
+  color: var(--teal-800);
   text-decoration: underline;
 }
 
 .panelFoot {
-  padding: var(--space-4) var(--space-5) var(--space-5);
-  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-3) var(--space-5) var(--space-5);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -167,9 +154,9 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
-  background: var(--brand-50);
-  border: 1px solid var(--brand-100);
-  color: var(--brand-700);
+  background: var(--purple-50);
+  border: 1px solid var(--purple-100);
+  color: var(--purple-700);
   margin-bottom: var(--space-1);
 }
 
@@ -215,5 +202,112 @@
 
   .trigger {
     padding-right: var(--space-3);
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Connections — the fast path to inviting someone                           */
+/* ------------------------------------------------------------------------- */
+
+.connections {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3) var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.connectionsLabel {
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+  padding: 0 var(--space-4);
+}
+
+.connectionsList {
+  display: grid;
+  gap: 1px;
+}
+
+.connection {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.connection:hover {
+  background: var(--bg-hover);
+}
+
+.connectionAvatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: var(--slate-100);
+  color: var(--who);
+  border: 1px solid var(--border-subtle);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.02em;
+}
+
+.connectionBody {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.connectionName {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connectionNote {
+  font-size: 10px;
+  color: var(--text-quaternary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connectionAdd {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease-out);
+}
+
+.connection:hover .connectionAdd {
+  opacity: 1;
+  background: var(--purple-100);
+  color: var(--purple-700);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connection,
+  .connectionAdd,
+  .trigger {
+    transition: none;
   }
 }

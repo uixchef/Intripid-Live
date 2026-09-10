@@ -2,52 +2,95 @@
   position: absolute;
   inset: 0;
   z-index: var(--z-map);
+  isolation: isolate;
 }
 
 /*
- * A one-directional wash under the console. The map stays readable at the
- * seam instead of being cut off by a hard panel edge — the canvas should feel
- * continuous behind the tool sitting on it.
+ * The environment tint. Three thin layers rather than one wash:
+ *  1. `saturation` pulls the basemap's chroma down to a low value while
+ *     leaving hue and luminance intact, so water still reads as water.
+ *  2. A violet `multiply` seats it in the surrounding atmosphere.
+ *  3. A faint `screen` lifts the deepest shadows back so coastlines and
+ *     labels keep their contrast.
+ * Sits above the canvas but below the markers, which are children of the
+ * map container and therefore painted after it.
  */
-.consoleScrim {
+.tint {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
+  z-index: 2;
   pointer-events: none;
+}
+
+.tint::before,
+.tint::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * Barely there.
+ *
+ * This layer has been walked back twice, and the reason is worth recording:
+ * every increase in the wash buys palette coherence with the surrounding
+ * atmosphere and pays for it in geography, and on a surface whose entire
+ * argument is "the map is the protagonist" that trade is always wrong. At
+ * 0.42 saturation over the dusk basemap the Atlantic and Africa were the
+ * same value and the country labels had gone to grey-on-purple.
+ *
+ * The atmosphere frame does the work of putting the map inside an Intripid
+ * world. The map itself only needs to stop shouting.
+ */
+.tint::before {
+  background: hsl(272 22% 52%);
+  mix-blend-mode: saturation;
+  opacity: 0.16;
+}
+
+.tint::after {
   background: linear-gradient(
-    to right,
-    var(--map-scrim-top) 0%,
-    rgba(250, 248, 244, 0.55) 55%,
-    var(--map-scrim-none) 100%
+    158deg,
+    rgba(90, 31, 168, 0.1) 0%,
+    rgba(142, 47, 142, 0.04) 55%,
+    rgba(224, 113, 63, 0.07) 100%
   );
+  mix-blend-mode: soft-light;
 }
 
 /* ------------------------------------------------------------------------- */
-/* Origin pin                                                               */
+/* Origin — orange, because origin is the beak: the part that points          */
 /* ------------------------------------------------------------------------- */
 
 .originPin {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
-  height: 24px;
-  padding: 0 var(--space-4) 0 var(--space-3);
+  height: 26px;
+  padding: 0 var(--space-5) 0 var(--space-3);
   border-radius: var(--radius-full);
-  background: var(--paper-900);
-  color: var(--paper-25);
+  background: var(--orange-500);
+  color: var(--slate-0);
   font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-tight);
   box-shadow:
     0 0 0 2px var(--map-pin-ring),
-    var(--shadow-md);
+    0 2px 8px rgba(140, 58, 17, 0.4);
   white-space: nowrap;
+  transition: box-shadow var(--dur-element) var(--ease-out);
 }
 
 .originPin svg {
   flex: none;
-  opacity: 0.85;
+}
+
+/* Confirmed origin earns a halo — it is now load-bearing for every result. */
+.originPinConfirmed {
+  box-shadow:
+    0 0 0 2px var(--map-pin-ring),
+    0 0 0 7px rgba(254, 149, 73, 0.28),
+    0 2px 10px rgba(140, 58, 17, 0.45);
 }
 
 .originLabel {
@@ -55,101 +98,163 @@
 }
 
 /* ------------------------------------------------------------------------- */
-/* Candidate destination pin                                                 */
+/* Candidate and result pins                                                 */
 /* ------------------------------------------------------------------------- */
 
-.candidate {
+.pin {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
-  height: 28px;
-  padding: 0 var(--space-2) 0 var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--bg-surface-raised);
-  border: 1px solid var(--border-default);
-  box-shadow:
-    0 0 0 2px var(--map-pin-ring),
-    var(--shadow-md);
   white-space: nowrap;
-  cursor: pointer;
   transform-origin: bottom center;
   transition:
-    box-shadow var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    box-shadow var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out);
 }
 
 /*
- * A small stem so the pill reads as anchored to a point on the ground rather
- * than floating above it.
+ * Candidate — teal. The raw world of places still in the running: your data,
+ * not yet the system's call. Quiet, unlabelled beyond the name.
  */
-.candidate::after {
+.pinCandidate {
+  height: 22px;
+  padding: 0 var(--space-4) 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--teal-400);
+  box-shadow: 0 1px 6px rgba(10, 20, 40, 0.45);
+}
+
+.pinDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--teal-500);
+}
+
+.pinNameQuiet {
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  color: var(--teal-900);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Culled — still visible, so you can see what the filters removed. */
+.pinCulled {
+  height: 20px;
+  padding: 0 var(--space-4) 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--env-hairline-strong);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.pinCulled .pinDot {
+  background: var(--env-text-faint);
+  width: 5px;
+  height: 5px;
+}
+
+.pinCulled .pinNameQuiet {
+  color: var(--env-text-dim);
+  font-weight: var(--weight-medium);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--env-text-faint);
+}
+
+/*
+ * Top three — purple. This is the system making a call, and the palette's
+ * purple-versus-teal split is exactly that: system versus you.
+ */
+.pinTop,
+.pinBest {
+  height: 30px;
+  padding: 0 var(--space-3) 0 var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--slate-0);
+  border: 1px solid var(--purple-200);
+  box-shadow:
+    0 0 0 2px var(--map-pin-ring),
+    0 4px 14px -2px rgba(44, 15, 82, 0.4);
+  cursor: pointer;
+}
+
+/* A stem so the pill reads as anchored to a point on the ground. */
+.pinTop::after,
+.pinBest::after {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: -5px;
-  width: 1px;
-  height: 6px;
+  bottom: -6px;
+  width: 1.5px;
+  height: 7px;
   transform: translateX(-50%);
-  background: var(--paper-500);
-  opacity: 0.5;
+  background: var(--purple-400);
 }
 
-.candidateRank {
+.pinBest {
+  height: 34px;
+  border-color: var(--purple-500);
+  box-shadow:
+    0 0 0 2.5px var(--map-pin-ring),
+    0 0 0 9px rgba(154, 77, 250, 0.22),
+    0 6px 20px -2px rgba(44, 15, 82, 0.5);
+}
+
+.pinRank {
   display: grid;
   place-items: center;
   flex: none;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: var(--radius-full);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: var(--weight-bold);
-  color: var(--paper-0);
-  background: var(--pin-tone, var(--paper-500));
+  color: var(--slate-0);
+  background: var(--purple-500);
   line-height: 1;
 }
 
-.candidateName {
+.pinBest .pinRank {
+  width: 26px;
+  height: 26px;
+  background: var(--purple-600);
+  font-size: var(--text-xs);
+}
+
+.pinName {
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
 }
 
-.candidateScore {
+.pinBest .pinName {
+  font-size: var(--text-sm);
+}
+
+.pinScore {
   flex: none;
   padding-right: var(--space-3);
   font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  color: var(--pin-tone, var(--text-tertiary));
+  font-weight: var(--weight-bold);
+  color: var(--purple-700);
 }
 
-.candidate_strong {
-  --pin-tone: var(--accent-600);
-}
-
-.candidate_fair {
-  --pin-tone: var(--energy-500);
-}
-
-.candidate_weak {
-  --pin-tone: var(--paper-500);
-}
-
-/* The top-ranked pin earns extra presence. */
-.candidate_strong {
-  border-color: var(--accent-200);
-}
-
-.candidateHovered {
-  border-color: var(--brand-400);
+.pinHovered {
+  border-color: var(--purple-500);
   box-shadow:
-    0 0 0 2px var(--map-pin-ring),
-    0 0 0 7px var(--map-halo),
-    var(--shadow-lg);
+    0 0 0 2.5px var(--map-pin-ring),
+    0 0 0 9px rgba(154, 77, 250, 0.26),
+    0 6px 20px -2px rgba(44, 15, 82, 0.5);
 }
 
 /* ------------------------------------------------------------------------- */
-/* Attraction pins (destination brief)                                       */
+/* Attractions (destination brief)                                           */
 /* ------------------------------------------------------------------------- */
 
 .attractionPin {
@@ -165,59 +270,30 @@
   width: 9px;
   height: 9px;
   border-radius: var(--radius-full);
-  background: var(--brand-600);
+  background: var(--purple-600);
   box-shadow:
     0 0 0 2.5px var(--map-pin-ring),
-    var(--shadow-sm);
+    0 1px 4px rgba(44, 15, 82, 0.35);
 }
 
+/* On a dusk basemap the label reads white with a dark halo, not the reverse. */
 .attractionName {
   font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  color: var(--paper-800);
+  font-weight: var(--weight-bold);
+  color: #fff;
   letter-spacing: var(--tracking-tight);
-  /* Reads over parks, water and buildings alike. */
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95),
-    0 0 4px rgba(255, 255, 255, 0.9);
+    0 1px 2px rgba(10, 4, 24, 0.9),
+    0 0 8px rgba(10, 4, 24, 0.7);
 }
 
 @media (max-width: 900px) {
-  .consoleScrim {
-    display: none;
-  }
-
   .attractionName {
     display: none;
   }
-}
 
-/*
- * The paper wash.
- *
- * `saturation` blending sets the basemap's saturation to the overlay's low
- * value while leaving hue and luminance intact — so water still reads as
- * water and land as land, but neither shouts. A `screen` or `multiply` wash
- * was tried first and only made the map pale, losing the contrast that makes
- * coastlines legible.
- *
- * The second layer restores a little warmth so the canvas sits in the same
- * paper palette as the console beside it.
- */
-.paperWash {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: hsl(38 14% 58%);
-  mix-blend-mode: saturation;
-  opacity: 0.94;
-}
-
-.paperWash::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--paper-200);
-  opacity: 0.26;
-  mix-blend-mode: multiply;
+  .pinCandidate .pinNameQuiet,
+  .pinCulled .pinNameQuiet {
+    display: none;
+  }
 }

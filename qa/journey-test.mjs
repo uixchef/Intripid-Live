@@ -15,6 +15,12 @@ const BASE = process.env.QA_BASE ?? "http://localhost:3000";
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+/*
+ * 8s, not Playwright's 30s default. A broken step should report in seconds;
+ * at 30s a handful of cascading failures turned a 90-second suite into a
+ * twenty-minute one with no output until the end.
+ */
+page.setDefaultTimeout(8000);
 
 const errors = [];
 page.on("console", (m) => {
@@ -27,12 +33,11 @@ async function step(name, fn) {
   try {
     const detail = await fn();
     steps.push({ name, pass: true, detail: detail ?? "ok" });
+    process.stdout.write(`  \u2713 ${name}\n`);
   } catch (error) {
-    steps.push({
-      name,
-      pass: false,
-      detail: error.message.split("\n")[0].slice(0, 170),
-    });
+    const detail = error.message.split("\n")[0].slice(0, 170);
+    steps.push({ name, pass: false, detail });
+    process.stdout.write(`  \u2717 ${name}\n      ${detail}\n`);
   }
 }
 
@@ -59,80 +64,139 @@ await step("landing states the premise and offers a way in", async () => {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("h1");
   const heading = (await page.locator("h1").textContent())?.replace(/\s+/g, " ").trim();
-  await page.getByRole("button", { name: /Find where to go/ }).click();
+  await page.getByRole("button", { name: /Help me explore/ }).click();
   await page.waitForSelector("text=When do you want to travel?");
   return `"${heading}" → discovery`;
 });
 
 /* ========================================================================== */
-/* 2 · Discovery — every answer moves the ranking                             */
+/* 2 · Discovery — six questions, every answer moves the ranking              */
 /* ========================================================================== */
 
-await step("dates step accepts a range and reports nights", async () => {
-  const nights = await page.locator("text=/\\d+ nights/").first().textContent();
+await step("1 · dates accepts a range and reports nights", async () => {
+  const nights = await page.locator("text=/\\d+ nights away/").first().textContent();
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.waitForSelector("text=Where are you starting from?");
-  return nights?.trim();
+  await page.waitForSelector("text=Where would you like to explore?");
+  return nights?.replace(/\s+/g, " ").trim();
 });
 
-await step("origin + scope in one step, map flies to the origin", async () => {
+await step("2 · scope narrows the field", async () => {
+  await page.getByRole("radio", { name: /Go abroad/ }).click();
+  await page.waitForTimeout(320);
+  const remaining = await page
+    .locator('[class*="liveCount"]')
+    .first()
+    .textContent();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForSelector("text=From where will you be leaving?");
+  return `abroad only · ${remaining?.replace(/\s+/g, " ").trim()}`;
+});
+
+await step("3 · origin asks for confirmation on the map", async () => {
   await page.getByRole("radio", { name: /London/ }).click();
-  await page.getByRole("radio", { name: "Go abroad" }).click();
-  const note = await page.locator("text=/rule out/i").first().textContent();
+  /*
+   * Choosing a city is not the same as agreeing it is right, so Continue
+   * lands on a confirmation against the pin rather than the next question —
+   * origin silently determines every recommendation, so it is never assumed.
+   */
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.waitForSelector("text=/What.s the budget/");
-  return note?.trim();
+  await page.waitForSelector("text=Did we find you?");
+  await page.getByRole("button", { name: /Looks good/ }).click();
+  await page.waitForSelector("text=/What.s your budget/");
+  return "London → confirmed on the map";
 });
 
-await step("budget visibly changes the ranking", async () => {
+await step("4 · budget visibly changes the ranking", async () => {
   /*
-   * The top slot may legitimately hold across tiers (Marrakesh in April from
-   * London is dominant at any budget). What must change is the field and the
-   * scores — that is what "recommendations respond to preferences" means.
+   * The top slot may legitimately hold across tiers. What must change is the
+   * field or the scores — that is what "recommendations respond to
+   * preferences" actually means.
    */
   const read = async (tier) => {
     await page.getByRole("radio", { name: new RegExp(tier) }).click();
-    await page.waitForTimeout(380);
-    const names = await page.locator('[class*="liveName"]').allTextContents();
-    const scores = await page.locator('[class*="liveScore"]').allTextContents();
-    return { names: names.map((n) => n.trim()), scores: scores.map((v) => v.trim()) };
+    await page.waitForTimeout(400);
+    const names = await page.locator('[class*="leaderName"]').allTextContents();
+    const scores = await page.locator('[class*="leaderScore"]').allTextContents();
+    return {
+      names: names.map((n) => n.trim()),
+      scores: scores.map((v) => v.trim()),
+    };
   };
 
   const cheap = await read("Backpack");
   const rich = await read("Premium");
 
-  const fieldChanged = cheap.names.join() !== rich.names.join();
-  const scoresChanged = cheap.scores.join() !== rich.scores.join();
-  if (!fieldChanged && !scoresChanged) {
+  if (
+    cheap.names.join() === rich.names.join() &&
+    cheap.scores.join() === rich.scores.join()
+  ) {
     throw new Error("budget changed neither the field nor the scores");
   }
   return `Backpack → ${cheap.names.join(", ")} | Premium → ${rich.names.join(", ")}`;
 });
 
-await step("escape hatch is offered before the flow ends", async () => {
-  const skip = page.locator('[class*="skip"]').first();
-  const text = await skip.textContent();
-  if (!text) throw new Error("no skip-ahead affordance");
-  return text.replace(/\s+/g, " ").trim();
+await step("4b · income context is asked once, and is skippable", async () => {
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForSelector('text=/means to you/');
+  const skip = page.getByRole("button", { name: /Skip — use typical local costs/ });
+  const label = await skip.textContent();
+  await skip.click();
+  await page.waitForSelector("text=Are there any experiences you must have?");
+  return label?.replace(/\s+/g, " ").trim();
 });
 
-await step("style and interests complete the flow", async () => {
+await step("5 · must-have experiences filter, not rank", async () => {
+  const badge = await page.locator('[class*="kindFilter"], [class*="kindRank"]').first().textContent();
+  await page.getByRole("button", { name: /Live city life/ }).click();
+  await page.getByRole("button", { name: /Steep in culture/ }).click();
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: /^City/ }).click();
-  await page.getByRole("button", { name: /^Culture/ }).click();
-  await page.getByRole("button", { name: /^Food/ }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: /Museums/ }).click();
+  await page.waitForSelector("text=Anything specific you'd like to do?");
+  return `experiences ${badge?.trim()}`;
+});
+
+await step("6 · activities order the survivors", async () => {
+  const badge = await page.locator('[class*="kindFilter"], [class*="kindRank"]').first().textContent();
+  await page.getByRole("button", { name: /Museums & galleries/ }).click();
   await page.getByRole("button", { name: /Fine dining/ }).click();
-  await page.getByRole("button", { name: "See matches" }).click();
-  return "reached processing";
+  await page.getByRole("button", { name: /Find my matches/ }).click();
+  return `activities ${badge?.trim()} → processing`;
 });
 
-await step("narrated processing resolves to a ranked field", async () => {
-  await page.waitForSelector("text=/worth your time/", { timeout: 20000 });
-  const title = await page.locator('[class*="railTitle"]').textContent();
-  const count = await page.locator('[class*="results-module"][class*="card"]').count();
-  return `${title?.trim()} (${count} cards)`;
+await step("narrated processing resolves to exactly three places", async () => {
+  await page.waitForSelector("text=/places that fit|closest/", { timeout: 25000 });
+  const heading = await page
+    .locator('[class*="resultsTitle"]')
+    .first()
+    .textContent();
+  /*
+   * Three, not a catalogue. The count is the product decision under test:
+   * a best card plus two runners-up.
+   */
+  const best = await page.locator('[class*="bestCard"]').count();
+  const runners = await page.locator('[class*="runnerCard"]').count();
+  if (best !== 1 || runners !== 2) {
+    throw new Error(`expected 1 best + 2 runners, got ${best} + ${runners}`);
+  }
+  return `${heading?.trim()} · 1 best + 2 runners-up`;
+});
+
+await step("each of the three gives a DIFFERENT reason", async () => {
+  const reasons = [
+    await page.locator('[class*="bestReason"]').first().textContent(),
+    ...(await page.locator('[class*="runnerReason"]').allTextContents()),
+  ].map((r) => (r ?? "").replace(/\s+/g, " ").trim());
+
+  const unique = new Set(reasons);
+  if (unique.size !== reasons.length) {
+    throw new Error(`repeated reasoning: ${reasons.join(" | ")}`);
+  }
+  return reasons.map((r) => r.slice(0, 34) + "…").join(" / ");
+});
+
+await step("ruled-out places are named, with the answer that removed them", async () => {
+  const items = await page.locator('[class*="ruledOutItem"]').allTextContents();
+  if (items.length === 0) return "nothing was hard-filtered at these answers";
+  return items.map((t) => t.replace(/\s+/g, " ").trim()).join("; ");
 });
 
 /* ========================================================================== */
@@ -140,7 +204,7 @@ await step("narrated processing resolves to a ranked field", async () => {
 /* ========================================================================== */
 
 await step("NYC leads the ranking for a city/culture/food trip", async () => {
-  const leader = await page.locator('[class*="cardName"]').first().textContent();
+  const leader = await page.locator('[class*="bestName"]').first().textContent();
   if (!leader?.includes("New York")) {
     throw new Error(`expected New York City to lead, got "${leader?.trim()}"`);
   }
@@ -253,7 +317,7 @@ await step("dragging an activity moves it in time", async () => {
 });
 
 await step("dragging an idea onto a day schedules it", async () => {
-  await page.getByRole("radio", { name: /^Ideas/ }).click();
+  await page.getByRole("tab", { name: /Ideas/ }).click();
   await page.waitForTimeout(400);
   const ideasBefore = await page.locator("[data-idea]").count();
   const eventsBefore = await page.locator("[data-event]").count();
@@ -269,7 +333,7 @@ await step("dragging an idea onto a day schedules it", async () => {
   );
 
   const eventsAfter = await page.locator("[data-event]").count();
-  await page.getByRole("radio", { name: /^Ideas/ }).click().catch(() => {});
+  await page.getByRole("tab", { name: /Ideas/ }).click().catch(() => {});
   await page.waitForTimeout(400);
   const ideasAfter = await page.locator("[data-idea]").count();
 
@@ -288,6 +352,8 @@ await step("dragging an idea onto a day schedules it", async () => {
 await step("assistant detects the seeded clash and explains itself", async () => {
   await page.locator("[data-day-tab]").nth(2).click(); // Thursday carries the overlap
   await page.waitForTimeout(700);
+  await page.getByRole("tab", { name: /Advisor/ }).click();
+  await page.waitForTimeout(400);
   await page.getByRole("button", { name: /Resolve clash/i }).first().click();
   await page.waitForTimeout(700);
   const title = await page.locator('[class*="panelTitle"]').textContent();
@@ -345,7 +411,8 @@ await step("presence lists travellers, roles and what they're viewing", async ()
 });
 
 await step("inviting someone adds them to the trip", async () => {
-  await page.getByRole("button", { name: /Invite someone/ }).click();
+  /* The travellers section is a rail section now, not a top-bar popover. */
+  await page.getByRole("button", { name: /Invite by email/ }).click();
   await page.waitForSelector("text=/Invite someone to plan/");
   await page.getByPlaceholder(/name@example.com/).fill("rosa.linden@example.com");
   await page.getByRole("button", { name: /Send invitation/ }).click();
@@ -355,11 +422,11 @@ await step("inviting someone adds them to the trip", async () => {
     .first()
     .textContent()
     .catch(() => null);
-  await page.locator('button[class*="collaborators-module"][class*="trigger"]').click();
   await page.waitForTimeout(500);
-  const people = await page.locator('li[class*="collaborators-module"][class*="person"]').count();
+  const people = await page
+    .locator('li[class*="collaborators-module"][class*="person"]')
+    .count();
   const pending = await page.locator('[class*="personPending"]').count();
-  await page.keyboard.press("Escape");
   if (people < 5) throw new Error(`traveller not added (${people} listed)`);
   return `${toast?.trim()} · ${people} listed · ${pending} pending invitation shown`;
 });

@@ -1,57 +1,68 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { ArrowRight, CalendarRange, Compass, MapPin } from "lucide-react";
 
+import { Hummingbird } from "@/components/brand/hummingbird";
 import { Logo } from "@/components/brand/mark";
 import { Button } from "@/components/ui/button";
-import { Tag } from "@/components/ui/chip";
 import { ScoreRing } from "@/components/ui/meter";
 import { DESTINATIONS } from "@/data/destinations";
-import { leadReason, recommend } from "@/lib/discovery/scoring";
+import { INTEREST_META } from "@/lib/categories";
+import { distinctReasons, recommend } from "@/lib/discovery/scoring";
+import type { DiscoveryPreferences } from "@/lib/types";
 
+import env from "../discovery/environment.module.css";
 import styles from "./landing.module.css";
 
 /**
- * The entry.
+ * The doorway.
  *
- * Not a marketing page — the product's own front door. It states the premise
- * (you may not know where to go yet), shows what the output actually looks
- * like, and offers two ways in. The preview is computed by the real scoring
- * engine against a real preference set, so what you see here is what the
- * product would actually say.
+ * Not a marketing page — the product's own front door, and deliberately in
+ * the discovery environment rather than a neutral app shell, so the world you
+ * are about to enter is visible before you enter it.
+ *
+ * The preview is computed by the real engine against a real preference set,
+ * so the three cards are what the product would actually say.
  */
 
-/** A representative traveller, used only to compute the preview ranking. */
-const PREVIEW_PREFS = {
-  dateMode: "exact" as const,
+const PREVIEW_PREFS: DiscoveryPreferences = {
+  dateMode: "specific",
   startDate: "2026-04-14",
   endDate: "2026-04-18",
+  weekendShape: "fri-sun",
+  flexibleMonth: 3,
+  flexibleNights: 5,
   origin: {
     city: "London",
     country: "United Kingdom",
     countryCode: "GB",
     coords: { lng: -0.1276, lat: 51.5072 },
   },
-  scope: "international" as const,
-  budget: "premium" as const,
-  styles: ["city" as const, "culture" as const, "food" as const],
-  interests: ["museums" as const, "fine-dining" as const, "architecture" as const],
+  originConfirmed: true,
+  scope: "international",
+  budget: "premium",
+  incomeBand: null,
+  styles: ["city", "culture", "food"],
+  interests: ["museums", "fine-dining", "architecture"],
 };
 
 export function Landing() {
-  const reduceMotion = useReducedMotion();
-  const preview = recommend(DESTINATIONS, PREVIEW_PREFS).slice(0, 3);
+  const preview = recommend(DESTINATIONS, PREVIEW_PREFS).top;
+  /* Phrased against each other, so the doorway does not show three cards
+     that all say the same sentence. */
+  const previewReasons = distinctReasons(preview);
 
   return (
-    <main className={styles.root}>
-      <div className={styles.grain} aria-hidden />
+    <main className={`${styles.root} ${env.root} onEnv`}>
+      <div className={env.atmosphere} aria-hidden />
+      <div className={env.grain} aria-hidden />
 
       <header className={styles.header}>
         <Logo size={21} />
         <Link href="/trip/nyc-spring" className={styles.headerLink}>
-          Open the New York trip
+          <span>Open the New York trip</span>
           <ArrowRight size={13} strokeWidth={2.2} />
         </Link>
       </header>
@@ -59,11 +70,11 @@ export function Landing() {
       <div className={styles.body}>
         <motion.section
           className={styles.copy}
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduceMotion ? 0.2 : 0.55, ease: [0.2, 0.8, 0.2, 1] }}
+          transition={{ duration: 0.42, ease: [0.2, 0, 0, 1] }}
         >
-          <span className="eyebrow">Destination discovery</span>
+          <span className={styles.eyebrow}>Destination discovery</span>
 
           <h1 className={styles.headline}>
             You don&rsquo;t need to know
@@ -72,9 +83,9 @@ export function Landing() {
           </h1>
 
           <p className={styles.lede}>
-            Most travel tools start with a search box, which only works if you
+            Most travel tools open with a search box, which only helps if you
             already have the answer. Intripid starts with your dates, your
-            money and what you actually enjoy — then shows you where those
+            money and what you actually care about — then shows you where those
             things point, and why.
           </p>
 
@@ -85,36 +96,36 @@ export function Landing() {
                 size="lg"
                 iconRight={<ArrowRight size={15} strokeWidth={2.2} />}
               >
-                Find where to go
+                Help me explore
               </Button>
             </Link>
             <span className={styles.actionsNote}>
-              Five questions. You can stop after two.
+              Six questions. You can stop after two.
             </span>
           </div>
 
           <ul className={styles.premise}>
             <li>
               <span className={styles.premiseIcon} aria-hidden>
-                <Compass size={14} strokeWidth={1.9} />
+                <Compass size={14} strokeWidth={2} />
               </span>
               <span>
-                <strong>Ranked, not listed.</strong> Every place explains how it
-                scored and how much of that rests on guesswork.
+                <strong>Three places, not a catalogue.</strong> Every one
+                explains how it scored and how much of that rests on guesswork.
               </span>
             </li>
             <li>
               <span className={styles.premiseIcon} aria-hidden>
-                <MapPin size={14} strokeWidth={1.9} />
+                <MapPin size={14} strokeWidth={2} />
               </span>
               <span>
-                <strong>The map does the talking.</strong> Answers move pins in
-                real time instead of filling in a form you can&rsquo;t see.
+                <strong>The map does the talking.</strong> Answers cull pins in
+                real time instead of filling a form you can&rsquo;t see.
               </span>
             </li>
             <li>
               <span className={styles.premiseIcon} aria-hidden>
-                <CalendarRange size={14} strokeWidth={1.9} />
+                <CalendarRange size={14} strokeWidth={2} />
               </span>
               <span>
                 <strong>Then it becomes a timeline.</strong> A trip is a
@@ -125,57 +136,71 @@ export function Landing() {
           </ul>
         </motion.section>
 
-        {/* What the output looks like, from the real engine. */}
-        <section className={styles.preview} aria-label="Example recommendations">
+        {/* What the output actually looks like, from the real engine. */}
+        <motion.section
+          className={`${styles.preview} ${env.glass}`}
+          aria-label="Example recommendation"
+          initial={{ opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.46, ease: [0.2, 0, 0, 1], delay: 0.1 }}
+        >
           <div className={styles.previewHead}>
-            <span className="eyebrow">A sample answer</span>
-            <p className={styles.previewMeta}>
-              5 nights from London · Premium · city, culture, food
-            </p>
+            <div>
+              <span className={styles.previewEyebrow}>A real answer</span>
+              <p className={styles.previewMeta}>
+                5 nights from London · Premium · city, culture, food
+              </p>
+            </div>
+            <Hummingbird mood="curious" size={44} className={styles.bird} />
           </div>
 
           <ol className={styles.previewList}>
             {preview.map((recommendation, index) => (
-              <motion.li
+              <li
                 key={recommendation.destination.id}
-                className={styles.previewCard}
-                initial={{ opacity: 0, y: 22, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                  duration: reduceMotion ? 0.2 : 0.5,
-                  ease: [0.2, 0.8, 0.2, 1],
-                  delay: reduceMotion ? 0 : 0.16 + index * 0.09,
-                }}
+                className={
+                  index === 0 ? styles.previewCardBest : styles.previewCard
+                }
               >
-                <span className={styles.previewRank}>{recommendation.rank}</span>
+                {index === 0 ? (
+                  <span className={styles.bestTag}>Best match</span>
+                ) : (
+                  <span className={styles.rankTag}>{index + 1}</span>
+                )}
                 <span className={styles.previewBody}>
                   <span className={styles.previewName}>
                     {recommendation.destination.name}
                     <span aria-hidden>{recommendation.destination.flag}</span>
                   </span>
                   <span className={styles.previewReason}>
-                    {leadReason(recommendation)}
+                    {previewReasons[index]}
                   </span>
-                  <span className={styles.previewTags}>
-                    {recommendation.matchedInterests.slice(0, 2).map((interest) => (
-                      <Tag key={interest} tone="accent">
-                        {interest.replace("-", " ")}
-                      </Tag>
-                    ))}
-                  </span>
+                  {index === 0 ? (
+                    <span className={styles.previewTags}>
+                      {recommendation.matchedInterests
+                        .slice(0, 2)
+                        .map((interest) => (
+                          <span key={interest} className={styles.previewTag}>
+                            {INTEREST_META[interest].label}
+                          </span>
+                        ))}
+                    </span>
+                  ) : null}
                 </span>
-                <ScoreRing score={recommendation.score} size={38} />
-              </motion.li>
+                <ScoreRing
+                  score={recommendation.score}
+                  size={index === 0 ? 44 : 34}
+                />
+              </li>
             ))}
           </ol>
 
           <p className={styles.previewFoot}>
-            Change one answer and this order changes.
+            Change one answer and this changes.
           </p>
-        </section>
+        </motion.section>
       </div>
 
-      {/* The whole product in one line — discovery is only the first third. */}
       <footer className={styles.journey}>
         <ol className={styles.journeySteps}>
           <li className={styles.journeyStepOn}>
@@ -191,6 +216,10 @@ export function Landing() {
             Build the timeline
           </li>
         </ol>
+        <p className={styles.tagline}>
+          Smart enough to plan the trip. Warm enough to make you want to take
+          it.
+        </p>
       </footer>
     </main>
   );

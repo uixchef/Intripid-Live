@@ -39,8 +39,8 @@
   border-radius: var(--radius-md);
   color: var(--text-tertiary);
   transition:
-    background-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
 }
 
 .backLink:hover {
@@ -105,60 +105,27 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border-right: 1px solid var(--border-default);
-  background: var(--bg-surface);
+  background: var(--bg-canvas);
 }
 
-.rightColumn {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+/*
+ * The rail. A flex column rather than a two-row grid: the map is a fixed
+ * height, the travellers section sizes to its own content, and the context
+ * section takes whatever is left. The old 1fr/1fr grid gave the map half the
+ * rail whether or not the context below it had anything to show.
+ */
+.rail {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   min-width: 0;
   background: var(--bg-surface);
+  border-left: 1px solid var(--border-default);
 }
 
-.mapPane {
+.rail > :nth-child(2) {
+  flex: 1;
   min-height: 0;
-  position: relative;
-  border-bottom: 1px solid var(--border-default);
-  /*
-   * Map markers carry their own z-index (a selected pin must sit above its
-   * neighbours). `isolation` keeps that ordering inside the map, so a marker
-   * label cannot paint over the editor panel that slides in beside it.
-   */
-  isolation: isolate;
-}
-
-/* Context panel */
-
-.contextPanel {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  min-height: 0;
-  background: var(--bg-surface);
-}
-
-.panelTabs {
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.panelContent {
-  min-height: 0;
-  overflow: hidden;
-  display: grid;
-}
-
-.panelScroll {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.panelDivider {
-  height: 1px;
-  background: var(--border-subtle);
-  margin: 0 var(--space-6);
 }
 
 /* Editor layer — occupies the right column, leaving the day visible. */
@@ -282,7 +249,6 @@
   }
 
   .schedule {
-    border-right: 0;
     min-height: 0;
   }
 
@@ -293,9 +259,9 @@
   .mobileMap {
     display: block;
     position: relative;
-    height: 168px;
+    height: 186px;
     border-bottom: 1px solid var(--border-default);
-    transition: height var(--dur-slow) var(--ease-out);
+    transition: height var(--dur-surface) var(--ease-out);
   }
 
   .mobileMapOpen {
@@ -313,8 +279,8 @@
     height: 26px;
     padding: 0 var(--space-4);
     border-radius: var(--radius-full);
-    background: var(--paper-900);
-    color: var(--paper-25);
+    background: var(--slate-900);
+    color: var(--slate-25);
     font-size: 10px;
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-tight);
@@ -323,7 +289,7 @@
     white-space: nowrap;
   }
 
-  .rightColumn,
+  .rail,
   .editorLayer {
     display: none;
   }
@@ -356,7 +322,7 @@
   }
 
   .mobileMap {
-    height: 128px;
+    height: 146px;
   }
 }
 

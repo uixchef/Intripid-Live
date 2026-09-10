@@ -1,209 +1,327 @@
 /*
- * Intripid design tokens — "Field Notes"
+ * Intripid design tokens
  * ============================================================================
  *
- * Direction: an editorial travel journal crossed with a precision instrument.
- * Warm paper neutrals carry the editorial warmth; a deep indigo-violet carries
- * the brand; the map and dense product chrome stay quiet so content leads.
+ * TWO MODES, ONE BRAND.
  *
- * Brand DNA carried forward from the historical hummingbird identity:
- *   violet body  -> --brand-*   (identity, primary action, the "stay" anchor)
- *   teal wings   -> --accent-*  (interaction, map, motion, live presence)
- *   orange beak  -> --energy-*  (the assistant, highlights — used sparingly)
+ * Destination Discovery is expressive and atmospheric: the map is the
+ * protagonist, sitting inside an Intripid environment rather than a white app
+ * chrome. Trip Planner is operational and precise: a calm, near-white
+ * workspace with calendar-grade clarity, where purple is an accent rather
+ * than a wash. They share one palette, one type system and one motion
+ * language — they are deliberately not flattened into one surface treatment.
  *
- * Deliberately NOT carried forward: the candy #8B5CF6 primary, purple
- * starfields, dashed purple affordances, yellow event cards, gradient chrome.
+ * COLOUR SEMANTICS (inherited, and the most valuable part of the identity):
+ *   purple  — the system acting: affordances, the assistant's decisions,
+ *             surviving candidates, progress
+ *   teal    — you and your data: your selections, the raw candidate world
+ *   orange  — origin and departure: "you are here"
+ *   pink    — the reveal: the payoff moment, the emotional register
  *
- * This is a committed LIGHT theme. A premium consumer product is allowed to
- * have a point of view about its surface; a half-built dark mode would be
- * worse than none. `color-scheme: light` is set explicitly so native controls
- * do not fight the palette.
+ * The historical values are the anchors (purple #AE6EFF, teal #00909B,
+ * orange #FE9549, pink #CC7BCC, ink #31374A); the ramps around them are
+ * rebuilt for contrast and for use at product density.
  */
 
 :root {
   /* ---------------------------------------------------------------------- */
-  /* Neutrals — warm "paper" scale (hue ~38, very low chroma)               */
+  /* Purple — the brand anchor. 400 is the inherited #AE6EFF.               */
   /* ---------------------------------------------------------------------- */
-  --paper-0: #ffffff;
-  --paper-25: #fdfcfa;
-  --paper-50: #faf8f4;
-  --paper-100: #f5f1ea;
-  --paper-150: #ede8de;
-  --paper-200: #e2dcd0;
-  --paper-300: #d0c8b9;
-  --paper-400: #ada496;
-  --paper-500: #8a8175;
-  --paper-600: #69625a;
-  --paper-700: #4d4842;
-  --paper-800: #332f2a;
-  --paper-900: #1f1c19;
-  --paper-950: #131110;
+  --purple-50: #f7f3ff;
+  --purple-100: #efe7ff;
+  --purple-200: #ded0ff;
+  --purple-300: #c6aaff;
+  --purple-400: #ae6eff;
+  --purple-500: #9a4dfa;
+  --purple-600: #8730ec;
+  --purple-700: #7222c9;
+  --purple-800: #5d1da4;
+  --purple-900: #4a1a80;
+  --purple-950: #2c0f52;
 
   /* ---------------------------------------------------------------------- */
-  /* Brand — Intripid violet, deepened toward indigo                        */
+  /* Teal — you and your data. 600 is the inherited #00909B.                */
   /* ---------------------------------------------------------------------- */
-  --brand-50: #f4f1fe;
-  --brand-100: #e9e3fd;
-  --brand-200: #d4cafb;
-  --brand-300: #b6a5f6;
-  --brand-400: #9478ee;
-  --brand-500: #7a54e3;
-  --brand-600: #6438d1;
-  --brand-700: #5429b0;
-  --brand-800: #46248e;
-  --brand-900: #3a2172;
-  --brand-950: #241348;
+  --teal-50: #ecfbfc;
+  --teal-100: #cbf3f6;
+  --teal-200: #9ae7ee;
+  --teal-300: #59d2de;
+  --teal-400: #22b3c4;
+  --teal-500: #0a97a6;
+  --teal-600: #00909b;
+  --teal-700: #0a737c;
+  --teal-800: #0e5b63;
+  --teal-900: #114a51;
 
   /* ---------------------------------------------------------------------- */
-  /* Accent — kingfisher teal (the hummingbird's wings)                     */
+  /* Orange — origin, departure, warmth. 400 is the inherited #FE9549.      */
   /* ---------------------------------------------------------------------- */
-  --accent-50: #edfaf8;
-  --accent-100: #d1f2ed;
-  --accent-200: #a6e5dc;
-  --accent-300: #6fd0c5;
-  --accent-400: #3db3a7;
-  --accent-500: #1f9588;
-  --accent-600: #13776d;
-  --accent-700: #115f58;
-  --accent-800: #124b47;
-  --accent-900: #113e3b;
+  --orange-50: #fff6ed;
+  --orange-100: #ffe8d2;
+  --orange-200: #ffcda1;
+  --orange-300: #feb075;
+  --orange-400: #fe9549;
+  --orange-500: #f4741b;
+  --orange-600: #d95a08;
+  --orange-700: #b1470c;
+  --orange-800: #8d3a11;
+  --orange-900: #743112;
 
   /* ---------------------------------------------------------------------- */
-  /* Energy — beak amber. The assistant's colour. Use sparingly.            */
+  /* Pink — the reveal. 400 is the inherited #CC7BCC.                       */
   /* ---------------------------------------------------------------------- */
-  --energy-50: #fef6ec;
-  --energy-100: #fde9ce;
-  --energy-200: #fad19a;
-  --energy-300: #f5b361;
-  --energy-400: #ee9533;
-  --energy-500: #de7914;
-  --energy-600: #bc5d0e;
-  --energy-700: #964610;
-  --energy-800: #793913;
-  --energy-900: #643012;
+  --pink-50: #fdf4fd;
+  --pink-100: #f9e7f9;
+  --pink-200: #f1cdf1;
+  --pink-300: #e3a8e3;
+  --pink-400: #cc7bcc;
+  --pink-500: #b85cb8;
+  --pink-600: #9d439d;
+  --pink-700: #813681;
+  --pink-800: #6a2d6a;
+  --pink-900: #582758;
+
+  /* ---------------------------------------------------------------------- */
+  /* Slate — cool product neutrals. 800 is the inherited ink #31374A.       */
+  /* Deliberately cool: the previous warm-paper scale is what made the      */
+  /* planner read as an editorial mock rather than a scheduling tool.       */
+  /* ---------------------------------------------------------------------- */
+  --slate-0: #ffffff;
+  --slate-25: #fcfdfe;
+  --slate-50: #f8fafc;
+  --slate-100: #f1f4f8;
+  --slate-150: #e9eef4;
+  --slate-200: #dde4ed;
+  --slate-300: #c4cfdd;
+  --slate-400: #98a6b9;
+  --slate-500: #6d7b90;
+  --slate-600: #4e5b6e;
+  --slate-700: #3a4557;
+  --slate-800: #31374a;
+  --slate-900: #232838;
+  --slate-950: #161a25;
 
   /* ---------------------------------------------------------------------- */
   /* Semantic                                                               */
+  /* Error shouts, success murmurs. Red is reserved absolutely for          */
+  /* leave / remove / delete / decline — never for emphasis.                */
   /* ---------------------------------------------------------------------- */
-  --success-50: #edf8f0;
-  --success-100: #d3edda;
-  --success-500: #3f9556;
-  --success-600: #2f7a44;
-  --success-700: #266237;
+  --positive-50: #ecfaf1;
+  --positive-100: #cff0dc;
+  --positive-500: #21976a;
+  --positive-600: #167a55;
+  --positive-700: #12603f;
 
-  --warning-50: #fef6ec;
-  --warning-100: #fde9ce;
-  --warning-500: #de7914;
-  --warning-600: #bc5d0e;
-  --warning-700: #964610;
+  --warning-50: #fff8eb;
+  --warning-100: #ffeccc;
+  --warning-300: #f5bd52;
+  --warning-500: #d98a10;
+  --warning-600: #b06c0b;
+  --warning-700: #8a540d;
 
-  --danger-50: #fdf0ef;
-  --danger-100: #fadad7;
-  --danger-500: #d64545;
-  --danger-600: #b93030;
-  --danger-700: #972626;
+  --danger-50: #fef2f2;
+  --danger-100: #fcdcda;
+  --danger-200: #f7bab6;
+  --danger-500: #de3b34;
+  --danger-600: #c22823;
+  --danger-700: #9d201d;
+
+  /* ====================================================================== */
+  /* APP SURFACES — Trip Planner. Near-white, calendar-grade calm.          */
+  /* ====================================================================== */
+  --bg-canvas: var(--slate-50);
+  --bg-surface: var(--slate-0);
+  --bg-surface-raised: var(--slate-0);
+  --bg-surface-sunken: var(--slate-50);
+  --bg-inset: var(--slate-100);
+  --bg-hover: rgba(49, 55, 74, 0.045);
+  --bg-active: rgba(49, 55, 74, 0.08);
+  --bg-selected: var(--purple-50);
+  --bg-scrim: rgba(22, 26, 37, 0.42);
+
+  --text-primary: var(--slate-900);
+  --text-secondary: var(--slate-700);
+  --text-tertiary: var(--slate-500);
+  --text-quaternary: var(--slate-400);
+  --text-inverse: var(--slate-0);
+  --text-brand: var(--purple-700);
+  --text-accent: var(--teal-700);
+
+  /* Hairlines. The calendar needs them almost invisible but perfectly even. */
+  --border-hairline: rgba(49, 55, 74, 0.06);
+  --border-subtle: rgba(49, 55, 74, 0.09);
+  --border-default: rgba(49, 55, 74, 0.14);
+  --border-strong: rgba(49, 55, 74, 0.22);
+  --border-brand: var(--purple-300);
+
+  --focus-ring: var(--purple-500);
+
+  /* ====================================================================== */
+  /* ENVIRONMENT — Destination Discovery.                                   */
+  /*                                                                        */
+  /* The map sits inside an Intripid world. The gradient is layered and     */
+  /* directional rather than a single wash: deep violet at the outer edge,  */
+  /* warming through pink toward an orange horizon. It stays dark enough    */
+  /* on the trailing edge to hold a light glass console at full contrast.   */
+  /* ====================================================================== */
+  --env-base: #2a1150;
+  --env-deep: #1d0b3a;
+  --env-violet: #5a1fa8;
+  --env-magenta: #8e2f8e;
+  --env-pink: #c4569e;
+  --env-ember: #e0713f;
+  --env-glow: #ffa963;
+
+  /*
+   * Glass. Light frosted panels over the environment: text legibility wins
+   * over spectacle, and a near-white panel over saturated colour reads as
+   * premium rather than as a 2021 lilac card.
+   *
+   * 0.93, not 0.8. At 0.8 the basemap's country labels read straight through
+   * the console — "Russia" landed next to the "Leaving" field — which is the
+   * point at which translucency has stopped being a material and started
+   * being a bug. The blur and the inner top highlight carry the glass; the
+   * opacity only has to carry the text.
+   */
+  --glass-bg: rgba(255, 255, 255, 0.93);
+  --glass-bg-strong: rgba(255, 255, 255, 0.97);
+  --glass-bg-dim: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-edge: rgba(49, 55, 74, 0.1);
+  --glass-blur: 26px;
+  --glass-shadow:
+    0 1px 2px rgba(28, 12, 56, 0.1), 0 12px 32px -8px rgba(28, 12, 56, 0.3),
+    0 32px 64px -24px rgba(28, 12, 56, 0.34);
+  --glass-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+
+  /* Text on the environment itself (outside glass). */
+  --env-text: rgba(255, 255, 255, 0.96);
+  --env-text-dim: rgba(255, 255, 255, 0.68);
+  --env-text-faint: rgba(255, 255, 255, 0.42);
+  --env-hairline: rgba(255, 255, 255, 0.16);
+  --env-hairline-strong: rgba(255, 255, 255, 0.28);
+
+  /* ====================================================================== */
+  /* Category identity — activity types.                                    */
+  /*                                                                        */
+  /* Tuned to sit on white at product density: saturated enough to identify */
+  /* at 3px, dark enough to read as a label. Transit stays neutral because  */
+  /* travel time is structure, not something you chose.                     */
+  /* ====================================================================== */
+  /*
+   * CATEGORY IDENTITY WITHOUT A RAINBOW.
+   *
+   * The previous set had seven mutually unrelated hues — cobalt, ochre,
+   * forest, raspberry — none of which belong to Intripid. Five columns of it
+   * turned the grid into confetti.
+   *
+   * Every category hue now comes from one of four brand families, and related
+   * categories deliberately share a family. Colour carries the COARSE read;
+   * the icon carries the fine distinction. So the grid resolves to five
+   * things, learnable in one glance:
+   *
+   *   orange = eat    purple = do    teal = outside    pink = play    grey = move
+   *
+   * The `-soft` fills are held at roughly 3-4% — barely tinted white. The
+   * 3px spine is the category signal; the fill only separates the card from
+   * the grid. At 6% the food family alone turned a five-day grid cream, which
+   * is the exact warm-paper read this pass exists to remove. `-ink` values
+   * all clear 4.5:1 on their own soft fill.
+   */
+
+  /* eat — orange */
+  --cat-food: #d95a08;
+  --cat-food-soft: #fff9f4;
+  --cat-food-ink: #8d3a11;
+
+  /* do — purple, the brand's own. Culture leads, sightseeing is its lighter
+     sibling: they are genuinely the same kind of thing. */
+  --cat-culture: #8730ec;
+  --cat-culture-soft: #faf7fe;
+  --cat-culture-ink: #5d1da4;
+
+  --cat-sightseeing: #ae6eff;
+  --cat-sightseeing-soft: #fbf8ff;
+  --cat-sightseeing-ink: #5d1da4;
+
+  /* outside — teal */
+  --cat-outdoors: #0a97a6;
+  --cat-outdoors-soft: #f2fbfc;
+  --cat-outdoors-ink: #0e5b63;
+
+  /* play — pink. Shopping is nightlife's lighter sibling. */
+  --cat-nightlife: #b85cb8;
+  --cat-nightlife-soft: #fdf8fd;
+  --cat-nightlife-ink: #742f74;
+
+  --cat-shopping: #e3a8e3;
+  --cat-shopping-soft: #fefaff;
+  --cat-shopping-ink: #813681;
+
+  /* move — neutral by design. Travel time is structure, not content, and it
+     must never compete with something the traveller actually chose. */
+  --cat-transit: #98a6b9;
+  --cat-transit-soft: #f6f9fb;
+  --cat-transit-ink: #4e5b6e;
+
+  /* the trip's frame — renders as the all-day band, never as a card, so it
+     can share purple with culture without ever sitting beside it */
+  --cat-stay: #7222c9;
+  --cat-stay-soft: #f8f4ff;
+  --cat-stay-ink: #5d1da4;
 
   /* ---------------------------------------------------------------------- */
-  /* Semantic surface & text roles                                          */
+  /* Calendar grid                                                          */
+  /*                                                                        */
+  /* Grid legibility comes from absolute evenness, not from contrast. These  */
+  /* are deliberately near-invisible in isolation and unmistakable in ranks. */
   /* ---------------------------------------------------------------------- */
-  --bg-canvas: var(--paper-100);
-  --bg-surface: var(--paper-25);
-  --bg-surface-raised: var(--paper-0);
-  --bg-surface-sunken: var(--paper-50);
-  --bg-inset: var(--paper-150);
-  --bg-hover: rgba(31, 28, 25, 0.04);
-  --bg-active: rgba(31, 28, 25, 0.07);
-  --bg-selected: var(--brand-50);
-  --bg-scrim: rgba(19, 17, 16, 0.44);
-
-  --text-primary: var(--paper-900);
-  --text-secondary: var(--paper-700);
-  --text-tertiary: var(--paper-500);
-  --text-quaternary: var(--paper-400);
-  --text-inverse: var(--paper-25);
-  --text-brand: var(--brand-700);
-  --text-accent: var(--accent-700);
-
-  --border-subtle: rgba(31, 28, 25, 0.07);
-  --border-default: rgba(31, 28, 25, 0.12);
-  --border-strong: rgba(31, 28, 25, 0.2);
-  --border-brand: var(--brand-300);
-
-  --focus-ring: var(--brand-500);
+  --grid-hour: rgba(49, 55, 74, 0.07);
+  --grid-half: rgba(49, 55, 74, 0.035);
+  --grid-day: rgba(49, 55, 74, 0.1);
+  --grid-now: var(--danger-500);
 
   /* ---------------------------------------------------------------------- */
-  /* Category colours — one per ItemCategory.                               */
-  /* Commutes are deliberately NEUTRAL: travel time is structure, not        */
-  /* content, and should never compete with what you came to do.             */
+  /* Traveller identity ramp                                                */
   /* ---------------------------------------------------------------------- */
-  --cat-stay: #5b3bc4;
-  --cat-stay-soft: #ece7fb;
-  --cat-stay-ink: #3f2792;
-
-  --cat-food: #c0522b;
-  --cat-food-soft: #fbe9e1;
-  --cat-food-ink: #8c3a1c;
-
-  --cat-culture: #2e5ea8;
-  --cat-culture-soft: #e4ecf9;
-  --cat-culture-ink: #1f4279;
-
-  --cat-outdoors: #4a7a3d;
-  --cat-outdoors-soft: #e8f1e4;
-  --cat-outdoors-ink: #33562a;
-
-  --cat-sightseeing: #b8770f;
-  --cat-sightseeing-soft: #fbeed4;
-  --cat-sightseeing-ink: #85560b;
-
-  --cat-nightlife: #7b3468;
-  --cat-nightlife-soft: #f6e7f2;
-  --cat-nightlife-ink: #57244a;
-
-  --cat-shopping: #a83c55;
-  --cat-shopping-soft: #fae6ea;
-  --cat-shopping-ink: #7a2b3e;
-
-  --cat-transit: #69625a;
-  --cat-transit-soft: #efece6;
-  --cat-transit-ink: #4d4842;
+  --who-0: #7222c9;
+  --who-1: #00909b;
+  --who-2: #d95a08;
+  --who-3: #9d439d;
+  --who-4: #1d5fb0;
+  --who-5: #157f5c;
 
   /* ---------------------------------------------------------------------- */
-  /* Traveller identity ramp — for avatars and assignment                   */
+  /* Map overlays                                                           */
   /* ---------------------------------------------------------------------- */
-  --who-0: #6438d1;
-  --who-1: #13776d;
-  --who-2: #de7914;
-  --who-3: #7b3468;
-  --who-4: #2e5ea8;
-  --who-5: #4a7a3d;
-
-  /* ---------------------------------------------------------------------- */
-  /* Map overlay tokens — read on top of a faded basemap                    */
-  /* ---------------------------------------------------------------------- */
-  --map-route: #6438d1;
-  --map-route-soft: rgba(100, 56, 209, 0.28);
-  --map-pin-ring: rgba(255, 255, 255, 0.94);
-  --map-pin-shadow: rgba(19, 17, 16, 0.3);
-  --map-halo: rgba(100, 56, 209, 0.16);
-  --map-scrim-top: rgba(250, 248, 244, 0.9);
-  --map-scrim-none: rgba(250, 248, 244, 0);
-  --map-water-tint: #cfe3e6;
+  --map-route: #8730ec;
+  --map-route-soft: rgba(135, 48, 236, 0.26);
+  --map-pin-ring: #ffffff;
+  --map-pin-shadow: rgba(22, 26, 37, 0.28);
+  --map-halo: rgba(135, 48, 236, 0.18);
+  --map-origin: var(--orange-500);
+  --map-candidate: var(--teal-500);
+  --map-survivor: var(--purple-500);
+  --map-culled: rgba(255, 255, 255, 0.3);
+  --map-water-tint: #cfe0e8;
 
   /* ---------------------------------------------------------------------- */
   /* Typography                                                             */
+  /*                                                                        */
+  /* Inter carries the product. The serif is reserved for moments that      */
+  /* genuinely benefit from character — discovery questions, destination     */
+  /* names, the day date — and never for operational labels or controls.    */
   /* ---------------------------------------------------------------------- */
   --font-sans:
     var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  --font-serif:
+  --font-display:
     var(--font-instrument-serif), "Iowan Old Style", "Palatino Linotype",
     Palatino, Georgia, serif;
   --font-mono:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 
-  /* Product UI runs at 14px: this is a dense planning tool, not a landing page. */
   --text-2xs: 0.6875rem; /* 11 */
   --text-xs: 0.75rem; /* 12 */
   --text-sm: 0.8125rem; /* 13 */
@@ -213,21 +331,20 @@
   --text-xl: 1.25rem; /* 20 */
   --text-2xl: 1.5rem; /* 24 */
   --text-3xl: 1.875rem; /* 30 */
-  --display-sm: 2.25rem; /* 36 */
-  --display-md: 3rem; /* 48 */
-  --display-lg: 4rem; /* 64 */
-  --display-xl: 5.25rem; /* 84 */
+  --display-sm: 2.125rem; /* 34 */
+  --display-md: 2.75rem; /* 44 */
+  --display-lg: 3.75rem; /* 60 */
 
-  --lh-tight: 1.15;
+  --lh-tight: 1.12;
   --lh-snug: 1.3;
   --lh-normal: 1.5;
-  --lh-relaxed: 1.65;
+  --lh-relaxed: 1.62;
 
-  --tracking-tighter: -0.022em;
-  --tracking-tight: -0.014em;
+  --tracking-tighter: -0.024em;
+  --tracking-tight: -0.013em;
   --tracking-normal: 0;
   --tracking-wide: 0.02em;
-  --tracking-caps: 0.07em;
+  --tracking-caps: 0.075em;
 
   --weight-normal: 400;
   --weight-medium: 500;
@@ -235,29 +352,29 @@
   --weight-bold: 700;
 
   /* ---------------------------------------------------------------------- */
-  /* Space — 2px base, tightening as it goes up                             */
+  /* Space                                                                  */
   /* ---------------------------------------------------------------------- */
   --space-0: 0;
-  --space-1: 0.125rem; /* 2 */
-  --space-2: 0.25rem; /* 4 */
-  --space-3: 0.375rem; /* 6 */
-  --space-4: 0.5rem; /* 8 */
-  --space-5: 0.625rem; /* 10 */
-  --space-6: 0.75rem; /* 12 */
-  --space-7: 0.875rem; /* 14 */
-  --space-8: 1rem; /* 16 */
-  --space-10: 1.25rem; /* 20 */
-  --space-12: 1.5rem; /* 24 */
-  --space-14: 1.75rem; /* 28 */
-  --space-16: 2rem; /* 32 */
-  --space-20: 2.5rem; /* 40 */
-  --space-24: 3rem; /* 48 */
-  --space-32: 4rem; /* 64 */
-  --space-40: 5rem; /* 80 */
-  --space-48: 6rem; /* 96 */
+  --space-1: 0.125rem;
+  --space-2: 0.25rem;
+  --space-3: 0.375rem;
+  --space-4: 0.5rem;
+  --space-5: 0.625rem;
+  --space-6: 0.75rem;
+  --space-7: 0.875rem;
+  --space-8: 1rem;
+  --space-10: 1.25rem;
+  --space-12: 1.5rem;
+  --space-14: 1.75rem;
+  --space-16: 2rem;
+  --space-20: 2.5rem;
+  --space-24: 3rem;
+  --space-32: 4rem;
+  --space-40: 5rem;
+  --space-48: 6rem;
 
   /* ---------------------------------------------------------------------- */
-  /* Radii — restrained. No nested pill-in-pill.                            */
+  /* Radii — one consistent system. Nothing nests a pill inside a pill.     */
   /* ---------------------------------------------------------------------- */
   --radius-xs: 3px;
   --radius-sm: 5px;
@@ -265,51 +382,52 @@
   --radius-lg: 10px;
   --radius-xl: 14px;
   --radius-2xl: 20px;
+  --radius-3xl: 28px;
   --radius-full: 999px;
 
   /* ---------------------------------------------------------------------- */
-  /* Elevation — tinted with warm ink, never pure black                     */
+  /* Elevation — cool slate ink, never black, never warm.                   */
+  /* The planner uses xs/sm almost exclusively; anything heavier reads as    */
+  /* a floating SaaS card.                                                  */
   /* ---------------------------------------------------------------------- */
-  --shadow-xs:
-    0 1px 1px rgba(31, 28, 25, 0.04), 0 1px 2px rgba(31, 28, 25, 0.05);
+  --shadow-xs: 0 1px 1.5px rgba(35, 40, 56, 0.05);
   --shadow-sm:
-    0 1px 2px rgba(31, 28, 25, 0.05), 0 2px 5px -1px rgba(31, 28, 25, 0.06);
+    0 1px 2px rgba(35, 40, 56, 0.05), 0 2px 6px -1px rgba(35, 40, 56, 0.07);
   --shadow-md:
-    0 2px 4px -1px rgba(31, 28, 25, 0.06),
-    0 6px 14px -3px rgba(31, 28, 25, 0.08);
+    0 2px 4px -1px rgba(35, 40, 56, 0.06),
+    0 8px 16px -4px rgba(35, 40, 56, 0.1);
   --shadow-lg:
-    0 4px 8px -2px rgba(31, 28, 25, 0.07),
-    0 14px 32px -8px rgba(31, 28, 25, 0.13);
+    0 4px 8px -2px rgba(35, 40, 56, 0.07),
+    0 16px 32px -8px rgba(35, 40, 56, 0.14);
   --shadow-xl:
-    0 8px 16px -6px rgba(31, 28, 25, 0.08),
-    0 28px 60px -18px rgba(31, 28, 25, 0.2);
+    0 8px 16px -6px rgba(35, 40, 56, 0.08),
+    0 28px 56px -16px rgba(35, 40, 56, 0.2);
   --shadow-drag:
-    0 12px 20px -8px rgba(31, 28, 25, 0.18),
-    0 30px 60px -20px rgba(100, 56, 209, 0.28);
-  --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    0 10px 18px -6px rgba(35, 40, 56, 0.16),
+    0 28px 52px -18px rgba(114, 34, 201, 0.28);
 
   /* ---------------------------------------------------------------------- */
-  /* Motion — hummingbird character: quick, precise, a touch of overshoot   */
+  /* Motion — the hummingbird spec.                                         */
+  /*                                                                        */
+  /* Hover, not spin. Instant start, instant stop. No ceremony, no bounce.  */
+  /* The map camera is the signature: it recentres decisively and settles.  */
   /* ---------------------------------------------------------------------- */
-  --dur-instant: 90ms;
-  --dur-fast: 150ms;
-  --dur-base: 220ms;
-  --dur-slow: 340ms;
-  --dur-page: 480ms;
+  --dur-micro: 120ms; /* hover, press, checkbox */
+  --dur-element: 180ms; /* element enter/exit */
+  --dur-surface: 260ms; /* panel, sheet, surface */
+  --dur-camera: 420ms; /* map camera */
 
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ease-in: cubic-bezier(0.5, 0, 0.9, 0.4);
-  --ease-in-out: cubic-bezier(0.5, 0, 0.2, 1);
-  /* The signature: a small overshoot, like a hummingbird arriving at a flower. */
-  --ease-hover: cubic-bezier(0.34, 1.42, 0.64, 1);
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.15, 1);
 
   /* ---------------------------------------------------------------------- */
-  /* Layout constants                                                       */
+  /* Layout                                                                 */
   /* ---------------------------------------------------------------------- */
   --topbar-h: 52px;
-  --daybar-h: 46px;
-  --rail-w: 300px;
-  --rail-w-wide: 340px;
+  --daybar-h: 58px;
+  --rail-w: 320px;
+  --rail-w-wide: 364px;
   --hour-h: 56px;
   --gutter-w: 58px;
 
@@ -325,17 +443,16 @@
   --z-drag: 100;
 }
 
-/* A tighter vertical rhythm on short viewports keeps the calendar usable. */
-@media (max-height: 780px) {
+@media (max-height: 820px) {
   :root {
-    --hour-h: 48px;
+    --hour-h: 46px;
   }
 }
 
 @media (max-width: 900px) {
   :root {
-    --topbar-h: 48px;
-    --hour-h: 52px;
+    --topbar-h: 50px;
+    --hour-h: 54px;
     --gutter-w: 46px;
   }
 }

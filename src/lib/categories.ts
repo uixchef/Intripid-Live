@@ -13,9 +13,11 @@ import {
 import type {
   BudgetTier,
   CommuteMode,
+  IncomeBand,
   Interest,
   ItemCategory,
   TripStyle,
+  WeekendShape,
 } from "./types";
 
 /**
@@ -150,31 +152,96 @@ export const BUDGET_META: Record<
   },
 };
 
-export const STYLE_META: Record<
-  TripStyle,
-  { label: string; blurb: string }
-> = {
-  slow: { label: "Slow", blurb: "One neighbourhood, properly" },
-  adventure: { label: "Adventure", blurb: "Get the heart rate up" },
-  culture: { label: "Culture", blurb: "Museums, music, architecture" },
-  food: { label: "Food", blurb: "Plan the trip around meals" },
-  nightlife: { label: "Nightlife", blurb: "The city after dark" },
-  nature: { label: "Nature", blurb: "Mountains, forest, coastline" },
-  beach: { label: "Beach", blurb: "Salt water and not much else" },
-  city: { label: "City", blurb: "Dense, loud, alive" },
+/**
+ * Must-have experiences — the FILTER question.
+ *
+ * Verb-led with an inline definition, which is the phrasing the original
+ * product used ("Enjoy Mountains", "Be Peaceful"). It matters: a taxonomy
+ * written as things you DO reads as a wishlist, while the same list written
+ * as nouns reads as a filter panel.
+ */
+export const STYLE_META: Record<TripStyle, { label: string; blurb: string }> = {
+  city: { label: "Live city life", blurb: "Dense, loud, alive at every hour" },
+  culture: {
+    label: "Steep in culture",
+    blurb: "Museums, architecture, music that matters",
+  },
+  food: { label: "Eat properly", blurb: "Plan the days around the meals" },
+  slow: { label: "Be peaceful", blurb: "One neighbourhood, unhurried" },
+  nature: {
+    label: "Get into nature",
+    blurb: "Mountains, forest, open coastline",
+  },
+  beach: { label: "Live island life", blurb: "Salt water and not much else" },
+  adventure: {
+    label: "Do something bracing",
+    blurb: "Get the heart rate up on purpose",
+  },
+  nightlife: {
+    label: "Stay out late",
+    blurb: "The city after everyone else has gone home",
+  },
 };
 
-export const INTEREST_META: Record<Interest, { label: string }> = {
-  museums: { label: "Museums" },
-  architecture: { label: "Architecture" },
-  "live-music": { label: "Live music" },
-  markets: { label: "Markets" },
-  coffee: { label: "Coffee" },
-  "fine-dining": { label: "Fine dining" },
-  "street-food": { label: "Street food" },
-  hiking: { label: "Hiking" },
-  water: { label: "Water" },
-  shopping: { label: "Shopping" },
-  history: { label: "History" },
-  nightlife: { label: "Nightlife" },
+/** The order experiences are offered in. */
+export const EXPERIENCE_ORDER: readonly TripStyle[] = [
+  "city",
+  "culture",
+  "food",
+  "slow",
+  "nature",
+  "beach",
+  "adventure",
+  "nightlife",
+] as const;
+
+/**
+ * Activities — the RANK question.
+ *
+ * These never eliminate a city; they order the survivors. Grouped so the list
+ * scans, and no emoji in the labels.
+ */
+export const INTEREST_META: Record<
+  Interest,
+  { label: string; group: string }
+> = {
+  museums: { label: "Museums & galleries", group: "Culture" },
+  architecture: { label: "Architecture walks", group: "Culture" },
+  history: { label: "Historic sites", group: "Culture" },
+  "live-music": { label: "Live music", group: "Culture" },
+  "fine-dining": { label: "Fine dining", group: "Food & drink" },
+  "street-food": { label: "Street food", group: "Food & drink" },
+  markets: { label: "Food markets", group: "Food & drink" },
+  coffee: { label: "Coffee places", group: "Food & drink" },
+  nightlife: { label: "Bars & nightlife", group: "Food & drink" },
+  hiking: { label: "Hiking", group: "Outdoors" },
+  water: { label: "Swimming & water", group: "Outdoors" },
+  shopping: { label: "Shopping", group: "City" },
+};
+
+/** Activity groups in display order. */
+export const ACTIVITY_GROUPS = [
+  "Culture",
+  "Food & drink",
+  "Outdoors",
+  "City",
+] as const;
+
+/** Income bands for the optional budget normaliser. */
+export const INCOME_META: Record<IncomeBand, { label: string }> = {
+  "under-40": { label: "Under $40k" },
+  "40-75": { label: "$40k – $75k" },
+  "75-125": { label: "$75k – $125k" },
+  "125-200": { label: "$125k – $200k" },
+  "over-200": { label: "Over $200k" },
+};
+
+/** What "the weekend" means. Asked only when the traveller picks a weekend. */
+export const WEEKEND_META: Record<
+  WeekendShape,
+  { label: string; blurb: string }
+> = {
+  "fri-sun": { label: "Friday to Sunday", blurb: "Leave after work" },
+  "sat-mon": { label: "Saturday to Monday", blurb: "Take the Monday" },
+  "sat-sun": { label: "Saturday to Sunday", blurb: "One night only" },
 };

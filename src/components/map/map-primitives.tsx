@@ -34,6 +34,11 @@ export interface MapMarkerProps {
   /** Higher values sit above other markers. Selected pins should win. */
   z?: number;
   anchor?: mapboxgl.Anchor;
+  /**
+   * Pixel nudge from the anchor point, [x, y] with y positive downward. Used
+   * to de-stack labels that would otherwise collide at low zoom.
+   */
+  offset?: [number, number];
   onClick?: () => void;
   /** Announced to screen readers; the marker is a button when interactive. */
   label?: string;
@@ -44,6 +49,7 @@ export function MapMarker({
   children,
   z = 1,
   anchor = "bottom",
+  offset,
   onClick,
   label,
 }: MapMarkerProps) {
@@ -77,6 +83,10 @@ export function MapMarker({
   useEffect(() => {
     markerRef.current?.setLngLat([coords.lng, coords.lat]);
   }, [coords.lng, coords.lat]);
+
+  useEffect(() => {
+    markerRef.current?.setOffset(offset ?? [0, 0]);
+  }, [offset]);
 
   /*
    * Stacking order lives on the marker element itself, because Mapbox renders

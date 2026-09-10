@@ -39,7 +39,13 @@ import { categoryMeta } from "@/lib/categories";
 import { useIsCompact, useIsShort } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
 import { offersForDay } from "@/lib/trip/assistant";
-import { tripDayKeys } from "@/lib/trip/schedule";
+import {
+  activitiesForDay,
+  commutesForDay,
+  gapsForDay,
+  summariseDay,
+  tripDayKeys,
+} from "@/lib/trip/schedule";
 import { dayLabel, durationLabel } from "@/lib/trip/time";
 import {
   selectSelectedItem,
@@ -51,10 +57,17 @@ import {
 import { ActivityEditor } from "./activity-editor";
 import { AssistantOffers, AssistantPlanPanel } from "./assistant";
 import { Calendar, DAY_START_MIN, DayRail, SNAP_MIN } from "./calendar";
-import { InviteModal, PresenceBar } from "./collaborators";
+import { InviteModal, PresenceChip, TravellersPanel } from "./collaborators";
 import { EventCard } from "./event-card";
 import { Itinerary } from "./itinerary";
 import { PlannerMap } from "./planner-map";
+import {
+  RailContext,
+  RailEmpty,
+  RailMap,
+  RailPeople,
+  type RailTab,
+} from "./rail";
 import { DetailsPanel, IdeasRail } from "./side-panel";
 
 import styles from "./planner-experience.module.css";
@@ -62,18 +75,17 @@ import styles from "./planner-experience.module.css";
 /**
  * The Trip Planner.
  *
- * Composition: the schedule leads, the map sits permanently beside it, and a
- * context column below the map carries whatever you are currently working
- * with — ideas, the selected stop, or the assistant's proposal. Nothing that
- * matters lives in a modal over the day.
+ * Composition: the schedule leads, and a persistent rail on the trailing edge
+ * carries everything about it — the map for the day, the activity you have
+ * selected, the ideas shelf, the advisor, and the people you are travelling
+ * with. Nothing that matters lives in a modal over the day, and nothing that
+ * matters is hidden behind a top-bar avatar stack.
  *
  * On mobile this becomes a single column with a collapsible map strip above
- * the day, which fixes the historical product's worst regression: on phones
- * the map was demoted behind a floating button and the map/schedule coupling
- * was lost entirely.
+ * the day and the rail's sections redistributed into sheets, which fixes the
+ * historical product's worst regression: on phones the map was demoted behind
+ * a floating button and the map/schedule coupling was lost entirely.
  */
-
-type PanelTab = "ideas" | "details" | "assistant";
 
 const HOUR_HEIGHT = 56;
 const HOUR_HEIGHT_SHORT = 48;
@@ -96,15 +108,18 @@ export function PlannerExperience() {
   const selectedItem = useTrip(selectSelectedItem);
 
   /*
-   * The pinned panel tab, remembered against the selection it was pinned for.
+   * The pinned rail tab, remembered against the selection it was pinned for.
    * Storing the selection alongside it means a NEW selection naturally wins
    * without an effect that resets state — the override simply stops matching.
    */
-  const [panelOverride, setPanelOverride] = useState<{
-    tab: PanelTab;
+  const [railOverride, setRailOverride] = useState<{
+    tab: RailTab;
     forSelection: string | null;
   } | null>(null);
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const [peopleOpen, setPeopleOpen] = useState(false);
+  const [peopleSheet, setPeopleSheet] = useState(false);
 
   const days = useMemo(() => tripDayKeys(trip), [trip]);
   const destination = getDestination(trip.destinationId);
@@ -143,15 +158,46 @@ export function PlannerExperience() {
     [trip, activeDay],
   );
 
-  // Which context panel is showing. Selecting something is a strong enough
-  // signal to override whatever tab was last pinned.
-  const panel: PanelTab = assistant.plan
-    ? "assistant"
-    : panelOverride && panelOverride.forSelection === selectedItemId
-      ? panelOverride.tab
+  /*
+   * Which rail tab is showing. A live proposal outranks everything, then a
+   * tab you pinned for this selection, then the selection itself. Selecting
+   * something is a strong enough signal to override whatever was last pinned.
+   */
+  const railTab: RailTab = assistant.plan
+    ? "advisor"
+    : railOverride && railOverride.forSelection === selectedItemId
+      ? railOverride.tab
       : selectedItem
-        ? "details"
+        ? "activity"
         : "ideas";
+
+  /* Day facts for the map's header, so the route says which day it is. */
+  const dayStats = useMemo(() => {
+    const stops = activitiesForDay(trip, activeDay).length;
+    const walkMinutes = commutesForDay(trip, activeDay)
+      .filter((item) => item.commute?.mode === "walk")
+      .reduce((total, item) => total + (item.commute?.minutes ?? 0), 0);
+    return { stops, walkMinutes };
+  }, [trip, activeDay]);
+
+  /* The same reading the advisor's offers are derived from, shown alongside
+     them so a suggestion can be checked rather than just trusted. */
+  const dayReading = useMemo(() => {
+    const summary = summariseDay(trip, activeDay);
+    const freeMinutes = gapsForDay(trip, activeDay).reduce(
+      (total, gap) => total + gap.minutes,
+      0,
+    );
+    return {
+      label: dayLabel(activeDay),
+      stops: summary.activityCount,
+      errorCount: summary.errorCount,
+      warningCount: summary.warningCount,
+      freeMinutes,
+      travelMinutes: summary.commuteMinutes,
+      costUsd: summary.costUsd,
+    };
+  }, [trip, activeDay]);
 
   /* ---------------------------------------------------------------------- */
   /* Drag and drop                                                          */
@@ -267,31 +313,116 @@ export function PlannerExperience() {
     [api],
   );
 
-  const contextPanel = (
-    <div className={styles.contextPanel}>
-      {!assistant.plan ? (
-        <div className={styles.panelTabs}>
-          <Segmented
-            options={[
-              { value: "ideas", label: `Ideas ${trip.ideas.length}` },
-              { value: "details", label: "Selected" },
-            ]}
-            value={panel === "details" ? "details" : "ideas"}
-            onChange={(value) => {
-              const tab = value as PanelTab;
-              setPanelOverride({
-                tab,
-                forSelection: tab === "ideas" ? null : selectedItemId,
-              });
-              if (tab === "ideas") api.getState().selectItem(null);
-            }}
-            label="Context panel"
-            size="sm"
-          />
-        </div>
-      ) : null}
+  const onInviteConnection = useCallback(
+    (label: string) => api.getState().sendInvite(label),
+    [api],
+  );
 
-      <div className={styles.panelContent}>
+  /* The travellers list, shared by the rail section and the mobile sheet. */
+  const travellersPanel = (
+    <TravellersPanel
+      trip={trip}
+      invited={invite.sent}
+      onInvite={() => api.getState().openInvite()}
+      onInviteConnection={onInviteConnection}
+      onFocusItem={(id) => api.getState().selectItem(id, "calendar")}
+    />
+  );
+
+  /*
+   * The rail's context body. One of three things, and never more than one:
+   * the advisor when it has something to say, the selected activity, or the
+   * ideas shelf.
+   */
+  const railBody =
+    railTab === "advisor" ? (
+      assistant.plan ? (
+        <AssistantPlanPanel
+          key={assistant.plan.id}
+          plan={assistant.plan}
+          applied={assistant.applied}
+          onApplyAll={() => api.getState().applyPlan()}
+          onApplyOne={(id) => api.getState().applyChange(id)}
+          onDismiss={() => api.getState().dismissPlan()}
+          onHoverChange={onHover}
+        />
+      ) : (
+        <AssistantOffers
+          key="offers"
+          offers={offers}
+          onRequest={(intent) => api.getState().requestPlan(intent)}
+          reading={dayReading}
+        />
+      )
+    ) : railTab === "activity" ? (
+      selectedItem ? (
+        <DetailsPanel
+          key={selectedItem.id}
+          trip={trip}
+          item={selectedItem}
+          activeDay={activeDay}
+          onEdit={() => api.getState().openEdit(selectedItem.id)}
+          onDelete={() => api.getState().deleteItem(selectedItem.id)}
+          onDuplicate={() => api.getState().duplicateItem(selectedItem.id)}
+          onUnschedule={() => api.getState().unschedule(selectedItem.id)}
+          onToggleAssignee={(who) =>
+            api.getState().toggleAssignee(selectedItem.id, who)
+          }
+          onResolveConflict={() => {
+            api.getState().setActiveDay(selectedItem.start!.slice(0, 10));
+            api.getState().requestPlan("resolve-overlap");
+          }}
+        />
+      ) : (
+        <RailEmpty
+          key="empty"
+          title="Nothing selected"
+          body="Pick an activity on the grid or a pin on the map to see its times, place, cost and who's going."
+        />
+      )
+    ) : (
+      <IdeasRail
+        key="ideas"
+        trip={trip}
+        activeDay={activeDay}
+        draggingId={draggingId}
+        onSchedule={(ideaId) => {
+          const idea = trip.ideas.find((i) => i.id === ideaId);
+          if (!idea) return;
+          // Drop it where there is room rather than on top of something.
+          api.getState().scheduleIdea(ideaId, activeDay, 10 * 60);
+        }}
+      />
+    );
+
+  const rail = (
+    <aside className={styles.rail}>
+      <RailMap
+        activeDay={activeDay}
+        stopCount={dayStats.stops}
+        walkMinutes={dayStats.walkMinutes}
+        expanded={mapExpanded}
+        onToggleExpanded={() => setMapExpanded((value) => !value)}
+      >
+        <PlannerMap
+          trip={trip}
+          activeDay={activeDay}
+          selectedItemId={selectedItemId}
+          hoveredItemId={hoveredItemId}
+          onSelect={onSelectFromMap}
+          onHover={onHover}
+          onBackgroundClick={() => api.getState().selectItem(null)}
+        />
+      </RailMap>
+
+      <RailContext
+        tab={railTab}
+        onTab={(tab) =>
+          setRailOverride({ tab, forSelection: selectedItemId })
+        }
+        ideaCount={trip.ideas.length}
+        advisorFlag={Boolean(assistant.plan) || offers.length > 0}
+      >
         {/*
          * Deliberately NOT mode="wait". Selecting a card is the most frequent
          * action in the planner, and waiting for the outgoing panel to animate
@@ -299,60 +430,26 @@ export function PlannerExperience() {
          * panel mounts immediately and cross-fades in its grid cell.
          */}
         <AnimatePresence initial={false}>
-          {panel === "assistant" && assistant.plan ? (
-            <AssistantPlanPanel
-              key={assistant.plan.id}
-              plan={assistant.plan}
-              applied={assistant.applied}
-              onApplyAll={() => api.getState().applyPlan()}
-              onApplyOne={(id) => api.getState().applyChange(id)}
-              onDismiss={() => api.getState().dismissPlan()}
-              onHoverChange={onHover}
-            />
-          ) : panel === "details" && selectedItem ? (
-            <DetailsPanel
-              key={selectedItem.id}
-              trip={trip}
-              item={selectedItem}
-              activeDay={activeDay}
-              onEdit={() => api.getState().openEdit(selectedItem.id)}
-              onDelete={() => api.getState().deleteItem(selectedItem.id)}
-              onDuplicate={() => api.getState().duplicateItem(selectedItem.id)}
-              onUnschedule={() => api.getState().unschedule(selectedItem.id)}
-              onToggleAssignee={(who) =>
-                api.getState().toggleAssignee(selectedItem.id, who)
-              }
-            />
-          ) : (
-            <motion.div
-              key="ideas"
-              className={styles.panelScroll}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.16 }}
-            >
-              <AssistantOffers
-                offers={offers}
-                onRequest={(intent) => api.getState().requestPlan(intent)}
-              />
-              <div className={styles.panelDivider} />
-              <IdeasRail
-                trip={trip}
-                activeDay={activeDay}
-                draggingId={draggingId}
-                onSchedule={(ideaId) => {
-                  const idea = trip.ideas.find((i) => i.id === ideaId);
-                  if (!idea) return;
-                  // Drop it where there is room rather than on top of
-                  // something: the first gap, else late morning.
-                  api.getState().scheduleIdea(ideaId, activeDay, 10 * 60);
-                }}
-              />
-            </motion.div>
-          )}
+          <motion.div
+            key={railBody.key}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.14 }}
+          >
+            {railBody}
+          </motion.div>
         </AnimatePresence>
-      </div>
-    </div>
+      </RailContext>
+
+      <RailPeople
+        trip={trip}
+        invited={invite.sent}
+        open={peopleOpen}
+        onToggle={() => setPeopleOpen((value) => !value)}
+      >
+        {travellersPanel}
+      </RailPeople>
+    </aside>
   );
 
   return (
@@ -414,11 +511,15 @@ export function PlannerExperience() {
               />
             ) : null}
 
-            <PresenceBar
+            <PresenceChip
               trip={trip}
               invited={invite.sent}
-              onInvite={() => api.getState().openInvite()}
-              onFocusItem={(id) => api.getState().selectItem(id, "calendar")}
+              expanded={isCompact ? peopleSheet : peopleOpen}
+              onToggle={() =>
+                isCompact
+                  ? setPeopleSheet((value) => !value)
+                  : setPeopleOpen((value) => !value)
+              }
             />
 
             <IconButton
@@ -479,7 +580,12 @@ export function PlannerExperience() {
                 onSelect={onSelectFromMap}
                 onHover={onHover}
                 onBackgroundClick={() => api.getState().selectItem(null)}
-                padding={{ top: 26, right: 26, bottom: 30, left: 26 }}
+                /*
+                 * The phone strip is short and wide, so vertical padding is
+                 * what forces the camera out. At 26/30 a downtown day framed
+                 * as far out as New Jersey.
+                 */
+                padding={{ top: 12, right: 22, bottom: 16, left: 22 }}
               />
               <button
                 type="button"
@@ -543,23 +649,8 @@ export function PlannerExperience() {
             )}
           </main>
 
-          {/* Desktop right column: map on top, context below. */}
-          {!isCompact ? (
-            <aside className={styles.rightColumn}>
-              <div className={styles.mapPane}>
-                <PlannerMap
-                  trip={trip}
-                  activeDay={activeDay}
-                  selectedItemId={selectedItemId}
-                  hoveredItemId={hoveredItemId}
-                  onSelect={onSelectFromMap}
-                  onHover={onHover}
-                  onBackgroundClick={() => api.getState().selectItem(null)}
-                />
-              </div>
-              {contextPanel}
-            </aside>
-          ) : null}
+          {/* The persistent context and utility rail. */}
+          {!isCompact ? rail : null}
 
           {/* The editor slides in beside the day — never over it. */}
           <AnimatePresence>
@@ -644,6 +735,10 @@ export function PlannerExperience() {
                   onToggleAssignee={(who) =>
                     api.getState().toggleAssignee(selectedItem.id, who)
                   }
+                  onResolveConflict={() => {
+                    api.getState().setActiveDay(selectedItem.start!.slice(0, 10));
+                    api.getState().requestPlan("resolve-overlap");
+                  }}
                 />
               ) : null}
             </Sheet>
@@ -671,6 +766,15 @@ export function PlannerExperience() {
                   }
                 />
               ) : null}
+            </Sheet>
+
+            <Sheet
+              open={peopleSheet}
+              onClose={() => setPeopleSheet(false)}
+              label="Travellers"
+              height={0.66}
+            >
+              {travellersPanel}
             </Sheet>
 
             <Sheet

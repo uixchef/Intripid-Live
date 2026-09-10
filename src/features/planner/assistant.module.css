@@ -22,9 +22,9 @@
   min-width: 0;
   box-shadow: var(--shadow-xs);
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-hover);
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
 .offer:hover {
@@ -50,13 +50,13 @@
   width: 26px;
   height: 26px;
   border-radius: var(--radius-md);
-  background: var(--energy-50);
-  border: 1px solid var(--energy-100);
-  color: var(--energy-600);
+  background: var(--purple-50);
+  border: 1px solid var(--purple-100);
+  color: var(--purple-600);
 }
 
 .offerAttention .offerIcon {
-  background: var(--paper-0);
+  background: var(--slate-0);
   border-color: var(--danger-100);
   color: var(--danger-600);
 }
@@ -87,7 +87,7 @@
   flex: none;
   color: var(--text-quaternary);
   opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-out);
+  transition: opacity var(--dur-micro) var(--ease-out);
 }
 
 .offer:hover .offerArrow {
@@ -109,9 +109,9 @@
   width: 24px;
   height: 24px;
   border-radius: var(--radius-full);
-  background: var(--success-50);
-  color: var(--success-600);
-  border: 1px solid var(--success-100);
+  background: var(--positive-50);
+  color: var(--positive-600);
+  border: 1px solid var(--positive-100);
   margin-top: 1px;
 }
 
@@ -162,18 +162,26 @@
   height: 20px;
   padding: 0 var(--space-4);
   border-radius: var(--radius-full);
-  background: var(--energy-50);
-  border: 1px solid var(--energy-100);
-  color: var(--energy-700);
+  /* Purple is the system acting — the same channel as its map pins and its
+     proposals in the grid. Amber belongs to origin and to warnings. */
+  background: var(--purple-50);
+  border: 1px solid var(--purple-100);
+  color: var(--purple-700);
   font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-tight);
 }
 
 .panelTitle {
-  font-family: var(--font-serif);
-  font-size: var(--text-xl);
-  line-height: 1.15;
+  /*
+   * UI face, not the editorial display face. The display serif belongs to
+   * Discovery's questions and to a date numeral; putting it on every panel
+   * heading in the planner is what made an operational tool read as an
+   * editorial concept.
+   */
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: 1.28;
   letter-spacing: var(--tracking-tight);
   color: var(--text-primary);
 }
@@ -214,7 +222,7 @@
   height: 17px;
   margin-top: 1px;
   border-radius: var(--radius-full);
-  background: var(--paper-150);
+  background: var(--slate-150);
   color: var(--text-tertiary);
   font-size: 9px;
   font-weight: var(--weight-bold);
@@ -241,23 +249,23 @@
   border: 1px solid var(--border-subtle);
   min-width: 0;
   transition:
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out);
+    border-color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
 }
 
 .change:hover {
-  border-color: var(--brand-300);
-  background: var(--brand-50);
+  border-color: var(--purple-300);
+  background: var(--purple-50);
 }
 
 .changeApplied {
-  background: var(--success-50);
-  border-color: var(--success-100);
+  background: var(--positive-50);
+  border-color: var(--positive-100);
 }
 
 .changeApplied:hover {
-  border-color: var(--success-100);
-  background: var(--success-50);
+  border-color: var(--positive-100);
+  background: var(--positive-50);
 }
 
 .changeSummary {
@@ -266,7 +274,7 @@
   color: var(--text-primary);
   min-width: 0;
   flex: 1;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .changeDone {
@@ -276,7 +284,7 @@
   flex: none;
   font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
-  color: var(--success-700);
+  color: var(--positive-700);
   padding-right: var(--space-3);
 }
 
@@ -294,4 +302,69 @@
   .offer:hover {
     transform: none;
   }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Day reading — the advisor showing its working                             */
+/* ------------------------------------------------------------------------- */
+
+.offersWrap {
+  display: grid;
+  gap: var(--space-5);
+  align-content: start;
+}
+
+.reading {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-6);
+  border-top: 1px solid var(--border-hairline);
+  margin: 0 var(--space-2);
+}
+
+.readingLabel {
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+.readingGrid {
+  display: grid;
+  gap: 1px;
+}
+
+.readingRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  min-width: 0;
+}
+
+.readingRow dt {
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.readingRow dd {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex: none;
+}
+
+.readingBad {
+  color: var(--danger-600);
+}
+
+.readingWarn {
+  color: var(--warning-700);
 }

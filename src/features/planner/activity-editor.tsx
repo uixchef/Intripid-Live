@@ -72,6 +72,15 @@ export function ActivityEditor({
 
   const titleMissing = draft.title.trim().length === 0;
 
+  /*
+   * A blank field on a form you just opened is not a mistake yet. The commit
+   * button still gates on `titleMissing`, but the red border and the message
+   * wait until the field has been visited — greeting someone with an error
+   * for not having typed is the form telling them off for showing up.
+   */
+  const [titleTouched, setTitleTouched] = useState(false);
+  const showTitleError = titleMissing && titleTouched;
+
   /** HH:MM for the native time input. */
   const timeValue = `${String(Math.floor(draft.startMinutes / 60)).padStart(2, "0")}:${String(
     draft.startMinutes % 60,
@@ -224,7 +233,11 @@ export function ActivityEditor({
 
         <Field
           label="What is it?"
-          error={titleMissing ? "Give it a name so the group knows what it is" : undefined}
+          error={
+            showTitleError
+              ? "Give it a name so the group knows what it is"
+              : undefined
+          }
         >
           {({ id, invalid }) => (
             <Input
@@ -233,6 +246,7 @@ export function ActivityEditor({
               value={draft.title}
               placeholder="Dinner at Lilia"
               onChange={(event) => onChange({ title: event.target.value })}
+              onBlur={() => setTitleTouched(true)}
             />
           )}
         </Field>
