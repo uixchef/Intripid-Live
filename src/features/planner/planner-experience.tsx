@@ -292,7 +292,13 @@ export function PlannerExperience() {
       ) : null}
 
       <div className={styles.panelContent}>
-        <AnimatePresence mode="wait" initial={false}>
+        {/*
+         * Deliberately NOT mode="wait". Selecting a card is the most frequent
+         * action in the planner, and waiting for the outgoing panel to animate
+         * away before mounting the details made it feel laggy. The incoming
+         * panel mounts immediately and cross-fades in its grid cell.
+         */}
+        <AnimatePresence initial={false}>
           {panel === "assistant" && assistant.plan ? (
             <AssistantPlanPanel
               key={assistant.plan.id}
@@ -323,7 +329,6 @@ export function PlannerExperience() {
               className={styles.panelScroll}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
               transition={{ duration: 0.16 }}
             >
               <AssistantOffers

@@ -225,6 +225,22 @@ const shots = [
     },
   },
   {
+    // Mid-flow on a phone: completed steps, the map at the origin, and the
+    // live leaderboard that makes the ranking's responsiveness visible.
+    name: "24-mobile-discovery-midflow",
+    viewport: PHONE,
+    url: "/discover",
+    async run(page) {
+      await page.waitForSelector("text=When do you want to travel?");
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /London/ }).click();
+      await page.getByRole("radio", { name: "Go abroad" }).click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("radio", { name: /Premium/ }).click();
+      await settleMap(page);
+    },
+  },
+  {
     name: "20-landing-mobile",
     viewport: PHONE,
     url: "/",

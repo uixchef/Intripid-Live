@@ -513,9 +513,20 @@
   }
 }
 
-/* On a phone the console owns the screen; the map already shows the leaders. */
+/*
+ * Kept on mobile. The map strip is only 30dvh there and can show two or three
+ * pins at best, so the written leaderboard is doing more work on a phone than
+ * on a desktop — and it fills space the short question steps would leave
+ * empty.
+ */
 @media (max-width: 900px) {
   .liveMatches {
-    display: none;
+    padding: var(--space-5) var(--space-6) 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .liveMatches {
+    padding: var(--space-4) var(--space-5) 0;
   }
 }

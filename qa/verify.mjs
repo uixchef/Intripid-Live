@@ -62,7 +62,11 @@ if (!noToken) {
   // The planner must still be fully usable with motion off. Target a real
   // activity — commutes have no participants section.
   await page.locator('[data-event="i-frenchette-bakery"]').click();
-  await page.waitForTimeout(400);
+  await page
+    .locator('[class*="detailsTitle"]')
+    .first()
+    .waitFor({ timeout: 5000 })
+    .catch(() => {});
   const detailsVisible = await page.locator("text=/Who.s going/").count();
   check(
     "planner works with reduced motion",
@@ -107,7 +111,11 @@ if (noToken) {
   );
 
   await page.locator('[data-event="i-frenchette-bakery"]').click();
-  await page.waitForTimeout(400);
+  await page
+    .locator('[class*="detailsTitle"]')
+    .first()
+    .waitFor({ timeout: 5000 })
+    .catch(() => {});
   check(
     "selection still works without a map",
     (await page.locator("text=/Who.s going/").count()) > 0,
