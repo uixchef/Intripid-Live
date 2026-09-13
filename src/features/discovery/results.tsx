@@ -316,6 +316,12 @@ function activityScores(
     .sort((a, b) => b.score - a.score);
 }
 
+function cityCoverFromPhoto(src: string | undefined): string | null {
+  if (!src) return null;
+  const match = src.match(/^(\/places\/[^/]+?)(?:-[a-z]+)?\.jpg$/);
+  return match ? `${match[1]}.jpg` : null;
+}
+
 function PlaceCard({
   attraction,
   variant = "spot",
@@ -324,19 +330,31 @@ function PlaceCard({
   variant?: "spot" | "event";
 }) {
   const photo = attraction.photo;
+  const cover = cityCoverFromPhoto(photo);
+  const src = photo ?? cover;
   return (
     <article className={cn(styles.spotCard, variant === "event" && styles.eventCard)}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={photo ?? "/discovery/pins/place.png"}
-        alt=""
-        width={200}
-        height={variant === "event" ? 200 : 160}
-        className={styles.spotPhoto}
-        onError={(event) => {
-          event.currentTarget.src = "/discovery/pins/place.png";
-        }}
-      />
+      {src ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt=""
+            width={200}
+            height={variant === "event" ? 200 : 160}
+            className={styles.spotPhoto}
+            onError={(event) => {
+              const img = event.currentTarget;
+              if (cover && !img.dataset.coverTried && img.getAttribute("src") !== cover) {
+                img.dataset.coverTried = "1";
+                img.src = cover;
+                return;
+              }
+              img.style.display = "none";
+            }}
+          />
+        </>
+      ) : null}
       <div className={styles.spotBody}>
         <p className={styles.spotName}>{attraction.name}</p>
         {variant === "event" && attraction.note ? (
@@ -442,8 +460,7 @@ export function DestinationBrief({
   const scores = activityScores(recommendation, prefs);
   const visibleScores = moreScores ? scores : scores.slice(0, 4);
   const { immersive, exciting, food } = splitBriefPlaces(destination.attractions);
-  const cover =
-    coverPhotoSrc(destination.id) ?? "/discovery/pins/place.png";
+  const cover = coverPhotoSrc(destination.id);
 
   const tabs = [
     { id: "why", label: "Why here", count: destination.whyYoullLoveIt.length },
@@ -574,17 +591,21 @@ export function DestinationBrief({
             transition={paneTransition}
           >
         <div className={styles.hero}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={cover}
-            alt=""
-            width={720}
-            height={240}
-            aria-hidden
-            onError={(event) => {
-              event.currentTarget.src = "/discovery/pins/place.png";
-            }}
-          />
+          {cover ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={cover}
+                alt=""
+                width={720}
+                height={240}
+                aria-hidden
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                }}
+              />
+            </>
+          ) : null}
           {matchRank > 0 ? (
             <span
               className={styles.heroRank}

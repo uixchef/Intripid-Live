@@ -174,65 +174,68 @@ function offset(coords: Seed["coords"], eastKm: number, northKm: number) {
  * to do. These are typed stops around the centre — not a live POI scrape —
  * so discovery and "Build trip here" always have places and calendar items.
  */
+function placePhoto(id: string, slot?: string) {
+  return slot ? `/places/${id}-${slot}.jpg` : `/places/${id}.jpg`;
+}
+
 function catalogAttractions(seed: Seed): Destination["attractions"] {
-  const photo = `/places/${seed.id}.jpg`;
-  const { coords, name } = seed;
+  const { coords, name, id } = seed;
   return [
     {
       name: `${name} historic centre`,
       category: "sightseeing",
       coords: offset(coords, 0.4, 0.2),
       note: `Start in the centre of ${name} and walk until the streets tell you where to turn.`,
-      photo,
+      photo: placePhoto(id),
     },
     {
       name: `Museum quarter, ${name}`,
       category: "culture",
       coords: offset(coords, -0.6, 0.5),
       note: `Give the main museum a morning before the rooms fill, then sit with whatever is next door.`,
-      photo,
+      photo: placePhoto(id, "culture"),
     },
     {
       name: `${name} central market`,
       category: "food",
       coords: offset(coords, 0.3, -0.5),
       note: `Eat standing if that is how the locals do it — the point is the stall, not a reservation.`,
-      photo,
+      photo: placePhoto(id, "food"),
     },
     {
       name: `Neighbourhood table, ${name}`,
       category: "food",
       coords: offset(coords, -0.4, -0.7),
       note: `Book the early sitting and let the room decide the rest of the night.`,
-      photo,
+      photo: placePhoto(id, "table"),
     },
     {
       name: `Park or waterfront, ${name}`,
       category: "outdoors",
       coords: offset(coords, 0.8, -0.2),
       note: `Walk it at the cooler end of the day. This is where ${name} exhales.`,
-      photo,
+      photo: placePhoto(id, "outdoors"),
     },
     {
       name: `After dark in ${name}`,
       category: "nightlife",
       coords: offset(coords, -0.2, 0.8),
       note: `One room, not a crawl. Sit where you can still hear the person you came with.`,
-      photo,
+      photo: placePhoto(id, "night"),
     },
     {
       name: `Main shopping street, ${name}`,
       category: "shopping",
       coords: offset(coords, 0.5, 0.6),
       note: `Use it as a transect, not a checklist — the side streets are the actual finds.`,
-      photo,
+      photo: placePhoto(id, "street"),
     },
     {
       name: `${name} arrival hall`,
       category: "transit",
       coords: offset(coords, -0.9, -0.3),
       note: `Orient from the station or ferry and walk in. The first twenty minutes are the map.`,
-      photo,
+      photo: placePhoto(id, "transit"),
     },
   ];
 }
