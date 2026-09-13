@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { createStore } from "zustand/vanilla";
 
 import { DESTINATIONS } from "@/data/destinations";
-import { SAVED_ORIGINS } from "@/data/origins";
 import {
   coerceFlexibleWindow,
   recommend,
@@ -114,7 +113,7 @@ function emptyPreferences(): DiscoveryPreferences {
     flexibleMonth: flexible.flexibleMonth,
     flexibleYear: flexible.flexibleYear,
     flexibleNights: 5,
-    origin: SAVED_ORIGINS[0],
+    origin: null,
     originConfirmed: false,
     scope: null,
     budget: null,

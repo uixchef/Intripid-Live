@@ -102,6 +102,20 @@ export function DiscoveryMap({
     step === "experiences" ||
     step === "activities";
 
+  /*
+   * Dates and "how far" are not about home. Home is an origin-step output.
+   * Showing the pin on question one implied we already knew where they live.
+   */
+  const showHome =
+    Boolean(origin) &&
+    (step === "origin" ||
+      step === "budget" ||
+      step === "experiences" ||
+      step === "activities" ||
+      huntKind !== null ||
+      stage === "results" ||
+      stage === "processing");
+
   const field = useMemo((): FieldPin[] => {
     if (!origin || active) return [];
 
@@ -164,7 +178,7 @@ export function DiscoveryMap({
       };
     }
 
-    if (!origin) {
+    if (!origin || !showHome) {
       return { center: { lng: 8, lat: 28 }, zoom: 1.5, fit: null as LngLat[] | null };
     }
 
@@ -230,6 +244,7 @@ export function DiscoveryMap({
     huntBeat,
     destPorts,
     showCities,
+    showHome,
     portsFound,
     departurePort,
   ]);
@@ -268,7 +283,7 @@ export function DiscoveryMap({
           padding={cameraPad}
         />
 
-        {origin ? (
+        {showHome && origin ? (
           <MapMarker
             coords={origin}
             z={40}
