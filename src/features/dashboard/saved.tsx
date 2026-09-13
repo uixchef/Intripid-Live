@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bookmark } from "lucide-react";
 
 import { getDestination } from "@/data/destinations";
+import { plannerHrefForDestination } from "@/data/trips";
 import type { SavedDestination } from "@/lib/types";
 
 import styles from "./saved.module.css";
@@ -55,12 +56,13 @@ export function SavedPanel({ saved, wishlistTotal }: SavedPanelProps) {
           return (
             <li key={entry.destinationId}>
               {/*
-               * Into Discovery rather than a destination page. There is no
-               * destination page in this product, and the useful thing to do
-               * with a saved place is check it against real dates — which is
-               * exactly what Discovery does.
+               * Into the planner for that city. Saved is a shortlist of
+               * places to build around, not a dead-end back into Discovery.
                */}
-              <Link href="/discover" className={styles.row}>
+              <Link
+                href={plannerHrefForDestination(entry.destinationId)}
+                className={styles.row}
+              >
                 <span className={styles.flag} aria-hidden>
                   {destination.flag}
                 </span>

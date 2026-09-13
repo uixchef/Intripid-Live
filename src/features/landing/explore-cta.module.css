@@ -1,0 +1,122 @@
+/*
+ * The AI door — Figma 858:4216.
+ *
+ * Motion is CSS so reduced-motion users get a still object.
+ */
+.explore {
+  --explore-angle: 0deg;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  height: 38px;
+  padding: 0 20px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(90deg, var(--purple-50) 0%, var(--orange-50) 100%) padding-box,
+    var(--gradient-ai-conic) border-box;
+  animation:
+    exploreSpin 7s linear infinite;
+  transition:
+    transform var(--dur-element) var(--ease-out);
+}
+
+.explore::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.72) 50%,
+    transparent 65%
+  );
+  background-size: 240% 100%;
+  background-position: 120% 0;
+  animation: exploreShine 3.4s ease-in-out infinite;
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  background-image: var(--gradient-ai-text);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--purple-700);
+  animation: exploreText 5.5s ease-in-out infinite;
+}
+
+.explore:hover {
+  transform: translateY(-1px);
+  animation-duration: 4.5s;
+}
+
+.explore:hover::after {
+  animation-duration: 1.8s;
+}
+
+.explore:active {
+  transform: translateY(1px);
+}
+
+.explore:focus-visible {
+  outline: 2px solid var(--purple-200);
+  outline-offset: 3px;
+}
+
+@property --explore-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes exploreSpin {
+  to {
+    --explore-angle: 360deg;
+  }
+}
+
+@keyframes exploreShine {
+  0% {
+    background-position: 120% 0;
+  }
+  55%,
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+@keyframes exploreText {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (max-width: 640px) {
+  .explore {
+    width: 100%;
+    max-width: 22rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explore,
+  .explore::after,
+  .label {
+    animation: none;
+  }
+}

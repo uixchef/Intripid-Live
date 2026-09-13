@@ -3,7 +3,9 @@
 import type { ReactNode } from "react";
 import { MotionConfig } from "motion/react";
 
-import { SessionStoreProvider } from "@/stores/session-store";
+import { Toast } from "@/components/ui/overlay";
+import { SessionStoreProvider, useSession, useSessionApi } from "@/stores/session-store";
+import { AppNavTracker } from "@/components/nav/app-nav-tracker";
 
 /**
  * App-wide client providers.
@@ -26,7 +28,25 @@ import { SessionStoreProvider } from "@/stores/session-store";
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
-      <SessionStoreProvider>{children}</SessionStoreProvider>
+      <SessionStoreProvider>
+        <AppNavTracker />
+        {children}
+        <SessionToast />
+      </SessionStoreProvider>
     </MotionConfig>
+  );
+}
+
+function SessionToast() {
+  const toast = useSession((s) => s.toast);
+  const api = useSessionApi();
+
+  return (
+    <Toast
+      message={toast?.message ?? null}
+      tone={toast?.tone}
+      toastKey={toast?.id}
+      onDismiss={() => api.getState().clearToast()}
+    />
   );
 }

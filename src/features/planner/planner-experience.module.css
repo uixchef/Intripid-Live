@@ -1,10 +1,29 @@
 .root {
+  --topbar-h: 64px;
   display: grid;
-  grid-template-rows: var(--topbar-h) auto 1fr;
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  height: 100%;
+  overflow: hidden;
+  background: var(--planner-chrome);
+  position: relative;
+}
+
+.frame {
   height: 100dvh;
   overflow: hidden;
-  background: var(--bg-canvas);
   position: relative;
+  background: var(--planner-chrome);
+}
+
+.canvas {
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar,
+.canvasDismiss {
+  display: none;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -15,10 +34,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-8);
-  padding: 0 var(--space-6);
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-default);
+  gap: var(--space-6);
+  padding: 0 12px 0 16px;
+  background: var(--planner-chrome);
   z-index: var(--z-topbar);
   min-width: 0;
 }
@@ -26,17 +44,18 @@
 .topbarStart {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  gap: 12px;
   min-width: 0;
+  flex: 1;
 }
 
 .backLink {
   display: grid;
   place-items: center;
   flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   color: var(--text-tertiary);
   transition:
     background-color var(--dur-micro) var(--ease-out),
@@ -44,59 +63,246 @@
 }
 
 .backLink:hover {
-  background: var(--bg-hover);
+  background: rgba(32, 33, 36, 0.08);
   color: var(--text-primary);
 }
 
 .tripMeta {
-  display: grid;
-  gap: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
+  max-width: 260px;
+  flex: 0 1 auto;
+}
+
+.tripCover {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: none;
+  background: var(--slate-100);
 }
 
 .tripName {
-  font-size: var(--text-md);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--slate-700);
+  letter-spacing: -0.01em;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.tripDates {
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
+.tripHomeBtn {
+  flex: none;
+  height: 36px;
+  padding: 0 16px;
+  margin-left: 8px;
+  border-radius: 18px;
+  border: 1px solid #dadce0;
+  background: var(--slate-0);
+  color: var(--slate-700);
+  font-size: 14px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.tripHomeBtn:hover:not(:disabled) {
+  background: var(--slate-50);
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+}
+
+.tripHomeBtn:disabled {
+  color: var(--slate-400);
+  background: var(--slate-50);
+  cursor: default;
+}
+
+.tripHomeBtnAway {
+  border-color: var(--purple-300);
+  background: var(--purple-50);
+  color: var(--purple-800);
+}
+
+.tripHomeBtnAway:hover:not(:disabled) {
+  background: var(--purple-100);
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.monthTitle {
+  flex: none;
+  margin-left: 4px;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--slate-800);
+  letter-spacing: -0.015em;
   white-space: nowrap;
 }
 
 .topbarEnd {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 4px;
   flex: none;
 }
 
+.settingsActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.searchWrap {
+  position: relative;
+}
+
+.searchField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(280px, 36vw);
+  height: 40px;
+  padding: 0 4px 0 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--slate-0);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.15),
+    0 2px 6px rgba(60, 64, 67, 0.1);
+  color: var(--slate-500);
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.searchField:focus-within {
+  border-color: var(--purple-500);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.15),
+    0 2px 6px rgba(60, 64, 67, 0.1),
+    0 0 0 3px var(--purple-100);
+}
+
+.searchClose {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  color: var(--text-tertiary);
+}
+
+.searchClose:hover {
+  color: var(--text-primary);
+}
+
+.searchField input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.searchField input::placeholder {
+  color: var(--text-quaternary);
+}
+
+.searchHits {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  padding: 6px 0;
+  border-radius: 8px;
+  background: var(--slate-0);
+  box-shadow: var(--shadow-lg);
+  list-style: none;
+}
+
+.searchHits button {
+  width: 100%;
+  padding: 8px 14px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.searchHits button:hover,
+.searchHits button:focus-visible {
+  background: var(--bg-hover);
+}
+
+.searchHits button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--purple-100);
+}
+
 /* ------------------------------------------------------------------------- */
-/* Day rail                                                                  */
+/* Workspace — calendar sheet + maps sidecar                                 */
 /* ------------------------------------------------------------------------- */
+
+.workspace {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 8px;
+  padding: 0 8px 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspaceWithRail {
+  grid-template-columns: minmax(0, 1fr) var(--rail-w-wide) 48px;
+}
+
+.workspaceSettings {
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.settingsTitle {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--slate-700);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.mainCard {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+}
 
 .dayRailWrap {
   z-index: var(--z-sticky);
   min-width: 0;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Body                                                                      */
-/* ------------------------------------------------------------------------- */
-
 .body {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--rail-w-wide);
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
 }
@@ -105,38 +311,30 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: var(--bg-canvas);
+  background: var(--bg-surface);
 }
 
-/*
- * The rail. A flex column rather than a two-row grid: the map is a fixed
- * height, the travellers section sizes to its own content, and the context
- * section takes whatever is left. The old 1fr/1fr grid gave the map half the
- * rail whether or not the context below it had anything to show.
- */
+.agenda {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .rail {
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+  overflow: hidden;
   background: var(--bg-surface);
-  border-left: 1px solid var(--border-default);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
 }
 
-.rail > :nth-child(2) {
+.rail > * {
   flex: 1;
   min-height: 0;
-}
-
-/* Editor layer — occupies the right column, leaving the day visible. */
-
-.editorLayer {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(420px, 46vw);
-  z-index: var(--z-rail);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -193,59 +391,246 @@
 /* Mobile                                                                    */
 /* ------------------------------------------------------------------------- */
 
-.mobileMap,
-.mobileMapToggle,
-.mobileBar,
+.mobileFabs,
 .mobileSegmented {
   display: none;
 }
 
 /* Smaller desktop: the right column narrows before the schedule does. */
 @media (max-width: 1280px) {
-  .body {
-    grid-template-columns: minmax(0, 1fr) var(--rail-w);
+  .workspaceWithRail {
+    grid-template-columns: minmax(0, 1fr) var(--rail-w) 48px;
   }
 }
 
 @media (max-width: 1100px) {
-  .tripDatesExtra {
-    display: none;
+  .monthTitle {
+    font-size: 18px;
+  }
+
+  .tripName {
+    font-size: 18px;
+  }
+
+  .settingsTitle {
+    font-size: 18px;
   }
 }
 
 @media (max-width: 900px) {
+  .frame {
+    --nav-w: min(340px, calc(100vw - 52px));
+    --nav-slide: 420ms cubic-bezier(0.32, 0.72, 0, 1);
+    background: color-mix(in srgb, var(--slate-200) 10%, var(--slate-0));
+  }
+
+  .sidebar {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--slate-200) 10%, var(--slate-0));
+  }
+
+  .frameOpen .sidebar {
+    pointer-events: auto;
+  }
+
+  .sidebar > * {
+    width: var(--nav-w);
+    height: 100%;
+  }
+
+  .canvas {
+    background: var(--bg-surface);
+    transform-origin: 50% 50%;
+    transition:
+      transform var(--nav-slide),
+      border-radius var(--nav-slide),
+      box-shadow var(--nav-slide);
+  }
+
+  .frameOpen .canvas {
+    transform: translate3d(var(--nav-w), 0, 0);
+    border-radius: 32px 0 0 32px;
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.04),
+      0 8px 32px rgba(15, 23, 42, 0.14);
+    overflow: hidden;
+  }
+
+  .canvasDismiss {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: calc(var(--z-topbar) + 2);
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    opacity: 0;
+    pointer-events: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity var(--nav-slide);
+  }
+
+  .frameOpen .canvasDismiss {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .canvasDismiss:active {
+    background: rgba(15, 23, 42, 0.04);
+  }
+
   .root {
-    grid-template-rows: var(--topbar-h) auto 1fr auto;
+    --topbar-h: 56px;
+    grid-template-rows: var(--topbar-h) auto minmax(0, 1fr);
+    background: var(--bg-surface);
+    transition: grid-template-rows 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .root[data-chrome-hidden] {
+    --topbar-h: 0px;
   }
 
   .topbar {
-    padding: 0 var(--space-4);
-    gap: var(--space-4);
+    padding: 0 var(--space-3);
+    background: var(--bg-surface);
+    gap: var(--space-3);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .dayRailWrap {
+    max-height: 80px;
+    overflow: hidden;
+  }
+
+  .root[data-settings="compact"] {
+    grid-template-rows: minmax(0, 1fr);
+    background: var(--planner-chrome);
+  }
+
+  .monthSlot {
+    display: grid;
+    grid-row: 2;
+    grid-template-rows: 0fr;
+    min-height: 0;
+    background: var(--bg-surface);
+    position: relative;
+    z-index: var(--z-sticky);
+    transition: grid-template-rows 220ms var(--ease-out);
+  }
+
+  .monthSlot:has(> *) {
+    grid-template-rows: 1fr;
+    box-shadow:
+      0 8px 16px rgba(32, 33, 36, 0.12),
+      0 16px 32px rgba(32, 33, 36, 0.1);
+  }
+
+  .monthSlot > * {
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .root:not([data-settings="compact"]) .workspace {
+    grid-row: 3;
   }
 
   .topbarEnd {
-    gap: var(--space-2);
+    gap: 4px;
   }
 
-  .tripName {
-    font-size: var(--text-sm);
+  .topbarIcon {
+    width: 40px;
+    height: 40px;
+    color: var(--text-secondary);
   }
 
-  /*
-   * At phone width the top bar was carrying a back link, mark, name, dates,
-   * avatars, a reset button and an Add button — which truncated the trip name
-   * to "Five da...". The bottom bar already has Add, and reset is a rare
-   * action, so both leave the top bar on mobile.
-   */
+  .topbarIcon:hover,
+  .topbarIcon:focus-visible {
+    color: var(--text-primary);
+  }
+
+  .backLink {
+    width: 40px;
+    height: 40px;
+    color: var(--text-secondary);
+  }
+
+  .topbarIconOn {
+    background: rgba(32, 33, 36, 0.08);
+    color: var(--text-primary);
+  }
+
+  .tripName,
+  .settingsTitle {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0;
+  }
+
+  .workspaceSettings {
+    grid-template-columns: 148px minmax(0, 1fr);
+    gap: 8px;
+    padding: 0 8px 8px;
+  }
+
+  .root[data-settings="compact"] .workspaceSettings {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 56px minmax(0, 1fr);
+    align-content: stretch;
+    gap: 0;
+    padding: 0;
+  }
+
+  .root[data-settings="compact"] .workspaceSettings > * {
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .mainCard {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .workspaceSettings .mainCard,
+  .workspaceSettings > :last-child {
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+    background: var(--bg-surface);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .root[data-settings="compact"] .workspaceSettings > :last-child {
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .body {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
   .tripDates,
   .topbarReset,
   .topbarAdd {
     display: none;
-  }
-
-  .body {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .schedule {
@@ -253,62 +638,335 @@
   }
 
   /*
-   * The mobile map strip. Pinned above the day rather than hidden behind a
-   * floating button, so the schedule/map coupling survives on a phone.
+   * Map peer view — fills the content area when the segmented control
+   * selects Map, giving the map the full height it needs to be useful.
    */
-  .mobileMap {
-    display: block;
+  .mobileMapPeer {
     position: relative;
-    height: 186px;
-    border-bottom: 1px solid var(--border-default);
-    transition: height var(--dur-surface) var(--ease-out);
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
   }
 
-  .mobileMapOpen {
-    height: 44dvh;
-  }
-
-  .mobileMapToggle {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    position: absolute;
-    right: var(--space-4);
-    bottom: var(--space-4);
-    z-index: var(--z-content);
-    height: 26px;
-    padding: 0 var(--space-4);
-    border-radius: var(--radius-full);
-    background: var(--slate-900);
-    color: var(--slate-25);
-    font-size: 10px;
-    font-weight: var(--weight-semibold);
-    letter-spacing: var(--tracking-tight);
-    box-shadow: var(--shadow-lg);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .rail,
-  .editorLayer {
+  .rail {
     display: none;
   }
 
-  .mobileBar {
+  .toolOverlay {
+    position: absolute;
+    inset: 0;
+    grid-area: 1 / 1 / -1 / 1;
+    z-index: calc(var(--z-topbar) + 4);
+    display: grid;
+    min-height: 0;
+    background: var(--bg-surface);
+    animation: toolOverlayIn var(--dur-surface) var(--ease-out);
+  }
+
+  .toolOverlay .rail {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .toolOverlay[data-tool="chat"] {
+    background: var(--planner-chrome);
+  }
+
+  .toolOverlay[data-tool="chat"] .rail {
+    background: transparent;
+  }
+
+  .askAiSheetBody {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .askAiSheet {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+    height: 100%;
+  }
+
+  .askAiSheetHead {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-4) var(--space-5);
-    padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 8px 8px 16px;
+  }
+
+  .askAiSheetTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .askAiSheetName {
+    font-size: 16px;
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-tight);
+    background-image: var(--gradient-ai-text);
+    background-size: 220% 100%;
+    background-position: 0% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--purple-700);
+  }
+
+  .askAiSheetCanvas {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .searchOverlay {
+    position: absolute;
+    inset: 0;
+    grid-area: 1 / 1 / -1 / 1;
+    z-index: calc(var(--z-topbar) + 6);
+    display: grid;
+    grid-template-rows: 56px minmax(0, 1fr);
+    min-height: 0;
     background: var(--bg-surface);
-    border-top: 1px solid var(--border-default);
+  }
+
+  .searchBar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 56px;
+    padding: 0 16px 0 4px;
+    border-bottom: 1px solid #dadce0;
+    background: var(--bg-surface);
+  }
+
+  .searchBack {
+    color: var(--slate-700);
+    background: transparent;
+    box-shadow: none;
+    border-radius: 24px;
+  }
+
+  .searchBack:hover,
+  .searchBack:active {
+    background: rgba(32, 33, 36, 0.08);
+  }
+
+  .searchPageInput {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--slate-800);
+    outline: none;
+  }
+
+  .searchPageInput::placeholder {
+    color: var(--slate-500);
+  }
+
+  .searchPageHits {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .searchPageHit {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    min-height: 64px;
+    padding: 12px 24px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: inset 0 -1px 0 #dadce0;
+  }
+
+  .searchPageHit:hover,
+  .searchPageHit:active {
+    background: rgba(32, 33, 36, 0.04);
+  }
+
+  .searchPageHitTitle {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--slate-800);
+  }
+
+  .searchPageHitMeta {
+    font-size: 13px;
+    color: var(--slate-600);
+  }
+
+  .searchPageHint {
+    margin: 0;
+    padding: 20px 24px 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--slate-600);
+  }
+
+  .searchPageEmpty {
+    padding: 24px;
+    font-size: 14px;
+    color: var(--slate-600);
+  }
+
+  .mobileFabs {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    position: absolute;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     z-index: var(--z-sticky);
+    pointer-events: none;
+    transition: bottom 220ms var(--ease-out);
+  }
+
+  .mobileFabsOverMap {
+    bottom: calc(154px + 12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobileFabs > * {
+    pointer-events: auto;
+  }
+
+  .mobileAiFab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 14px 0 10px;
+    border: 1px solid rgba(174, 110, 255, 0.28);
+    border-radius: 20px;
+    background:
+      var(--gradient-ai-soft),
+      var(--slate-0);
+    color: var(--purple-800);
+    font-size: 13px;
+    font-weight: var(--weight-medium);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow:
+      0 1px 3px rgba(60, 64, 67, 0.28),
+      0 4px 8px rgba(60, 64, 67, 0.16);
+  }
+
+  .mobileAiFab:active {
+    filter: brightness(0.97);
+  }
+
+  .mobileAiFabLabel {
+    background-image: var(--gradient-ai-text);
+    background-size: 220% 100%;
+    background-position: 0% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--purple-700);
+    animation: mobileAiFabLabel 5.5s ease-in-out infinite;
+  }
+
+  @keyframes mobileAiFabLabel {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .mobileAddFab {
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--purple-400);
+    color: var(--slate-0);
+    box-shadow:
+      0 1px 3px rgba(60, 64, 67, 0.3),
+      0 4px 8px 3px rgba(60, 64, 67, 0.15);
+  }
+
+  .mobileAddFab:hover {
+    background: var(--purple-500);
+  }
+
+  .mobileAddFab:active {
+    background: var(--purple-600);
   }
 
   .mobileSegmented {
-    display: grid;
-    flex: 1;
-    min-width: 0;
+    display: flex;
+    height: 36px;
+    border-radius: 18px;
+    border: 1px solid #dadce0;
+    background: var(--slate-0);
+    overflow: hidden;
+    flex: none;
+  }
+
+  .mobileSegBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--slate-600);
+    cursor: pointer;
+    box-shadow: none;
+    border-right: 1px solid #dadce0;
+    transition: background-color var(--dur-micro) var(--ease-out);
+  }
+
+  .mobileSegBtn:last-child {
+    border-right: 0;
+  }
+
+  .mobileSegBtn:hover {
+    background: var(--slate-50);
+  }
+
+  .mobileSegOn {
+    background: var(--purple-100);
+    color: var(--purple-800);
+  }
+
+  .mobileSegOn:hover {
+    background: var(--purple-100);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .root,
+    .dayRailWrap {
+      transition: none;
+    }
   }
 }
 
@@ -316,22 +974,45 @@
   .topbar {
     padding: 0 var(--space-3);
   }
+}
 
-  .backLink {
-    width: 24px;
+@keyframes toolOverlayIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
   }
-
-  .mobileMap {
-    height: 146px;
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mobileMap {
+  .dragPreview {
+    transform: none;
+  }
+
+  .canvas {
     transition: none;
   }
 
-  .dragPreview {
-    transform: none;
+  .monthSlot {
+    transition: none;
+  }
+
+  .mobileFabs {
+    transition: none;
+  }
+
+  .canvasDismiss {
+    transition: none;
+  }
+
+  .toolOverlay {
+    animation: none;
+  }
+
+  .mobileAiFabLabel {
+    animation: none;
   }
 }

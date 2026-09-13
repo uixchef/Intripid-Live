@@ -1,7 +1,9 @@
 import { walkMinutes } from "@/lib/geo";
+import { partyTravellers, withOrganizerFirst } from "@/lib/collaboration";
 import type {
   Conflict,
   ItineraryItem,
+  Traveller,
   Trip,
 } from "@/lib/types";
 
@@ -58,6 +60,87 @@ export function findTraveller(trip: Trip, id: string) {
   return trip.travellers.find((t) => t.id === id) ?? null;
 }
 
+/**
+ * Who this stop is for. Empty `assignedTo` means the whole travelling party —
+ * not advisors, who help plan and are not on the ground.
+ */
+function peopleOn(item: ItineraryItem, trip: Trip): Set<string> {
+  return new Set(guestsForItem(item, trip).map((person) => person.id));
+}
+
+export function guestsForItem(item: ItineraryItem, trip: Trip): Traveller[] {
+  const party = withOrganizerFirst(partyTravellers(trip.travellers));
+  if (item.assignedTo.length === 0) return party;
+  const allowed = new Set(item.assignedTo);
+  return party.filter((person) => allowed.has(person.id));
+}
+
+export function commentsFromText(
+  from: string,
+  text?: string | null,
+): NonNullable<ItineraryItem["comments"]> | undefined {
+  const trimmed = text?.trim();
+  return trimmed ? [{ from, text: trimmed }] : undefined;
+}
+
+export function commentsOnItem(
+  item: Pick<ItineraryItem, "comments" | "notes" | "createdBy">,
+): NonNullable<ItineraryItem["comments"]> {
+  if (item.comments && item.comments.length > 0) return item.comments;
+  return commentsFromText(item.createdBy, item.notes) ?? [];
+}
+
+export function commentsForDisplay(item: ItineraryItem, trip: Trip) {
+  return commentsOnItem(item).flatMap((comment) => {
+    const person = trip.travellers.find((entry) => entry.id === comment.from);
+    return person ? [{ person, text: comment.text }] : [];
+  });
+}
+
+export function commentViewerId(
+  travellers: Traveller[],
+  sessionId: string,
+): string {
+  return (
+    travellers.find((person) => person.id === sessionId)?.id ??
+    travellers.find((person) => person.role === "owner")?.id ??
+    travellers[0]?.id ??
+    ""
+  );
+}
+
+export function itemHasUnreadComments(
+  item: ItineraryItem,
+  viewerId: string,
+  seen: Record<string, number>,
+): boolean {
+  const comments = commentsOnItem(item);
+  if (comments.length === 0) return false;
+  const seenCount = seen[item.id];
+  if (seenCount === undefined) {
+    return comments.some((comment) => comment.from !== viewerId);
+  }
+  return comments.length > seenCount;
+}
+
+export function migrateItemComments(item: ItineraryItem): ItineraryItem {
+  const comments = commentsOnItem(item);
+  return {
+    ...item,
+    comments: comments.length > 0 ? comments : undefined,
+    notes: undefined,
+  };
+}
+
+/** True when at least one traveller is expected at both stops. */
+function sharesTravellers(a: ItineraryItem, b: ItineraryItem, trip: Trip): boolean {
+  const left = peopleOn(a, trip);
+  for (const id of peopleOn(b, trip)) {
+    if (left.has(id)) return true;
+  }
+  return false;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Conflicts                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -98,13 +181,20 @@ export function conflictsForDay(trip: Trip, day: string): Conflict[] {
       const bEnd = minutesIntoDay(b.end);
 
       if (bStart < aEnd && aStart < bEnd) {
-        const overlap = Math.min(aEnd, bEnd) - Math.max(aStart, bStart);
-        conflicts.push({
-          kind: "overlap",
-          itemIds: [a.id, b.id],
-          message: `“${a.title}” and “${b.title}” overlap by ${overlap} minutes.`,
-          severity: "error",
-        });
+        /*
+         * Two stops in the same hour are only a clash if someone is on both.
+         * The group splitting up — Maya at the Neue, Danny on Madison — is
+         * parallel, not double-booked.
+         */
+        if (sharesTravellers(a, b, trip)) {
+          const overlap = Math.min(aEnd, bEnd) - Math.max(aStart, bStart);
+          conflicts.push({
+            kind: "overlap",
+            itemIds: [a.id, b.id],
+            message: `“${a.title}” and “${b.title}” overlap by ${overlap} minutes.`,
+            severity: "error",
+          });
+        }
         continue;
       }
 

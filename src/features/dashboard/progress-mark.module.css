@@ -1,0 +1,100 @@
+.root {
+  --size: 100px;
+  --face: 88px;
+  --chip: 25px;
+  --chip-font: 12px;
+  position: relative;
+  display: block;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 1px var(--bg-surface);
+}
+
+.lg {
+  --size: 148px;
+  --face: 130px;
+  --chip: 36px;
+  --chip-font: 17px;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  width: var(--size);
+  height: var(--size);
+  pointer-events: none;
+  overflow: visible;
+}
+
+.track {
+  stroke: var(--purple-100);
+}
+
+.fill {
+  stroke: var(--purple-400);
+  transition: stroke-dashoffset 280ms var(--ease-out);
+}
+
+.face {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: var(--face);
+  height: var(--face);
+  left: calc((var(--size) - var(--face)) / 2);
+  top: calc((var(--size) - var(--face)) / 2);
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--slate-100);
+  color: var(--slate-0);
+  font-size: calc(var(--face) * 22 / 80);
+  font-weight: var(--weight-semibold);
+  box-shadow: 0 0 0 1px var(--bg-surface);
+}
+
+.face img {
+  display: block;
+  width: var(--face);
+  height: var(--face);
+  object-fit: cover;
+}
+
+.faceFallback {
+  background: var(--purple-600);
+}
+
+.chip {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--chip);
+  height: var(--chip);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--bg-surface);
+  background: var(--purple-50);
+  color: var(--purple-800);
+  font-size: var(--chip-font);
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .lg {
+    --size: 112px;
+    --face: 98px;
+    --chip: 28px;
+    --chip-font: 13px;
+  }
+}

@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-tight);
   white-space: nowrap;
@@ -74,7 +74,6 @@
   padding: 0 var(--space-4);
   font-size: var(--text-xs);
   gap: var(--space-2);
-  border-radius: var(--radius-sm);
 }
 
 .sm {
@@ -94,7 +93,6 @@
   height: 42px;
   padding: 0 var(--space-10);
   font-size: var(--text-md);
-  border-radius: var(--radius-lg);
 }
 
 .iconOnly {
@@ -120,22 +118,22 @@
 /* ------------------------------------------------------------------------- */
 
 .primary {
-  background: var(--purple-600);
+  background: var(--purple-400);
   color: var(--slate-0);
   box-shadow:
     var(--shadow-xs),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .primary:hover:not(:disabled) {
-  background: var(--purple-700);
+  background: var(--purple-500);
   box-shadow:
     var(--shadow-sm),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .primary:active:not(:disabled) {
-  background: var(--purple-800);
+  background: var(--purple-600);
 }
 
 .primary:disabled {
@@ -217,25 +215,105 @@
 }
 
 /* ------------------------------------------------------------------------- */
-/* Danger                                                                    */
+/* Danger — filled destructive CTA. Same weight as primary, red.             */
 /* ------------------------------------------------------------------------- */
 
 .danger {
-  background: transparent;
-  color: var(--danger-600);
+  background: var(--danger-500);
+  color: var(--slate-0);
+  font-weight: var(--weight-semibold);
+  box-shadow:
+    var(--shadow-xs),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .danger:hover:not(:disabled) {
-  background: var(--danger-50);
-  color: var(--danger-700);
+  background: var(--danger-600);
+  color: var(--slate-0);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .danger:active:not(:disabled) {
-  background: var(--danger-100);
+  background: var(--danger-700);
 }
 
 .danger:disabled {
+  background: var(--slate-200);
   color: var(--slate-400);
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------------- */
+/* AI — the assistant's CTA. Same language as Ask AI, never solid purple.    */
+/* ------------------------------------------------------------------------- */
+
+.ai {
+  border-color: rgba(174, 110, 255, 0.32);
+  background:
+    var(--gradient-ai-soft),
+    var(--slate-0);
+  color: var(--purple-800);
+  box-shadow: var(--shadow-xs);
+}
+
+.ai:hover:not(:disabled) {
+  border-color: rgba(174, 110, 255, 0.48);
+  background: linear-gradient(
+    90deg,
+    rgba(174, 110, 255, 0.32),
+    rgba(254, 149, 73, 0.32)
+  );
+}
+
+.ai:active:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.ai:disabled {
+  background: var(--slate-100);
+  border-color: var(--border-subtle);
+  color: var(--slate-400);
+  box-shadow: none;
+}
+
+.ai .label {
+  background-image: var(--gradient-ai-text);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--purple-700);
+  animation: aiLabel 5.5s ease-in-out infinite;
+}
+
+.ai:disabled .label {
+  animation: none;
+  background-image: none;
+  -webkit-text-fill-color: var(--slate-400);
+  color: var(--slate-400);
+}
+
+.ai:hover:not(:disabled) [data-ai-mark] {
+  animation-duration: 2.2s;
+  filter: brightness(1.08);
+}
+
+.ai:focus-visible {
+  outline: 2px solid var(--purple-400);
+  outline-offset: 2px;
+}
+
+@keyframes aiLabel {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -244,5 +322,10 @@
   }
   .button:active:not(:disabled) {
     transform: none;
+  }
+
+  .ai .label {
+    animation: none;
+    background-position: 30% 50%;
   }
 }

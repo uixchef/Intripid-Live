@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Compass, X } from "lucide-react";
+import { Check, ChevronDown, Compass, X } from "lucide-react";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Segmented, Textarea } from "@/components/ui/controls";
 import { BUDGET_META, INTEREST_META, STYLE_META } from "@/lib/categories";
@@ -78,6 +78,7 @@ export function PersonaPanel({
     from: TravelPersona;
     value: TravelPersona;
   } | null>(null);
+  const [open, setOpen] = useState(false);
   const summaryRef = useRef<HTMLTextAreaElement>(null);
 
   const value = draft && draft.from === persona ? draft.value : persona;
@@ -85,9 +86,11 @@ export function PersonaPanel({
   const patch = (next: Partial<TravelPersona>) =>
     setDraft({ from: persona, value: { ...value, ...next } });
 
-  /* Focus only — no state is set here, which is what keeps this legal. */
   useEffect(() => {
-    if (editing) summaryRef.current?.focus();
+    if (editing) {
+      setOpen(true);
+      summaryRef.current?.focus();
+    }
   }, [editing]);
 
   const toggleInterest = (interest: Interest) =>
@@ -123,12 +126,29 @@ export function PersonaPanel({
     <section className={styles.panel} aria-label="Travel persona">
       <header className={styles.head}>
         <div className={styles.headText}>
-          <h2 className={styles.title}>How you travel</h2>
-          <p className={styles.sub}>
-            {editing
-              ? "Changes apply to your next recommendations"
-              : `Last confirmed ${shortDate(persona.updatedIso)}`}
-          </p>
+          <div className={styles.titleRow}>
+            <h2 className={styles.title} id="persona-title">
+              How you travel
+            </h2>
+            {editing ? null : (
+              <IconButton
+                size="sm"
+                variant="ghost"
+                className={styles.toggle}
+                label={open ? "Collapse how you travel" : "Expand how you travel"}
+                aria-expanded={open}
+                aria-controls="persona-details"
+                onClick={() => setOpen((current) => !current)}
+              >
+                <ChevronDown size={16} strokeWidth={2.1} />
+              </IconButton>
+            )}
+          </div>
+          {editing ? (
+            <p className={styles.sub}>
+              Changes apply to your next recommendations
+            </p>
+          ) : null}
         </div>
 
         {editing ? (
@@ -218,8 +238,8 @@ export function PersonaPanel({
               {INTERESTS.map((interest) => (
                 <Chip
                   key={interest}
-                  size="sm"
-                  checkable
+                  variant="soft"
+                  selection="multiple"
                   selected={value.interests.includes(interest)}
                   onClick={() => toggleInterest(interest)}
                 >
@@ -233,65 +253,67 @@ export function PersonaPanel({
         /* ------------------------------------------------------------------ */
         /* Read                                                               */
         /* ------------------------------------------------------------------ */
-        <div className={styles.body}>
+        <div className={styles.body} data-open={open ? "" : undefined}>
           <p className={styles.summary}>{persona.summary}</p>
 
-          <dl className={styles.facts}>
-            <div className={styles.fact}>
-              <dt>Pace</dt>
-              <dd>
-                <span className={styles.factValue}>
-                  {PACE_OPTIONS.find((o) => o.value === persona.pace)?.label}
-                </span>
-                <span className={styles.factNote}>
-                  {PACE_NOTE[persona.pace]}
-                </span>
-              </dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>Usual budget</dt>
-              <dd>
-                <span className={styles.factValue}>
-                  {BUDGET_META[persona.budget].label}
-                </span>
-                <span className={styles.factNote}>
-                  {BUDGET_META[persona.budget].blurb}
-                </span>
-              </dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>Trip character</dt>
-              <dd>
-                <span className={styles.factValue}>
-                  {persona.styles
-                    .map((style: TripStyle) => STYLE_META[style].label)
-                    .join(" · ")}
-                </span>
-              </dd>
-            </div>
-          </dl>
+          <div id="persona-details" hidden={!open} className={styles.details}>
+            <dl className={styles.facts}>
+              <div className={styles.fact}>
+                <dt>Pace</dt>
+                <dd>
+                  <span className={styles.factValue}>
+                    {PACE_OPTIONS.find((o) => o.value === persona.pace)?.label}
+                  </span>
+                  <span className={styles.factNote}>
+                    {PACE_NOTE[persona.pace]}
+                  </span>
+                </dd>
+              </div>
+              <div className={styles.fact}>
+                <dt>Usual budget</dt>
+                <dd>
+                  <span className={styles.factValue}>
+                    {BUDGET_META[persona.budget].label}
+                  </span>
+                  <span className={styles.factNote}>
+                    {BUDGET_META[persona.budget].blurb}
+                  </span>
+                </dd>
+              </div>
+              <div className={styles.fact}>
+                <dt>Trip character</dt>
+                <dd>
+                  <span className={styles.factValue}>
+                    {persona.styles
+                      .map((style: TripStyle) => STYLE_META[style].label)
+                      .join(" · ")}
+                  </span>
+                </dd>
+              </div>
+            </dl>
 
-          <div className={styles.interests}>
-            <p className={styles.interestsLabel}>What you look for</p>
-            <ul className={styles.interestList}>
-              {persona.interests.map((interest) => (
-                <li key={interest} className={styles.interest}>
-                  {INTEREST_META[interest].label}
-                </li>
-              ))}
-            </ul>
+            <div className={styles.interests}>
+              <p className={styles.interestsLabel}>What you look for</p>
+              <ul className={styles.interestList}>
+                {persona.interests.map((interest) => (
+                  <li key={interest} className={styles.interest}>
+                    {INTEREST_META[interest].label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <footer className={styles.foot}>
+              <p className={styles.footNote}>
+                Discovery starts from this, so every run begins with what you
+                already told us rather than a blank form.
+              </p>
+              <Link href="/discover" className={styles.footLink}>
+                <Compass size={12} strokeWidth={2.2} aria-hidden />
+                Use it now
+              </Link>
+            </footer>
           </div>
-
-          <footer className={styles.foot}>
-            <p className={styles.footNote}>
-              Discovery starts from this, so every run begins with what you
-              already told us rather than a blank form.
-            </p>
-            <Link href="/discover" className={styles.footLink}>
-              <Compass size={12} strokeWidth={2.2} aria-hidden />
-              Use it now
-            </Link>
-          </footer>
         </div>
       )}
     </section>

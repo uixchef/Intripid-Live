@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { AlertTriangle, CalendarClock, Sparkles, Users } from "lucide-react";
 
+import { Hummingbird } from "@/components/brand/hummingbird";
 import { cn } from "@/lib/utils";
 import type { AppNotification } from "@/lib/types";
 
@@ -65,6 +66,7 @@ export function NotificationsPanel({
 
       {notifications.length === 0 ? (
         <div className={styles.empty}>
+          <Hummingbird mood="peaceful" size={72} />
           <p className={styles.emptyTitle}>Nothing waiting</p>
           <p className={styles.emptyBody}>
             Clashes, changes your travellers make, and closing seasonal windows

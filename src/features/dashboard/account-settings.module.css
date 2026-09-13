@@ -1,0 +1,741 @@
+.photoRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 420px;
+}
+
+.photo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--purple-600);
+  color: var(--slate-0);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoFallback {
+  background: var(--purple-600);
+  color: var(--slate-0);
+}
+
+.photoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.uploadHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.nameRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nameRow .nameField {
+  max-width: none;
+  width: 100%;
+}
+
+.people {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 600px;
+}
+
+.peopleTools {
+  display: grid;
+  gap: 12px;
+  max-width: 600px;
+}
+
+.peopleTabs {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 -4px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--slate-200);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.peopleTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.peopleTab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: none;
+  height: 40px;
+  padding: 4px 8px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  border-radius: 4px 4px 0 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--text-sm-lh);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.peopleTab:hover {
+  color: var(--text-secondary);
+}
+
+.peopleTabOn {
+  color: var(--purple-600);
+  font-weight: var(--weight-semibold);
+  border-bottom-color: var(--purple-400);
+}
+
+.peopleTabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-height: 18px;
+  max-height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--slate-100);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  line-height: 16px;
+}
+
+.peopleTabOn .peopleTabCount {
+  background: var(--purple-100);
+  color: var(--purple-600);
+}
+
+.peopleEmpty {
+  margin: 0;
+  max-width: 600px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #5f6368;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 4px 4px 4px 0;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.person:last-child {
+  border-bottom: 0;
+}
+
+.personMark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--purple-600);
+  color: var(--slate-0);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+}
+
+.personMark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.personCopy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.personName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.personMeta {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.personActions {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.personMenu {
+  border: 0;
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.06),
+    0 4px 8px -2px rgba(16, 24, 40, 0.1),
+    0 12px 24px -4px rgba(16, 24, 40, 0.08);
+  overflow: hidden;
+}
+
+.personMenuList {
+  display: grid;
+  gap: 2px;
+}
+
+.personMenuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: #344054;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.personMenuItem:hover,
+.personMenuItem:focus-visible {
+  background: #f9fafb;
+  outline: none;
+}
+
+.personMenuDanger {
+  color: #d93025;
+}
+
+.personMenuDanger:hover,
+.personMenuDanger:focus-visible {
+  background: #fce8e6;
+}
+
+.personLink,
+.personRemove {
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+}
+
+.personLink {
+  color: var(--purple-700);
+}
+
+.personLink:hover {
+  background: var(--purple-50);
+}
+
+.personRemove {
+  color: #d93025;
+}
+
+.personRemove:hover {
+  background: #fce8e6;
+}
+
+.profileCard {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+
+.profileMark {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--purple-600);
+  color: var(--slate-0);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.profileMark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileName {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.profileHandle {
+  margin: 0;
+  font-size: 14px;
+  color: #5f6368;
+}
+
+.profileMeta {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #5f6368;
+}
+
+.profileHistory {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #202124;
+}
+
+.profileHistoryLabel {
+  margin: 0 0 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5f6368;
+}
+
+.profileActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.profileCard .personRemove,
+.profileCard .personLink {
+  margin-top: 12px;
+}
+
+.profileActions .personRemove,
+.profileActions .personLink {
+  margin-top: 0;
+}
+
+.addresses {
+  max-width: 600px;
+}
+
+.addressList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 600px;
+}
+
+.addressList .person {
+  max-width: none;
+}
+
+.addressPick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.addressCard {
+  display: grid;
+  gap: 12px;
+  max-width: 600px;
+  padding: 12px 0 4px;
+}
+
+.addressCardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.addressCardHead .addressActions {
+  margin-left: auto;
+}
+
+.addressCardHead:hover .addressActions,
+.addressCardHead:focus-within .addressActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.addressFields {
+  display: grid;
+  gap: 12px;
+}
+
+.addressPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-width: 0;
+}
+
+.addressPair > * {
+  min-width: 0;
+}
+
+.addressCardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.addressActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.person:hover .addressActions,
+.person:focus-within .addressActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.addressHint {
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--purple-600);
+  cursor: pointer;
+}
+
+.addressHint:hover,
+.addressHint:focus-visible {
+  background: var(--purple-50);
+  outline: none;
+}
+
+.addAddress {
+  display: grid;
+  gap: 12px;
+  max-width: 600px;
+  padding-top: 8px;
+}
+
+.addAddress .nameRow > * {
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.addPerson {
+  display: grid;
+  gap: 12px;
+  max-width: 328px;
+  padding-top: 8px;
+}
+
+.addPersonActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.addPersonActions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.addPersonActions button:disabled:hover {
+  background: transparent;
+}
+
+.skills {
+  display: grid;
+  gap: 12px;
+}
+
+.skillRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px;
+  gap: 12px;
+  align-items: center;
+}
+
+.addSkill {
+  justify-self: start;
+}
+
+.foodTags {
+  display: grid;
+  gap: 8px;
+}
+
+.foodAdd {
+  display: grid;
+  gap: 12px;
+}
+
+.foodAddField {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.foodAddField label {
+  flex: 1;
+  min-width: 180px;
+  max-width: 328px;
+}
+
+.bands {
+  display: grid;
+  gap: 2px;
+  max-width: 420px;
+}
+
+.band {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+  color: #3c4043;
+  cursor: pointer;
+}
+
+.band input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--purple-500);
+}
+
+.band:hover,
+.band:has(input:focus-visible) {
+  color: #202124;
+}
+
+.heroMark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--purple-600);
+  color: var(--slate-0);
+  font-size: 16px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.heroMark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .photoRow,
+  .chips,
+  .people,
+  .peopleTools,
+  .peopleEmpty,
+  .addPerson,
+  .addAddress,
+  .addressList,
+  .addressCard,
+  .addresses,
+  .skills,
+  .bands,
+  .nameRow {
+    max-width: none;
+  }
+
+  .foodTags {
+    padding: 4px 16px 14px;
+  }
+
+  .foodTags .chips {
+    padding: 0;
+  }
+
+  .nameRow {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .photoRow {
+    padding: 14px 16px;
+  }
+
+  .uploadHint {
+    padding: 0 16px 14px;
+  }
+
+  .chips {
+    padding: 4px 16px 14px;
+  }
+
+  .bands {
+    padding: 0;
+    gap: 0;
+  }
+
+  .band {
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    min-height: 56px;
+    padding: 12px 16px;
+    font-size: 16px;
+    color: var(--text-primary);
+    box-shadow: inset 0 -1px 0 var(--slate-100);
+  }
+
+  .band:last-child {
+    box-shadow: none;
+  }
+
+  .band:hover,
+  .band:active {
+    background: var(--bg-hover);
+  }
+
+  .people {
+    padding: 8px 12px 8px 16px;
+  }
+
+  .peopleTools,
+  .peopleEmpty {
+    padding: 8px 16px 4px;
+  }
+
+  .person {
+    min-height: 60px;
+    padding: 12px 12px 12px 0;
+    gap: 12px;
+  }
+
+  .addPerson {
+    padding: 12px 16px 14px;
+  }
+
+  .addAddress {
+    padding: 12px 16px 14px;
+    max-width: none;
+  }
+
+  .addressActions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .addressList,
+  .addressCard {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .addressPair {
+    grid-template-columns: 1fr;
+  }
+
+  .skills {
+    padding: 4px 16px 14px;
+    max-width: none;
+  }
+
+  .skillRow {
+    grid-template-columns: minmax(0, 1fr) 36px;
+    gap: 8px;
+  }
+
+  .skillRow > :nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .skillRow > :nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .skillRow > :nth-child(3) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .addSkill {
+    padding: 4px 16px 14px;
+  }
+
+  .person:last-child {
+    border-bottom: 1px solid #e8eaed;
+  }
+}

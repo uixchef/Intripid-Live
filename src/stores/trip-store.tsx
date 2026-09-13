@@ -4,9 +4,18 @@ import type { ReactNode } from "react";
 import { persist } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
 
+import { ACCOUNT_USER } from "@/data/account";
 import { NYC_TRIP } from "@/data/nyc-trip";
+import { resolveTripCover } from "@/data/place-photos";
+import { DRAFT_TRIP_ID } from "@/data/trips";
+import { partyTravellers } from "@/lib/collaboration";
 import { buildPlan } from "@/lib/trip/assistant";
-import { tripDayKeys } from "@/lib/trip/schedule";
+import {
+  commentViewerId,
+  commentsFromText,
+  migrateItemComments,
+  tripDayKeys,
+} from "@/lib/trip/schedule";
 import {
   atMinutes,
   dayKey,
@@ -14,15 +23,20 @@ import {
   formatWall,
   moveToDay,
   parseWall,
+  shiftDayKey,
   toWallClock,
+  type ClockFormat,
 } from "@/lib/trip/time";
-import type {
-  AssistantPlan,
-  Idea,
-  ItemCategory,
-  ItineraryItem,
-  Trip,
-  Traveller,
+import {
+  IDEA_WHEN_LABELS,
+  type AssistantPlan,
+  type CommuteMode,
+  type Idea,
+  type ItemCategory,
+  type ItineraryItem,
+  type Place,
+  type Trip,
+  type Traveller,
 } from "@/lib/types";
 
 import { createStoreContext } from "./create-store-context";
@@ -36,7 +50,22 @@ import { createStoreContext } from "./create-store-context";
  * what the itinerary says.
  */
 
-export type PlannerView = "calendar" | "itinerary";
+export type PlannerView = "day" | "week" | "trip" | "four" | "itinerary";
+
+export function normalizePlannerView(view: string | null | undefined): PlannerView {
+  if (view === "calendar") return "week";
+  if (view === "schedule") return "itinerary";
+  if (
+    view === "day" ||
+    view === "week" ||
+    view === "trip" ||
+    view === "four" ||
+    view === "itinerary"
+  ) {
+    return view;
+  }
+  return "week";
+}
 
 /** Where a selection came from, so the other surfaces can respond correctly. */
 export type SelectionSource = "calendar" | "map" | "itinerary" | "ideas" | "assistant";
@@ -51,13 +80,94 @@ export interface EditorDraft {
   placeName: string;
   placeAddress: string;
   placeCoords: { lng: number; lat: number } | null;
+  fromPlaceId: string | null;
+  fromPlaceName: string;
+  fromPlaceAddress: string;
+  fromPlaceCoords: { lng: number; lat: number } | null;
   day: string;
+  /** Check-out day for lodging; same as `day` for timed stops. */
+  endDay: string;
   startMinutes: number;
   durationMin: number;
-  notes: string;
   flexible: boolean;
   assignedTo: string[];
+  booking: string;
+  commuteMode: CommuteMode;
+  /** Opening thought when creating. Stored as the first comment. */
+  comment: string;
 }
+
+export interface PlannerPrefs {
+  dayStartHour: number;
+  dayEndHour: number;
+  timeFormat: ClockFormat;
+  weekStartsOn: 0 | 1;
+  defaultDurationMin: number;
+  showWeekends: boolean;
+  mineOnly: boolean;
+  /** Explicit overlay mode. Off = the normal trip calendar. */
+  sharedView: boolean;
+  /** Travellers selected in shared view. Ignored when `sharedView` is off. */
+  overlayIds: string[];
+}
+
+export const DEFAULT_PLANNER_PREFS: PlannerPrefs = {
+  dayStartHour: 7,
+  dayEndHour: 23,
+  timeFormat: "12h",
+  weekStartsOn: 0,
+  defaultDurationMin: 90,
+  showWeekends: true,
+  mineOnly: false,
+  sharedView: false,
+  overlayIds: [],
+};
+
+/** Null when the range already sits inside the current window. */
+export function hoursCoveringRange(
+  startMin: number,
+  endMin: number,
+  prefs: PlannerPrefs,
+): Pick<PlannerPrefs, "dayStartHour" | "dayEndHour"> | null {
+  const dayStartHour = Math.min(
+    prefs.dayStartHour,
+    Math.max(0, Math.floor(startMin / 60)),
+  );
+  const dayEndHour = Math.max(
+    prefs.dayEndHour,
+    Math.min(24, Math.ceil(endMin / 60)),
+  );
+  if (dayStartHour === prefs.dayStartHour && dayEndHour === prefs.dayEndHour) {
+    return null;
+  }
+  return { dayStartHour, dayEndHour };
+}
+
+/** Selected travellers in shared view. Empty when the trip calendar is showing. */
+export function overlayTravellerIds(
+  prefs: PlannerPrefs,
+  travellers: Traveller[],
+  _meId: string | null,
+): string[] {
+  if (!prefs.sharedView) return [];
+  const allowed = new Set(travellers.map((person) => person.id));
+  return prefs.overlayIds.filter((id) => allowed.has(id));
+}
+
+export interface TripMetaPatch {
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  coverImage?: string | null;
+}
+
+export type ChatShare = {
+  kind: "idea";
+  ideaId: string;
+  title: string;
+  place: string | null;
+  reason: string;
+};
 
 export interface TripState {
   trip: Trip;
@@ -73,9 +183,15 @@ export interface TripState {
   invite: { open: boolean; sent: string[] };
   /** Transient confirmations, e.g. "Moved to Thursday 2:00 PM". */
   toast: { id: number; message: string; tone: "info" | "success" | "warning" } | null;
+  prefs: PlannerPrefs;
+  /** How many comments on a stop the current viewer has opened. */
+  commentSeen: Record<string, number>;
+  pendingChatShare: ChatShare | null;
 
   setActiveDay: (day: string) => void;
   setView: (view: PlannerView) => void;
+  /** Date-rail click: that day only, Google Calendar's Day view. */
+  openDayView: (day: string) => void;
   selectItem: (id: string | null, source?: SelectionSource) => void;
   hoverItem: (id: string | null) => void;
   setDragging: (id: string | null) => void;
@@ -87,12 +203,19 @@ export interface TripState {
   scheduleIdea: (ideaId: string, day: string, startMinutes: number) => void;
   duplicateItem: (id: string) => void;
   toggleAssignee: (itemId: string, travellerId: string) => void;
+  addItemComment: (itemId: string, text: string, fromId: string) => void;
+  markItemCommentsSeen: (itemId: string) => void;
+  setTravellerRole: (
+    travellerId: string,
+    role: Traveller["role"],
+  ) => void;
+  removeTraveller: (travellerId: string) => void;
 
   openCreate: (seed?: Partial<EditorDraft>) => void;
   openEdit: (id: string) => void;
   closeEditor: () => void;
   updateDraft: (patch: Partial<EditorDraft>) => void;
-  commitDraft: () => void;
+  commitDraft: (draft?: EditorDraft | null) => void;
 
   requestPlan: (intent: AssistantPlan["intent"]) => void;
   dismissPlan: () => void;
@@ -103,10 +226,15 @@ export interface TripState {
   closeInvite: () => void;
   sendInvite: (email: string) => void;
   addIdea: (idea: Omit<Idea, "id">) => void;
+  queueChatShare: (share: ChatShare) => void;
+  clearChatShare: () => void;
 
   showToast: (message: string, tone?: "info" | "success" | "warning") => void;
   clearToast: () => void;
   resetTrip: () => void;
+  leaveTrip: (successorId: string) => void;
+  updatePrefs: (patch: Partial<PlannerPrefs>) => void;
+  updateTripMeta: (patch: TripMetaPatch) => void;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -123,11 +251,17 @@ function normaliseTrip(trip: Trip): Trip {
     ...trip,
     startDate: toWallClock(trip.startDate),
     endDate: toWallClock(trip.endDate),
-    items: trip.items.map((item) => ({
-      ...item,
-      start: item.start ? toWallClock(item.start) : null,
-      end: item.end ? toWallClock(item.end) : null,
-    })),
+    coverImage:
+      trip.coverImage === null
+        ? null
+        : resolveTripCover(trip.coverImage, trip.destinationId),
+    items: trip.items.map((item) =>
+      migrateItemComments({
+        ...item,
+        start: item.start ? toWallClock(item.start) : null,
+        end: item.end ? toWallClock(item.end) : null,
+      }),
+    ),
   };
 }
 
@@ -141,6 +275,9 @@ const DEFAULT_DURATION = 90;
 
 function draftFromItem(item: ItineraryItem): EditorDraft {
   const start = item.start ?? `${dayKey(new Date())}T10:00:00`;
+  const origin =
+    item.commute?.fromPlace ?? (item.kind === "commute" ? item.place : null);
+  const destination = item.commute?.toPlace ?? null;
   return {
     id: item.id,
     kind: item.kind,
@@ -148,43 +285,93 @@ function draftFromItem(item: ItineraryItem): EditorDraft {
     title: item.title,
     subtitle: item.subtitle ?? "",
     placeId: null,
-    placeName: item.place?.name ?? "",
-    placeAddress: item.place?.address ?? "",
-    placeCoords: item.place?.coords ?? null,
+    placeName: destination?.name ?? (item.kind === "commute" ? "" : item.place?.name ?? ""),
+    placeAddress:
+      destination?.address ?? (item.kind === "commute" ? "" : item.place?.address ?? ""),
+    placeCoords:
+      destination?.coords ?? (item.kind === "commute" ? null : item.place?.coords ?? null),
+    fromPlaceId: null,
+    fromPlaceName: origin?.name ?? "",
+    fromPlaceAddress: origin?.address ?? "",
+    fromPlaceCoords: origin?.coords ?? null,
     day: dayKey(start),
+    endDay: item.end ? dayKey(item.end) : dayKey(start),
     startMinutes: parseWall(start).getHours() * 60 + parseWall(start).getMinutes(),
     durationMin:
       item.start && item.end ? durationMinutes(item.start, item.end) : DEFAULT_DURATION,
-    notes: item.notes ?? "",
     flexible: item.flexible,
     assignedTo: [...item.assignedTo],
+    booking: item.booking ?? "",
+    commuteMode: item.commute?.mode ?? "walk",
+    comment: "",
   };
 }
 
-function itemFromDraft(draft: EditorDraft, createdBy: string): ItineraryItem {
-  const start = atMinutes(draft.day, draft.startMinutes);
-  const end = atMinutes(draft.day, draft.startMinutes + draft.durationMin);
+function placeFromDraft(
+  name: string,
+  address: string,
+  coords: { lng: number; lat: number } | null,
+): Place | null {
+  if (!name || !coords) return null;
+  return { name, address, coords };
+}
+
+function itemFromDraft(
+  draft: EditorDraft,
+  createdBy: string,
+  previous?: ItineraryItem,
+): ItineraryItem {
+  const lodging = draft.kind === "stay";
+  const checkOut = draft.endDay > draft.day ? draft.endDay : shiftDayKey(draft.day, 1);
+  const start = lodging
+    ? atMinutes(draft.day, 15 * 60)
+    : atMinutes(draft.day, draft.startMinutes);
+  const end = lodging
+    ? atMinutes(checkOut, 11 * 60)
+    : atMinutes(draft.day, draft.startMinutes + draft.durationMin);
+  const fromPlace = placeFromDraft(
+    draft.fromPlaceName,
+    draft.fromPlaceAddress,
+    draft.fromPlaceCoords,
+  );
+  const toPlace = placeFromDraft(draft.placeName, draft.placeAddress, draft.placeCoords);
+  const title =
+    draft.title.trim() ||
+    (draft.kind === "commute" && fromPlace && toPlace
+      ? `${fromPlace.name} to ${toPlace.name}`
+      : "Untitled");
+  const thought = draft.comment.trim();
+  const comments =
+    previous?.comments ??
+    (thought ? [{ from: createdBy, text: thought }] : undefined);
 
   return {
     id: draft.id ?? newId("item"),
     kind: draft.kind,
     category: draft.category,
-    title: draft.title.trim() || "Untitled",
+    title,
     subtitle: draft.subtitle.trim() || undefined,
-    place:
-      draft.placeName && draft.placeCoords
-        ? {
-            name: draft.placeName,
-            address: draft.placeAddress,
-            coords: draft.placeCoords,
-          }
-        : null,
+    place: draft.kind === "commute" ? toPlace ?? fromPlace : toPlace,
     start,
     end,
-    notes: draft.notes.trim() || undefined,
-    flexible: draft.flexible,
+    comments,
+    flexible: lodging ? false : draft.flexible,
     assignedTo: draft.assignedTo,
-    createdBy,
+    createdBy: previous?.createdBy ?? createdBy,
+    costUsd: previous?.costUsd,
+    booking: draft.booking.trim() || undefined,
+    commute:
+      draft.kind === "commute"
+        ? {
+            mode: draft.commuteMode,
+            minutes: Math.max(1, draft.durationMin),
+            distanceKm: previous?.commute?.distanceKm ?? 0,
+            fromItemId: previous?.commute?.fromItemId ?? "",
+            toItemId: previous?.commute?.toItemId ?? "",
+            fromPlace: fromPlace ?? undefined,
+            toPlace: toPlace ?? undefined,
+          }
+        : undefined,
   };
 }
 
@@ -192,8 +379,8 @@ function itemFromDraft(draft: EditorDraft, createdBy: string): ItineraryItem {
 /* Store                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export function makeTripStore() {
-  const trip = normaliseTrip(NYC_TRIP);
+export function makeTripStore(seed: Trip = NYC_TRIP) {
+  const trip = normaliseTrip(seed);
   const days = tripDayKeys(trip);
   let toastId = 0;
 
@@ -202,7 +389,7 @@ export function makeTripStore() {
       (set, get) => ({
         trip,
         activeDay: days[0],
-        view: "calendar",
+        view: "week",
         selectedItemId: null,
         selectionSource: null,
         hoveredItemId: null,
@@ -211,11 +398,40 @@ export function makeTripStore() {
         assistant: { open: false, plan: null, applied: [] },
         invite: { open: false, sent: [] },
         toast: null,
+        pendingChatShare: null,
+        prefs: { ...DEFAULT_PLANNER_PREFS },
+        commentSeen: {},
 
         setActiveDay: (activeDay) =>
-          set({ activeDay, selectedItemId: null, selectionSource: null }),
+          set((state) => {
+            const selected = state.trip.items.find((item) => item.id === state.selectedItemId);
+            const staysOnDay = selected?.start
+              ? dayKey(selected.start) === activeDay
+              : false;
+            return {
+              activeDay,
+              selectedItemId: staysOnDay ? state.selectedItemId : null,
+              selectionSource: staysOnDay ? state.selectionSource : null,
+            };
+          }),
 
         setView: (view) => set({ view }),
+
+        openDayView: (day) =>
+          set((state) => {
+            const selected = state.trip.items.find(
+              (item) => item.id === state.selectedItemId,
+            );
+            const staysOnDay = selected?.start
+              ? dayKey(selected.start) === day
+              : false;
+            return {
+              activeDay: day,
+              view: "day" as const,
+              selectedItemId: staysOnDay ? state.selectedItemId : null,
+              selectionSource: staysOnDay ? state.selectionSource : null,
+            };
+          }),
 
         selectItem: (selectedItemId, selectionSource = "calendar") => {
           const state = get();
@@ -339,11 +555,18 @@ export function makeTripStore() {
             kind: "activity",
             category: idea.category,
             title: idea.title,
-            subtitle: idea.subtitle,
+            subtitle:
+              idea.subtitle ??
+              (idea.when && idea.when !== "flexible"
+                ? IDEA_WHEN_LABELS[idea.when]
+                : undefined),
             place: idea.place,
             start: atMinutes(day, snapped),
             end: atMinutes(day, snapped + idea.durationMin),
-            notes: idea.reason,
+            comments: commentsFromText(
+              idea.addedBy === "assistant" ? "assistant" : idea.addedBy,
+              idea.reason,
+            ),
             flexible: true,
             assignedTo: [],
             createdBy: idea.addedBy === "assistant" ? "assistant" : idea.addedBy,
@@ -400,7 +623,7 @@ export function makeTripStore() {
          */
         toggleAssignee: (itemId, travellerId) => {
           const state = get();
-          const everyone = state.trip.travellers.map((t) => t.id);
+          const everyone = partyTravellers(state.trip.travellers).map((t) => t.id);
 
           set({
             trip: {
@@ -427,28 +650,112 @@ export function makeTripStore() {
           });
         },
 
+        addItemComment: (itemId, text, fromId) => {
+          const trimmed = text.trim();
+          if (!trimmed) return;
+          const state = get();
+          const author =
+            state.trip.travellers.find((person) => person.id === fromId)?.id ??
+            state.trip.travellers.find((person) => person.role === "owner")?.id ??
+            state.trip.travellers[0]?.id;
+          if (!author) return;
+
+          const nextItems = state.trip.items.map((item) => {
+            if (item.id !== itemId) return item;
+            return {
+              ...item,
+              comments: [...(item.comments ?? []), { from: author, text: trimmed }],
+            };
+          });
+          const nextCount =
+            nextItems.find((item) => item.id === itemId)?.comments?.length ?? 0;
+
+          set({
+            trip: {
+              ...state.trip,
+              items: nextItems,
+            },
+            commentSeen: { ...state.commentSeen, [itemId]: nextCount },
+          });
+        },
+
+        markItemCommentsSeen: (itemId) => {
+          const state = get();
+          const count =
+            state.trip.items.find((item) => item.id === itemId)?.comments?.length ?? 0;
+          if (state.commentSeen[itemId] === count) return;
+          set({
+            commentSeen: { ...state.commentSeen, [itemId]: count },
+          });
+        },
+
+        setTravellerRole: (travellerId, role) => {
+          const state = get();
+          const target = state.trip.travellers.find((t) => t.id === travellerId);
+          if (!target || target.role === "owner") return;
+          if (role === "owner") return;
+
+          set({
+            trip: {
+              ...state.trip,
+              travellers: state.trip.travellers.map((t) =>
+                t.id === travellerId ? { ...t, role } : t,
+              ),
+            },
+          });
+          get().showToast(`Updated ${target.name.split(" ")[0]}'s role`, "success");
+        },
+
+        removeTraveller: (travellerId) => {
+          const state = get();
+          const target = state.trip.travellers.find((t) => t.id === travellerId);
+          if (!target || target.role === "owner") return;
+          if (state.trip.travellers.length <= 1) return;
+
+          set({
+            trip: {
+              ...state.trip,
+              travellers: state.trip.travellers.filter((t) => t.id !== travellerId),
+              items: state.trip.items.map((item) => ({
+                ...item,
+                assignedTo: item.assignedTo.filter((id) => id !== travellerId),
+              })),
+            },
+          });
+          get().showToast(`${target.name.split(" ")[0]} left the trip`, "info");
+        },
+
         openCreate: (seed) => {
           const state = get();
+          const day = seed?.day ?? state.activeDay;
           set({
+            activeDay: day,
             editor: {
               open: true,
               mode: "create",
               draft: {
                 id: null,
                 kind: "activity",
-                category: "sightseeing",
+                category: "nightlife",
                 title: "",
                 subtitle: "",
                 placeId: null,
                 placeName: "",
                 placeAddress: "",
                 placeCoords: null,
-                day: state.activeDay,
+                fromPlaceId: null,
+                fromPlaceName: "",
+                fromPlaceAddress: "",
+                fromPlaceCoords: null,
+                day,
+                endDay: seed?.endDay ?? day,
                 startMinutes: 10 * 60,
-                durationMin: DEFAULT_DURATION,
-                notes: "",
+                durationMin: state.prefs.defaultDurationMin,
                 flexible: true,
                 assignedTo: [],
+                booking: "",
+                commuteMode: "walk",
+                comment: "",
                 ...seed,
               },
             },
@@ -474,15 +781,17 @@ export function makeTripStore() {
           set({ editor: { ...editor, draft: { ...editor.draft, ...patch } } });
         },
 
-        commitDraft: () => {
+        commitDraft: (incoming) => {
           const state = get();
-          const draft = state.editor.draft;
+          const draft = incoming ?? state.editor.draft;
           if (!draft) return;
 
           const owner =
             state.trip.travellers.find((t) => t.role === "owner")?.id ??
             state.trip.travellers[0].id;
-          const item = itemFromDraft(draft, owner);
+          const actor = commentViewerId(state.trip.travellers, ACCOUNT_USER.id) || owner;
+          const previous = state.trip.items.find((entry) => entry.id === draft.id);
+          const item = itemFromDraft(draft, previous ? (previous.createdBy ?? owner) : actor, previous);
 
           const exists = state.trip.items.some((i) => i.id === item.id);
           set({
@@ -633,6 +942,9 @@ export function makeTripStore() {
           });
         },
 
+        queueChatShare: (pendingChatShare) => set({ pendingChatShare }),
+        clearChatShare: () => set({ pendingChatShare: null }),
+
         showToast: (message, tone = "info") => {
           toastId += 1;
           set({ toast: { id: toastId, message, tone } });
@@ -641,7 +953,7 @@ export function makeTripStore() {
         clearToast: () => set({ toast: null }),
 
         resetTrip: () => {
-          const fresh = normaliseTrip(NYC_TRIP);
+          const fresh = normaliseTrip(seed);
           set({
             trip: fresh,
             activeDay: tripDayKeys(fresh)[0],
@@ -650,17 +962,153 @@ export function makeTripStore() {
             hoveredItemId: null,
             editor: { open: false, mode: "create", draft: null },
             assistant: { open: false, plan: null, applied: [] },
+            prefs: { ...DEFAULT_PLANNER_PREFS },
+            commentSeen: {},
           });
           get().showToast("Trip reset to the original plan", "info");
         },
+
+        leaveTrip: (successorId) => {
+          const state = get();
+          const me =
+            state.trip.travellers.find((person) => person.role === "owner") ??
+            state.trip.travellers[0];
+          const successor = state.trip.travellers.find(
+            (person) => person.id === successorId,
+          );
+          if (!me || !successor || successor.id === me.id) return;
+
+          set({
+            trip: {
+              ...state.trip,
+              travellers: state.trip.travellers
+                .filter((person) => person.id !== me.id)
+                .map((person) =>
+                  person.id === successorId
+                    ? { ...person, role: "owner" as const }
+                    : person,
+                ),
+              items: state.trip.items.map((item) => ({
+                ...item,
+                assignedTo: item.assignedTo.filter((id) => id !== me.id),
+              })),
+            },
+          });
+          get().showToast(
+            `${successor.name.split(" ")[0]} is now the organiser`,
+            "success",
+          );
+        },
+
+        updatePrefs: (patch) =>
+          set((state) => {
+            const prefs = { ...state.prefs, ...patch };
+            if (prefs.dayEndHour <= prefs.dayStartHour + 3) {
+              prefs.dayEndHour = Math.min(24, prefs.dayStartHour + 4);
+            }
+            if (prefs.dayStartHour >= prefs.dayEndHour) {
+              prefs.dayStartHour = Math.max(5, prefs.dayEndHour - 4);
+            }
+            return { prefs };
+          }),
+
+        updateTripMeta: (patch) => {
+          const state = get();
+          const startDate = patch.startDate ?? state.trip.startDate;
+          const endDate = patch.endDate ?? state.trip.endDate;
+          if (startDate > endDate) return;
+
+          const trip: Trip = {
+            ...state.trip,
+            ...patch,
+            startDate,
+            endDate,
+            items: state.trip.items.map((item) => {
+              if (item.kind !== "stay" || !item.start || !item.end) return item;
+              return {
+                ...item,
+                start: `${startDate}T${item.start.slice(11)}`,
+                end: `${endDate}T${item.end.slice(11)}`,
+              };
+            }),
+          };
+          const days = tripDayKeys(trip);
+          const activeDay = days.includes(state.activeDay) ? state.activeDay : days[0];
+          set({ trip, activeDay });
+        },
       }),
       {
-        name: "intripid.trip.v1",
+        name: `intripid.trip.v2.${seed.id}`,
         // Only the itinerary survives a refresh. UI focus should not.
-        partialize: (state) => ({ trip: state.trip, view: state.view }),
+        partialize: (state) => ({
+          trip: state.trip,
+          view: state.view,
+          prefs: state.prefs,
+          commentSeen: state.commentSeen,
+        }),
         // Rehydrate manually after mount so SSR markup and the first client
         // render agree — otherwise persisted edits cause a hydration mismatch.
         skipHydration: true,
+        merge: (persisted, current) => {
+          try {
+            const saved = (persisted ?? {}) as Partial<TripState>;
+            const savedTrip = saved.trip;
+            const canUseSaved = Boolean(savedTrip?.items && savedTrip.travellers);
+            const thinner =
+              canUseSaved &&
+              seed.id !== DRAFT_TRIP_ID &&
+              savedTrip &&
+              (savedTrip.items.filter((item) => item.kind === "activity").length <
+                seed.items.filter((item) => item.kind === "activity").length ||
+                savedTrip.travellers.length < seed.travellers.length);
+            const seedOwnerId =
+              seed.travellers.find((person) => person.role === "owner")?.id ??
+              null;
+            const savedOwnerId =
+              savedTrip?.travellers.find((person) => person.role === "owner")
+                ?.id ?? null;
+            const stale =
+              savedTrip &&
+              (savedTrip.id !== seed.id ||
+                savedTrip.destinationId !== seed.destinationId ||
+                thinner ||
+                (seedOwnerId && seedOwnerId !== savedOwnerId) ||
+                (seed.id === DRAFT_TRIP_ID &&
+                  (savedTrip.startDate !== seed.startDate ||
+                    savedTrip.endDate !== seed.endDate)));
+            const usable = !canUseSaved || stale ? undefined : savedTrip;
+            const seedById = new Map(
+              seed.travellers.map((person) => [person.id, person] as const),
+            );
+            const trip = usable
+              ? normaliseTrip({
+                  ...usable,
+                  travellers: usable.travellers.map((person) => {
+                    const fromSeed = seedById.get(person.id);
+                    if (!fromSeed) return person;
+                    return {
+                      ...person,
+                      initials: fromSeed.initials,
+                      photoUrl: fromSeed.photoUrl,
+                      colorIndex: fromSeed.colorIndex,
+                      ...(fromSeed.role === "advisor"
+                        ? { online: fromSeed.online, role: fromSeed.role }
+                        : {}),
+                    };
+                  }),
+                })
+              : usable;
+            return {
+              ...current,
+              ...saved,
+              trip: trip ?? current.trip,
+              prefs: { ...DEFAULT_PLANNER_PREFS, ...saved.prefs },
+              commentSeen: saved.commentSeen ?? current.commentSeen,
+            };
+          } catch {
+            return current;
+          }
+        },
       },
     ),
   );
@@ -668,8 +1116,18 @@ export function makeTripStore() {
 
 const context = createStoreContext<TripState>("TripStore");
 
-export function TripStoreProvider({ children }: { children: ReactNode }) {
-  return <context.Provider createStore={makeTripStore}>{children}</context.Provider>;
+export function TripStoreProvider({
+  trip,
+  children,
+}: {
+  trip: Trip;
+  children: ReactNode;
+}) {
+  return (
+    <context.Provider createStore={() => makeTripStore(trip)}>
+      {children}
+    </context.Provider>
+  );
 }
 
 export const useTrip = context.useStoreSelector;

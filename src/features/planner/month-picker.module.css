@@ -1,0 +1,238 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  min-height: 40px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--slate-800);
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  background: rgba(32, 33, 36, 0.06);
+}
+
+.trigger svg {
+  color: var(--slate-500);
+  flex: none;
+}
+
+.triggerCompact {
+  margin-left: 0;
+  min-height: 36px;
+  padding: 2px 4px 2px 0;
+  border-radius: 4px;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.triggerStatic {
+  cursor: default;
+  pointer-events: none;
+}
+
+.triggerCompact:hover,
+.triggerCompact[aria-expanded="true"] {
+  background: transparent;
+}
+
+.triggerCompact svg {
+  transition: transform 200ms var(--ease-out);
+}
+
+.triggerCompact[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.popover {
+  border: 0;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 3px rgba(60, 64, 67, 0.15),
+    0 8px 24px rgba(60, 64, 67, 0.18);
+  overflow: hidden;
+}
+
+.panel {
+  padding: 16px 18px 18px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.headTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--slate-800);
+  letter-spacing: -0.01em;
+}
+
+.headNav {
+  display: flex;
+  align-items: center;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.weekdays span {
+  display: grid;
+  place-items: center;
+  height: 28px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--slate-500);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px 0;
+}
+
+.cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-inline: auto;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--slate-800);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell:hover {
+  background: var(--bg-hover);
+}
+
+.cellMuted {
+  color: var(--slate-400);
+}
+
+.cellTrip {
+  font-weight: 500;
+}
+
+.cellActive {
+  background: var(--purple-50);
+  color: var(--purple-700);
+}
+
+.cellToday {
+  background: var(--purple-500);
+  color: var(--slate-0);
+  font-weight: 500;
+}
+
+.cellToday:hover {
+  background: var(--purple-600);
+}
+
+.cellDot {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--purple-500);
+}
+
+.cellToday .cellDot {
+  background: var(--slate-0);
+}
+
+.cellActive:not(.cellToday) .cellDot {
+  background: var(--purple-600);
+}
+
+/* Compact: date grid + month pills expand in flow. */
+.mobileStrip {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 48px;
+  padding: 6px 16px 12px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--slate-100);
+  color: var(--slate-700);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chipOn {
+  background: var(--purple-100);
+  color: var(--purple-800);
+}
+
+.mobileCal {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 2px 4px;
+}
+
+.gridMobile {
+  width: 100%;
+  max-width: 100%;
+}
+
+.cellMobile {
+  width: 40px;
+  height: 40px;
+  margin-inline: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .triggerCompact svg {
+    transition: none;
+  }
+}

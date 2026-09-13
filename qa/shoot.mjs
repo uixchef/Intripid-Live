@@ -38,6 +38,26 @@ const shots = [
     },
   },
   {
+    name: "01b-landing-features-desktop",
+    viewport: DESKTOP,
+    url: "/",
+    async run(page) {
+      await page.waitForSelector("h1");
+      await page.locator("#ai-human").scrollIntoViewIfNeeded();
+      await page.waitForTimeout(600);
+    },
+  },
+  {
+    name: "01c-landing-footer-desktop",
+    viewport: DESKTOP,
+    url: "/",
+    async run(page) {
+      await page.waitForSelector("h1");
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(700);
+    },
+  },
+  {
     name: "02-discovery-dates-desktop",
     viewport: DESKTOP,
     url: "/discover",
@@ -394,6 +414,26 @@ const shots = [
     async run(page) {
       await page.waitForSelector("h1");
       await page.waitForTimeout(800);
+    },
+  },
+  {
+    name: "20b-landing-features-mobile",
+    viewport: PHONE,
+    url: "/",
+    async run(page) {
+      await page.waitForSelector("h1");
+      await page.locator("#ai-human").scrollIntoViewIfNeeded();
+      await page.waitForTimeout(600);
+    },
+  },
+  {
+    name: "20c-landing-footer-mobile",
+    viewport: PHONE,
+    url: "/",
+    async run(page) {
+      await page.waitForSelector("h1");
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(700);
     },
   },
 ];

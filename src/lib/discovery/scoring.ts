@@ -1,6 +1,7 @@
 import {
   addDays,
   differenceInCalendarDays,
+  format,
   getMonth,
   parseISO,
 } from "date-fns";
@@ -28,12 +29,10 @@ import type {
  * order the reasoning happened. Filters ELIMINATE.
  *
  * STAGE 2 — a weighted rank over the survivors, and only the survivors.
- * Activities ORDER; they never eliminate.
  *
- * The filter/rank distinction is the core algorithmic information
- * architecture and is surfaced in the UI on every question, because a
- * traveller deserves to know whether an answer is narrowing the field or
- * merely sorting it.
+ * Experiences and activities only drip-remove the weakest mismatches
+ * (a couple per chip), so one tap never clears a band of the map.
+ * Find matches keeps 5–8; the brief is still three.
  *
  * Two safety properties, both deliberate:
  *  - Filtering never returns an empty set. If it would, we relax to pure
@@ -43,16 +42,28 @@ import type {
 
 /** Weights over the survivors. Activities dominate, as in the original. */
 const WEIGHTS = {
-  activities: 0.4,
+  activities: 0.35,
   experiences: 0.2,
-  season: 0.2,
+  populated: 0.1,
+  season: 0.15,
   budget: 0.1,
   reach: 0.05,
   duration: 0.05,
 } as const;
 
-/** Below this an experience is considered unsupported by a city. */
-const EXPERIENCE_FLOOR = 0.4;
+/**
+ * A city keeps a must-have only when it actually offers it.
+ * Destination scores leave a gap: has-it is ≥ 0.52, does-not is ≤ 0.48.
+ */
+const SUPPORT_FLOOR = 0.5;
+/** Do not collapse the filter game below this while there are still cities. */
+const FIELD_FLOOR = 5;
+/** Worst-fit cities dropped per selected chip — never a handful at once. */
+const DROP_PER_CHIP = 2;
+
+function offers(fit: number | undefined): boolean {
+  return (fit ?? 0) >= SUPPORT_FLOOR;
+}
 
 const BUDGET_LABELS = {
   backpack: "Backpack",
@@ -66,6 +77,52 @@ const WEEKEND_NIGHTS: Record<WeekendShape, number> = {
   "sat-mon": 2,
   "sat-sun": 1,
 };
+
+/** How far ahead a flexible month can be picked — always covers next year. */
+export const FLEXIBLE_HORIZON_MONTHS = 18;
+
+export function flexibleWindowValue(year: number, month: number): string {
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
+export function parseFlexibleWindow(value: string): {
+  year: number;
+  month: number;
+} {
+  const [year, month] = value.split("-").map(Number);
+  return { year, month: month - 1 };
+}
+
+/**
+ * If the stored month/year is already behind the current month, roll forward
+ * to the next time that month occurs. April without a year is a lie in September.
+ */
+export function coerceFlexibleWindow(
+  month: number,
+  year?: number,
+  from: Date = new Date(),
+): { flexibleMonth: number; flexibleYear: number } {
+  const current = new Date(from.getFullYear(), from.getMonth(), 1);
+  let nextYear = year ?? from.getFullYear();
+  while (new Date(nextYear, month, 1) < current) nextYear += 1;
+  return { flexibleMonth: month, flexibleYear: nextYear };
+}
+
+export function upcomingFlexibleMonths(
+  from: Date = new Date(),
+  count = FLEXIBLE_HORIZON_MONTHS,
+): { year: number; month: number; value: string; label: string }[] {
+  const start = new Date(from.getFullYear(), from.getMonth(), 1);
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(start.getFullYear(), start.getMonth() + index, 1);
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      value: flexibleWindowValue(date.getFullYear(), date.getMonth()),
+      label: format(date, "MMMM yyyy"),
+    };
+  });
+}
 
 function listPhrase(items: string[]): string {
   if (items.length === 0) return "";
@@ -152,9 +209,11 @@ export function resolvedDates(
   }
 
   if (prefs.dateMode === "flexible") {
-    // Mid-month is the honest representative window for an open month.
-    const year = 2026;
-    const start = new Date(year, prefs.flexibleMonth, 12);
+    const { flexibleYear, flexibleMonth } = coerceFlexibleWindow(
+      prefs.flexibleMonth,
+      prefs.flexibleYear,
+    );
+    const start = new Date(flexibleYear, flexibleMonth, 12);
     const end = addDays(start, prefs.flexibleNights);
     return {
       start: start.toISOString().slice(0, 10),
@@ -220,6 +279,33 @@ function experienceFactor(
     label: "Must-haves",
     score,
     weight: WEIGHTS.experiences,
+    detail,
+  };
+}
+
+function populatedFactor(
+  destination: Destination,
+  prefs: DiscoveryPreferences,
+): ScoreFactor | null {
+  if (!prefs.populated || prefs.populated === "open") return null;
+
+  const city = destination.styleFit["city-life"];
+  const popular = prefs.populated === "popular";
+  const score = popular ? city : 1 - city;
+
+  const detail = popular
+    ? score >= 0.7
+      ? "A well-known city — scale and energy are the point."
+      : "Known, but not a headline destination."
+    : score >= 0.7
+      ? "Quieter and less crowded than the usual circuit."
+      : "Still a major place — we kept it because the rest of the fit is strong.";
+
+  return {
+    key: "populated",
+    label: "Scale",
+    score,
+    weight: WEIGHTS.populated,
     detail,
   };
 }
@@ -360,6 +446,7 @@ export function preferenceCompleteness(prefs: DiscoveryPreferences): number {
     prefs.scope !== null,
     prefs.origin !== null,
     prefs.budget !== null,
+    prefs.populated !== null,
     prefs.styles.length > 0,
     prefs.interests.length > 0,
   ];
@@ -426,7 +513,7 @@ function runFilters(
 
   // (c) Reachability — can you realistically get there and back?
   if (prefs.origin && window.nights !== null) {
-    const ceiling = Math.max(3.5, window.nights * 3.4);
+    const ceiling = Math.max(18, window.nights * 5.5);
     apply(
       "reach",
       "Working out what you can actually reach",
@@ -445,20 +532,80 @@ function runFilters(
     );
   }
 
-  // (e) Must-have experiences. This one really does eliminate.
   if (prefs.styles.length > 0) {
     const names = prefs.styles
       .slice(0, 2)
       .map((s) => STYLE_META[s].label.toLowerCase());
-    apply(
+    pool = dripByFit(
+      stages,
+      pool,
       "experiences",
-      `Removing cities that can't deliver ${listPhrase(names)}`,
-      "Must-haves are a filter, not a preference.",
-      (d) => prefs.styles.every((s) => d.styleFit[s] >= EXPERIENCE_FLOOR),
+      `Trimming cities that can't deliver ${listPhrase(names)}`,
+      "A couple of the weakest matches come off the map, not a whole band.",
+      prefs.styles,
+      (destination, style) => destination.styleFit[style] ?? 0,
+    );
+  }
+
+  if (prefs.interests.length > 0) {
+    const names = prefs.interests
+      .slice(0, 2)
+      .map((s) => INTEREST_META[s].label.toLowerCase());
+    pool = dripByFit(
+      stages,
+      pool,
+      "activities",
+      `Trimming cities that can't support ${listPhrase(names)}`,
+      "A couple of the weakest matches come off the map, not a whole band.",
+      prefs.interests,
+      (destination, interest) => destination.interestFit[interest] ?? 0,
     );
   }
 
   return { survivors: pool, stages };
+}
+
+/**
+ * Nudge the field instead of clearing it. Each selected chip may drop at
+ * most a couple of the weakest remaining cities, and never below FIELD_FLOOR.
+ */
+function dripByFit<K extends string>(
+  stages: FilterStage[],
+  pool: Destination[],
+  key: FilterStage["key"],
+  label: string,
+  detail: string,
+  selected: readonly K[],
+  fitOf: (destination: Destination, key: K) => number,
+): Destination[] {
+  if (selected.length === 0 || pool.length === 0) return pool;
+
+  const scoreOf = (destination: Destination) =>
+    Math.min(...selected.map((item) => fitOf(destination, item)));
+
+  const weakest = [...pool].sort(
+    (a, b) =>
+      scoreOf(a) - scoreOf(b) || a.id.localeCompare(b.id),
+  );
+  const budget = Math.min(
+    selected.length * DROP_PER_CHIP,
+    Math.max(0, pool.length - FIELD_FLOOR),
+  );
+  const drop = weakest
+    .filter((destination) => !offers(scoreOf(destination)))
+    .slice(0, budget);
+  const dropIds = new Set(drop.map((destination) => destination.id));
+  const kept = pool.filter((destination) => !dropIds.has(destination.id));
+
+  stages.push({
+    key,
+    label,
+    detail,
+    entered: pool.length,
+    removed: drop.length,
+    removedIds: drop.map((destination) => destination.id),
+  });
+  return kept;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -472,6 +619,7 @@ function scoreDestination(
   const factors = [
     activityFactor(destination, prefs),
     experienceFactor(destination, prefs),
+    populatedFactor(destination, prefs),
     seasonFactor(destination, prefs),
     budgetFactor(destination, prefs),
     reachFactor(destination, prefs),
@@ -539,9 +687,6 @@ export function recommend(
   prefs: DiscoveryPreferences,
 ): RecommendationSet {
   const { survivors, stages } = runFilters(destinations, prefs);
-
-  // Never show nothing. If the filters emptied the field, rank everything and
-  // admit that we loosened the constraints.
   const relaxed = survivors.length === 0;
   const pool = relaxed ? destinations : survivors;
   const ranked = rank(pool, prefs);

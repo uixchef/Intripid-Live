@@ -1,172 +1,283 @@
 "use client";
 
-import { Bookmark, MapPin, Pencil, SlidersHorizontal, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Map as MapIcon, MapPin } from "lucide-react";
 
+import { plannerHrefForPlace } from "@/data/trips";
+import { prizeProgressSummary } from "@/data/prizes";
 import { Button } from "@/components/ui/button";
-import { monthYear } from "@/lib/dashboard/format";
+import { Sheet } from "@/components/ui/overlay";
+import { MobileBack } from "@/components/nav/mobile-back";
+import { useBackTarget } from "@/components/nav/back-link";
+import type {
+  AccountUser,
+  FootprintCategory,
+  LngLat,
+} from "@/lib/types";
+import { useHideOnScroll } from "@/lib/use-hide-on-scroll";
+import { useIsCompact } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
-import type { AccountUser } from "@/lib/types";
+import { useSession, useSessionApi } from "@/stores/session-store";
 
+import { IdentityMap } from "./identity-map";
+import { FootprintEditor } from "./footprint-editor";
+import { ProgressMark } from "./progress-mark";
+import { SealRow } from "./seal-row";
 import styles from "./identity.module.css";
-
-/**
- * Travel identity.
- *
- * WHAT THE ORIGINAL HAD: a globe cover image, an overlapping avatar, name and
- * handle, three counts (Wishlist / Visited / Avoid), two buttons, and four
- * badge-like circles — two of them empty dashed outlines.
- *
- * WHAT IS KEPT: all of the information, and the hierarchy. This block still
- * answers "who am I in this product" before anything else on the page.
- *
- * WHAT IS REINTERPRETED, and why:
- *
- *  - THE COVER. A decorative globe on the widest block of the home screen
- *    costs about 190px of first-screen height and says nothing. The cover is
- *    now a horizon band that carries the three counts, so the same pixels do
- *    the identity work and the data work at once.
- *
- *  - THE BADGES. Two of the four in the original were empty dashed circles —
- *    locked achievements, which is a slot machine, not a travel profile. Read
- *    as product, that position wants the standing inputs to every
- *    recommendation. So it holds persona traits, and each one states what it
- *    causes Intripid to do. That is the difference between a profile that
- *    gamifies you and one that works for you.
- *
- *  - "AVOID" stays a first-class count, at the same weight as Wishlist and
- *    Visited. It is the most distinctive number in the original and the one a
- *    recommender benefits from most.
- */
 
 export interface IdentityProps {
   user: AccountUser;
-  /** True while the persona editor is open, so the CTA can reflect it. */
   editing: boolean;
+  expanded: boolean;
+  /** Drop the WebGL globe before a planner route change. */
+  mapLive?: boolean;
+  onToggleExpand: () => void;
   onEditPersona: () => void;
   onEditProfile: () => void;
+  onOpenBoard: () => void;
+  onPlanTrip: (href: string) => void;
+  /** Open the expanded editor on this bucket. */
+  footprintCategory?: FootprintCategory;
 }
 
 export function Identity({
   user,
   editing,
+  expanded,
+  mapLive = true,
+  onToggleExpand,
   onEditPersona,
   onEditProfile,
+  onOpenBoard,
+  onPlanTrip,
+  footprintCategory = "wishlist",
 }: IdentityProps) {
-  const { stats } = user;
+  const cameFrom = useBackTarget("/dashboard");
+  const [focus, setFocus] = useState<{
+    id: string;
+    coords: LngLat;
+    zoom: number;
+    revision: number;
+  } | null>(null);
+  const [historySheetPx, setHistorySheetPx] = useState(() =>
+    typeof window !== "undefined" ? Math.round(window.innerHeight * 0.42) : 0,
+  );
+  const [cameraInsetPx, setCameraInsetPx] = useState(() =>
+    typeof window !== "undefined" ? Math.round(window.innerHeight * 0.42) : 0,
+  );
+  const [placesOpen, setPlacesOpen] = useState(true);
+  const isCompact = useIsCompact();
+  const chrome = useHideOnScroll(isCompact && expanded);
+  const resetChrome = chrome.reset;
+  const wishlist = useSession((s) => s.wishlist);
+  const visited = useSession((s) => s.visited);
+  const avoids = useSession((s) => s.avoids);
+  const footprint = useSessionApi();
+
+  useEffect(() => {
+    if (!expanded) return;
+    if (isCompact && placesOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onToggleExpand();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded, isCompact, placesOpen, onToggleExpand]);
+
+  const stats = {
+    wishlist: wishlist.length,
+    visited: visited.length,
+    avoid: avoids.length,
+  };
+
+  const progress = useMemo(
+    () => prizeProgressSummary(user.badges, visited, wishlist, avoids),
+    [user.badges, visited, wishlist, avoids],
+  );
+
+  useEffect(() => {
+    if (expanded) setPlacesOpen(true);
+  }, [expanded]);
+
+  const onHistorySnap = useCallback((_index: number, heightFraction: number) => {
+    setCameraInsetPx(Math.round(heightFraction * window.innerHeight));
+  }, []);
+
+  const onHistoryHeight = useCallback((px: number) => {
+    setHistorySheetPx(Math.round(px));
+  }, []);
+
+  const hidePlaces = useCallback(() => {
+    setPlacesOpen(false);
+    setHistorySheetPx(0);
+    setCameraInsetPx(0);
+    resetChrome();
+  }, [resetChrome]);
+
+  function lookAt(place: { id: string; coords: LngLat; zoom: number }) {
+    setFocus((current) => ({
+      ...place,
+      revision: (current?.revision ?? 0) + 1,
+    }));
+  }
+
+  const editor = expanded ? (
+    <FootprintEditor
+      wishlist={wishlist}
+      visited={visited}
+      avoids={avoids}
+      onAddWishlist={(place) => footprint.getState().addWishlist(place)}
+      onAddVisited={(place) => footprint.getState().addVisited(place)}
+      onAddAvoid={(place) => footprint.getState().addAvoid(place)}
+      onRemove={(category, id) =>
+        footprint.getState().removePlace(category, id)
+      }
+      selectedId={focus?.id}
+      onSelectPlace={lookAt}
+      onPlanTrip={(place) => onPlanTrip(plannerHrefForPlace(place))}
+      initialCategory={footprintCategory}
+      onScroll={chrome.onScroll}
+    />
+  ) : null;
+
+  const mapInset = placesOpen ? historySheetPx : 0;
+  const cameraInset = placesOpen ? cameraInsetPx : 0;
 
   return (
-    <section className={styles.identity} aria-label="Your travel identity">
-      {/* ------------------------------------------------------------------ */}
-      {/* Cover — a horizon that carries the counts                          */}
-      {/* ------------------------------------------------------------------ */}
+    <section
+      className={styles.identity}
+      data-expanded={expanded ? "" : undefined}
+      data-chrome-hidden={isCompact && expanded && chrome.hidden ? "" : undefined}
+      aria-label="Your travel identity"
+      style={
+        expanded && isCompact
+          ? {
+              ["--map-inset-bottom" as string]: `${mapInset}px`,
+            }
+          : undefined
+      }
+    >
       <div className={styles.cover}>
-        <svg
-          className={styles.horizon}
-          viewBox="0 0 960 160"
-          preserveAspectRatio="none"
-          aria-hidden
-        >
-          {/*
-           * Three contour ridges, the same drawing language as the trip
-           * covers. Deliberately not a photograph and not a gradient wash:
-           * this is the calmest thing that can still read as travel.
-           */}
-          <path d="M0 118 C 150 96, 260 128, 420 110 S 700 78, 960 104 L960 160 L0 160 Z" />
-          <path d="M0 136 C 190 118, 320 146, 500 132 S 780 104, 960 126 L960 160 L0 160 Z" />
-          <path d="M0 152 C 220 140, 360 160, 560 150 S 820 132, 960 146 L960 160 L0 160 Z" />
-        </svg>
-
-        <dl className={styles.stats}>
-          <div className={styles.stat}>
-            <dt className={styles.statLabel}>
-              <Bookmark size={11} strokeWidth={2.2} aria-hidden />
-              Wishlist
-            </dt>
-            <dd className={cn(styles.statValue, "tabular")}>
-              {stats.wishlist}
-            </dd>
-          </div>
-          <div className={styles.stat}>
-            <dt className={styles.statLabel}>
-              <MapPin size={11} strokeWidth={2.2} aria-hidden />
-              Visited
-            </dt>
-            <dd className={cn(styles.statValue, "tabular")}>{stats.visited}</dd>
-          </div>
-          <div className={styles.stat}>
-            <dt className={styles.statLabel}>
-              <X size={11} strokeWidth={2.4} aria-hidden />
-              Ruled out
-            </dt>
-            <dd className={cn(styles.statValue, "tabular")}>{stats.avoid}</dd>
-          </div>
-        </dl>
+        <IdentityMap
+          locations={visited}
+          wishlist={wishlist}
+          avoids={avoids}
+          stats={stats}
+          expanded={expanded}
+          live={mapLive}
+          focus={focus}
+          insetBottom={isCompact && expanded ? cameraInset : 0}
+          showExpand={!(isCompact && expanded)}
+          onToggleExpand={onToggleExpand}
+          onSelectPlace={lookAt}
+        />
       </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Person                                                             */}
-      {/* ------------------------------------------------------------------ */}
-      <div className={styles.body}>
-        <div className={styles.person}>
-          <span className={styles.avatar} aria-hidden>
-            {user.initials}
-          </span>
+      {expanded && isCompact ? (
+        <header className={styles.mapTopbar}>
+          <MobileBack
+            from={cameFrom.screen === "Back" ? "Dashboard" : cameFrom.screen}
+            onClick={onToggleExpand}
+            className={styles.mapBack}
+          />
+        </header>
+      ) : null}
+
+      {expanded && !isCompact ? editor : null}
+
+      {expanded && isCompact ? (
+        <>
+          <button
+            type="button"
+            className={cn(styles.mapToggle, !placesOpen && styles.mapToggleRaised)}
+            aria-pressed={!placesOpen}
+            aria-label={placesOpen ? "Show map" : "Show places"}
+            onClick={() => {
+              if (placesOpen) hidePlaces();
+              else setPlacesOpen(true);
+            }}
+          >
+            {placesOpen ? (
+              <>
+                <MapIcon size={13} strokeWidth={2.2} />
+                Map
+              </>
+            ) : (
+              <>
+                <MapPin size={13} strokeWidth={2.2} />
+                Places
+              </>
+            )}
+          </button>
+          <Sheet
+            open={placesOpen}
+            onClose={hidePlaces}
+            label="Travel history"
+            snapPoints={[0.42, 0.64, 0.92]}
+            initialSnapIndex={0}
+            scrim={false}
+            onSnapChange={onHistorySnap}
+            onHeightChange={onHistoryHeight}
+            className={styles.historySheet}
+            bodyClassName={styles.historySheetBody}
+          >
+            {editor}
+          </Sheet>
+        </>
+      ) : null}
+
+      {expanded ? null : (
+        <div className={styles.body}>
+          <div className={styles.header}>
+            <button
+              type="button"
+              className={styles.progressHit}
+              aria-haspopup="dialog"
+              aria-label={`Level ${progress.level}, ${progress.level} seals collected. Open leaderboard.`}
+              onClick={onOpenBoard}
+            >
+              <ProgressMark
+                user={user}
+                level={progress.level}
+                progress={progress.ringPct}
+                size="lg"
+              />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className={styles.badgesTrigger}
+            aria-haspopup="dialog"
+            aria-label={`Prizes, ${progress.earned.length} collected. Open leaderboard.`}
+            onClick={onOpenBoard}
+          >
+            <SealRow prizes={progress.prizes} />
+          </button>
 
           <div className={styles.who}>
             <h1 className={styles.name}>{user.name}</h1>
-            <p className={styles.meta}>
-              <span className={styles.handle}>@{user.handle}</span>
-              <span className={styles.dot} aria-hidden>
+            <p className={styles.handle}>
+              @{user.handle}
+              <span className={styles.whoSep} aria-hidden>
                 ·
               </span>
-              <span>
-                {user.homeCity}, {user.homeCountry}
-              </span>
-              <span className={cn(styles.dot, styles.dotWide)} aria-hidden>
-                ·
-              </span>
-              <span className={styles.since}>
-                Since {monthYear(user.memberSinceIso)}
+              <span title="Level is how many prize seals you have collected">
+                Level {progress.level}
               </span>
             </p>
           </div>
 
           <div className={styles.actions}>
-            <Button
-              variant="secondary"
-              size="sm"
-              iconLeft={<Pencil size={13} strokeWidth={2.1} />}
-              onClick={onEditProfile}
-            >
+            <Button variant="secondary" size="sm" onClick={onEditProfile}>
               Edit profile
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              iconLeft={<SlidersHorizontal size={13} strokeWidth={2.1} />}
-              onClick={onEditPersona}
-            >
-              {editing ? "Editing persona" : "Refine persona"}
+            <Button variant="secondary" size="sm" onClick={onEditPersona}>
+              {editing ? "Editing persona" : "Build your travel persona!"}
             </Button>
           </div>
         </div>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Traits — where the original put badge circles                    */}
-        {/* ---------------------------------------------------------------- */}
-        <ul className={styles.traits} aria-label="What Intripid knows about how you travel">
-          {user.persona.traits.map((trait) => (
-            <li
-              key={trait.id}
-              className={styles.trait}
-              data-channel={trait.channel}
-            >
-              <span className={styles.traitLabel}>{trait.label}</span>
-              <span className={styles.traitEffect}>{trait.effect}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      )}
     </section>
   );
 }

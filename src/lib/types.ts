@@ -47,6 +47,12 @@ export const BUDGET_TIERS: readonly BudgetTier[] = [
 export type TripScope = "domestic" | "international" | "open";
 
 /**
+ * Whether to boost well-known cities or quieter places. `open` is a real
+ * answer, not an unanswered question — it means "don't weight scale".
+ */
+export type PopulatedPref = "open" | "popular" | "quiet";
+
+/**
  * How the dates were expressed. Three modes, restored from the original
  * product: a specific window, an open month, or "this weekend" — which was
  * first-class because weekend trips are a quarter of global bookings.
@@ -75,54 +81,112 @@ export type IncomeBand =
  * this into several questions created friction without improving results.
  */
 export type TripStyle =
-  | "slow"
-  | "adventure"
-  | "culture"
-  | "food"
-  | "nightlife"
-  | "nature"
-  | "beach"
-  | "city";
+  | "mountains"
+  | "beaches"
+  | "forests"
+  | "deserts"
+  | "lakes-rivers"
+  | "historical-sites"
+  | "monuments"
+  | "traditional-villages"
+  | "wildlife-safaris"
+  | "adventure-parks"
+  | "extreme-sports"
+  | "city-life"
+  | "architecture"
+  | "beach-resort"
+  | "hot-springs"
+  | "rejuvenate"
+  | "peaceful"
+  | "spas";
 
 export const TRIP_STYLES: readonly TripStyle[] = [
-  "slow",
-  "adventure",
-  "culture",
-  "food",
-  "nightlife",
-  "nature",
-  "beach",
-  "city",
+  "mountains",
+  "beaches",
+  "forests",
+  "deserts",
+  "lakes-rivers",
+  "historical-sites",
+  "monuments",
+  "traditional-villages",
+  "wildlife-safaris",
+  "adventure-parks",
+  "extreme-sports",
+  "city-life",
+  "architecture",
+  "beach-resort",
+  "hot-springs",
+  "rejuvenate",
+  "peaceful",
+  "spas",
 ] as const;
 
 /** Finer-grained interests, used to explain and differentiate recommendations. */
 export type Interest =
+  | "swimming"
+  | "boating"
+  | "fishing"
+  | "beach-activities"
+  | "kayaking-canoeing"
+  | "snorkeling"
+  | "paddle-boarding"
+  | "river-cruises"
+  | "waterfall-visits"
   | "museums"
-  | "architecture"
   | "live-music"
-  | "markets"
-  | "coffee"
-  | "fine-dining"
+  | "cooking-classes"
+  | "festivals"
+  | "food-markets"
   | "street-food"
+  | "coffee-places"
+  | "fine-dining"
+  | "parks-gardens"
+  | "photography"
   | "hiking"
-  | "water"
-  | "shopping"
-  | "history"
-  | "nightlife";
+  | "cycling"
+  | "running"
+  | "yoga"
+  | "climbing"
+  | "winter-sports"
+  | "walking-tours"
+  | "street-art"
+  | "neighborhoods"
+  | "bars-nightlife"
+  | "shopping-streets"
+  | "viewpoints";
 
 export const INTERESTS: readonly Interest[] = [
+  "swimming",
+  "boating",
+  "fishing",
+  "beach-activities",
+  "kayaking-canoeing",
+  "snorkeling",
+  "paddle-boarding",
+  "river-cruises",
+  "waterfall-visits",
   "museums",
-  "architecture",
   "live-music",
-  "markets",
-  "coffee",
-  "fine-dining",
+  "cooking-classes",
+  "festivals",
+  "food-markets",
   "street-food",
+  "coffee-places",
+  "fine-dining",
+  "parks-gardens",
+  "photography",
   "hiking",
-  "water",
-  "shopping",
-  "history",
-  "nightlife",
+  "cycling",
+  "running",
+  "yoga",
+  "climbing",
+  "winter-sports",
+  "walking-tours",
+  "street-art",
+  "neighborhoods",
+  "bars-nightlife",
+  "shopping-streets",
+  "viewpoints",
 ] as const;
 
 export interface Origin {
@@ -146,6 +210,8 @@ export interface DiscoveryPreferences {
   weekendShape: WeekendShape;
   /** Only meaningful when dateMode is "flexible": 0-indexed month. */
   flexibleMonth: number;
+  /** Calendar year for `flexibleMonth` — April is not the same trip in 2026 and 2027. */
+  flexibleYear: number;
   /** Only meaningful when dateMode is "flexible". */
   flexibleNights: number;
   origin: Origin | null;
@@ -153,6 +219,8 @@ export interface DiscoveryPreferences {
   originConfirmed: boolean;
   scope: TripScope | null;
   budget: BudgetTier | null;
+  /** Rank-only: boost famous cities, quieter places, or neither. */
+  populated: PopulatedPref | null;
   /** Optional refinement of what the chosen tier means for this traveller. */
   incomeBand: IncomeBand | null;
   /**
@@ -160,7 +228,7 @@ export interface DiscoveryPreferences {
    * removed from the running, not merely ranked lower.
    */
   styles: TripStyle[];
-  /** Preferred activities. These RANK the survivors; they never eliminate. */
+  /** Preferred activities. These FILTER: a city that cannot support one is removed. */
   interests: Interest[];
 }
 
@@ -188,6 +256,8 @@ export interface Attraction {
   coords: LngLat;
   /** One-line reason this is worth the traveller's time. */
   note: string;
+  /** Editorial photo of the place — never a map tile. */
+  photo?: string;
 }
 
 export interface Destination {
@@ -232,7 +302,14 @@ export interface Destination {
 
 /** Why a destination scored the way it did — drives the "Why here" surface. */
 export interface ScoreFactor {
-  key: "budget" | "style" | "interests" | "season" | "distance" | "duration";
+  key:
+    | "budget"
+    | "style"
+    | "interests"
+    | "season"
+    | "distance"
+    | "duration"
+    | "populated";
   label: string;
   /** 0..1 — how well this factor matched. */
   score: number;
@@ -250,7 +327,7 @@ export interface ScoreFactor {
  * the results. Both need this data to be real rather than decorative.
  */
 export interface FilterStage {
-  key: "dates" | "scope" | "reach" | "afford" | "experiences";
+  key: "dates" | "scope" | "reach" | "afford" | "experiences" | "activities";
   /** Present tense, what we are doing. */
   label: string;
   /** Why it takes a moment. */
@@ -340,9 +417,11 @@ export interface Traveller {
   id: string;
   name: string;
   initials: string;
+  /** Portrait. Initials remain the fallback when this is missing. */
+  photoUrl?: string;
   /** Index into the traveller colour ramp. */
   colorIndex: number;
-  role: "owner" | "editor" | "advisor" | "viewer";
+  role: "owner" | "co-owner" | "editor" | "advisor" | "viewer";
   /** Simulated presence. */
   online: boolean;
   /** What they are looking at, when present. Powers lightweight presence. */
@@ -363,7 +442,12 @@ export interface ItineraryItem {
    */
   start: string | null;
   end: string | null;
+  /**
+   * Leftover briefing copy. Folded into `comments` on load; do not write new
+   * notes — care notes live as comments from people on the trip.
+   */
   notes?: string;
+  comments?: { from: string; text: string }[];
   /**
    * Flexible items can be moved by the assistant when it rebalances a day.
    * Non-flexible items are anchored (a booked table, a timed museum entry).
@@ -381,10 +465,28 @@ export interface ItineraryItem {
     distanceKm: number;
     fromItemId: string;
     toItemId: string;
+    /** Free-standing origin when this is not a hop between two stops. */
+    fromPlace?: Place;
+    /** Free-standing destination. */
+    toPlace?: Place;
   };
   /** Free-text booking note, e.g. "Confirmation FJ8L2Q". */
   booking?: string;
 }
+
+export type IdeaWhen = "flexible" | "morning" | "afternoon" | "evening" | "night";
+
+export const IDEA_WHEN_LABELS: Record<IdeaWhen, string> = {
+  flexible: "Flexible",
+  morning: "Morning",
+  afternoon: "Afternoon",
+  evening: "Evening",
+  night: "Night",
+};
+
+export type IdeaAttachment =
+  | { kind: "photo"; id: string; name: string; src: string }
+  | { kind: "file"; id: string; name: string };
 
 /**
  * An unscheduled suggestion. Lives in the "Ideas" rail and can be dragged onto
@@ -398,11 +500,14 @@ export interface Idea {
   place: Place | null;
   /** Typical duration in minutes, used when it lands on the calendar. */
   durationMin: number;
-  /** Why the assistant is suggesting it. */
+  /** Part of day this belongs in, before anyone puts it on the grid. */
+  when?: IdeaWhen;
+  /** Why the assistant is suggesting it — or the writer's own description. */
   reason: string;
   /** Who added it — travellers add ideas too, not just the assistant. */
   addedBy: string;
   costUsd?: number;
+  attachments?: IdeaAttachment[];
 }
 
 export interface Trip {
@@ -417,6 +522,8 @@ export interface Trip {
   travellers: Traveller[];
   items: ItineraryItem[];
   ideas: Idea[];
+  /** Photo on the trip. Null uses the destination drawing. */
+  coverImage?: string | null;
   /** Preferences carried over from discovery, for the "why this trip" context. */
   fromDiscovery?: {
     budget: BudgetTier | null;
@@ -494,6 +601,21 @@ export interface TravelStats {
 }
 
 /**
+ * A prize on the identity row — the original dashboard's four circles.
+ * Empty slots stay visible so the set reads as a collection, not a list
+ * that happens to have two items.
+ */
+export interface TravelBadge {
+  id: string;
+  label: string;
+  /** Short line on hover / for screen readers. */
+  detail: string;
+  earned: boolean;
+  /** Prize artwork from the profile design. */
+  image: string;
+}
+
+/**
  * A trait the recommender actually uses.
  *
  * Deliberately not a badge or an achievement. The original dashboard showed
@@ -527,19 +649,147 @@ export interface TravelPersona {
   updatedIso: string;
 }
 
+/** A city or stop on the traveller's footprint map. */
+export type VisitedLocationKind = "home" | "visited" | "transit";
+
+export interface VisitedLocation {
+  id: string;
+  name: string;
+  coords: LngLat;
+  kind: VisitedLocationKind;
+  /** ISO 3166-1 alpha-2, for the circular flag on the footprint list. */
+  countryCode?: string;
+}
+
+/**
+ * A place this traveller has ruled out.
+ *
+ * Scale is the unit they meant — a city, a state, a country, or a whole
+ * continent — so the identity map can paint an area rather than a pin.
+ */
+export type AvoidScale = "continent" | "country" | "state" | "city";
+
+export interface AvoidPlace {
+  id: string;
+  name: string;
+  scale: AvoidScale;
+  coords: LngLat;
+  /** ISO 3166-1 alpha-2, when the area is a country (or Antarctica). */
+  iso2?: string;
+  /** Halo used at globe zoom so small places still read as a region. */
+  radiusKm: number;
+  /** Optional outline; used for states that are not in the country tileset. */
+  polygon?: [number, number][];
+  /** Extra ISO codes when the area is a continent or region. */
+  iso2Group?: string[];
+}
+
+/** A place they want to go — pin, not an area. */
+export interface WishlistPlace {
+  id: string;
+  name: string;
+  coords: LngLat;
+  countryCode?: string;
+}
+
+export type FootprintCategory = "wishlist" | "visited" | "avoid";
+
+/** How this traveller eats when we book or rank meals. */
+export type DietPreference =
+  | "omnivore"
+  | "vegetarian"
+  | "vegan"
+  | "pescatarian"
+  | "halal"
+  | "kosher";
+
+/** Allergens and exclusions. Multi-select; never required. */
+export type FoodRestriction =
+  | "gluten"
+  | "dairy"
+  | "nuts"
+  | "peanuts"
+  | "shellfish"
+  | "egg"
+  | "soy"
+  | "sesame";
+
+/** Documents we keep so booking and border questions are not asked twice. */
+export interface TravelDocuments {
+  nationality: string;
+  passportNumber: string;
+  passportExpiry: string;
+  knownTravellerNumber: string;
+  emergencyName: string;
+  emergencyPhone: string;
+}
+
+/** Why this person is on Friends & family — not a social graph role. */
+export type HouseholdRelation = "partner" | "family" | "friend" | "colleague";
+
+/** How well they get around in a spoken language. */
+export type LanguageLevel = "native" | "fluent" | "conversational" | "basic";
+
+export type LanguageId =
+  | "english"
+  | "hindi"
+  | "spanish"
+  | "french"
+  | "portuguese"
+  | "german"
+  | "italian"
+  | "japanese"
+  | "mandarin"
+  | "arabic"
+  | "korean"
+  | "dutch"
+  | "danish"
+  | "swedish"
+  | "icelandic";
+
+export interface LanguageSkill {
+  id: LanguageId;
+  level: LanguageLevel;
+}
+
+export interface SavedAddress {
+  id: string;
+  street: string;
+  city: string;
+  postal: string;
+  country: string;
+  countryCode: string;
+}
+
 export interface AccountUser {
   id: string;
   name: string;
   /** Without the leading "@". */
   handle: string;
   initials: string;
+  /** Portrait when we have one; initials otherwise. */
+  photoUrl?: string;
   /** Index into the traveller colour ramp, shared with the planner. */
   colorIndex: number;
   /** Where they travel from by default; feeds Discovery's origin step. */
   homeCity: string;
   homeCountry: string;
+  /** Street or building, when they have given one. */
+  homeAddress: string;
+  /** Saved departure addresses — street, city, postal, country. */
+  addresses: SavedAddress[];
+  defaultAddressId: string;
+  /** Known diet ids, plus any custom tags the traveller added. */
+  diets: string[];
+  /** Known allergen ids, plus any custom exclusions. */
+  foodRestrictions: string[];
+  /** Spoken languages, with how well they travel in them. */
+  languages: LanguageSkill[];
+  incomeBand: IncomeBand | null;
+  documents: TravelDocuments;
   memberSinceIso: string;
   stats: TravelStats;
+  badges: TravelBadge[];
   persona: TravelPersona;
 }
 
@@ -561,10 +811,8 @@ export type TripStatus = "upcoming" | "ongoing" | "completed";
 /**
  * A trip as the dashboard knows it.
  *
- * Only one seeded trip has a real itinerary behind it (`plannerTripId` points
- * at the planner's NYC trip). The rest are summaries, and the card says so by
- * offering a different primary action rather than pretending to open a
- * planner that has nothing in it.
+ * `plannerTripId` is the `/trip/[id]` route. Dashboard trips carry a finished
+ * itinerary and roster. Discovery drafts a city; dates-first opens empty.
  */
 export interface TripSummary {
   id: string;
@@ -581,7 +829,7 @@ export interface TripSummary {
   stops: number | null;
   /** Traveller ids from the planner's roster, so the two agree. */
   travellerIds: string[];
-  /** Set only when a real planner itinerary exists for this trip. */
+  /** Route id for `/trip/[id]`. */
   plannerTripId?: string;
   /** One line of why this trip exists, shown on completed trips. */
   note?: string;
@@ -602,12 +850,23 @@ export interface Connection {
   /** Matches a planner traveller id where the person is on the NYC trip. */
   id: string;
   name: string;
+  /** Public username, shown as @handle. */
+  handle: string;
   initials: string;
+  photoUrl?: string;
   colorIndex: number;
   /** Trips taken together, most recent first. */
   history: string[];
   /** True when they are on at least one of your active trips. */
   onCurrentTrip: boolean;
+  relation?: HouseholdRelation;
+  /**
+   * `sent` / `received` are pending requests (Requests tab).
+   * Omit or `connected` is a confirmed connect.
+   */
+  invite?: "connected" | "sent" | "received";
+  /** Address used to send a connection request. */
+  email?: string;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -635,11 +894,10 @@ export interface AppNotification {
 /* -------------------------------------------------------------------------- */
 
 /**
- * One seasonal destination feature.
+ * One seasonal destination feature in the dashboard carousel.
  *
- * The original dashboard carried a Cherry Blossom news card. Kept, but pointed
- * back into the product: the reason to show it is that the window is closing
- * and Discovery can act on that, not that it is news.
+ * The original dashboard carried a Cherry Blossom news card. Kept as a
+ * rotating set: windows close, and Discovery can act on the one in view.
  */
 export interface EditorialFeature {
   id: string;

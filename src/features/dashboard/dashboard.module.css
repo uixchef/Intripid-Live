@@ -1,73 +1,191 @@
 /*
- * The dashboard shell.
- *
- * A scrolling document with a sticky bar, not a fixed 100dvh application.
- * The planner and Discovery both own the whole viewport because they are
- * workspaces; a home screen has more content than fits and should scroll like
- * a page.
+ * Two islands on planner chrome — the same shell as the trip builder.
+ * Header sits on the wash. The page is two white sheets, 16px radius,
+ * the same shadow as the calendar and the map rail.
  */
 
 .root {
-  min-height: 100dvh;
-  background: var(--bg-canvas);
+  --topbar-h: 64px;
+  position: relative;
+  display: grid;
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--planner-chrome);
 }
 
-/*
- * A real measure. At 1440 an unbounded dashboard puts the identity block's
- * name 1,300px from its stats and leaves the trip cards absurdly wide; capped
- * and centred, 1440 and 1600 look considered rather than stretched.
- */
-.page {
-  max-width: 1240px;
-  margin-inline: auto;
-  padding: var(--space-10) var(--space-8) var(--space-16);
+.workspace {
+  display: grid;
+  align-content: start;
+  min-height: 0;
   min-width: 0;
+  padding: 0 8px 8px;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
 }
 
 .body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: var(--space-8);
-  /* Each column sizes to its own content instead of stretching to the tallest. */
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 8px;
   align-items: start;
   min-width: 0;
+  height: fit-content;
+}
+
+.island {
+  background: var(--bg-surface);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+  overflow: hidden;
+  min-width: 0;
+  height: fit-content;
 }
 
 .main,
 .support {
   display: grid;
-  gap: var(--space-8);
+  gap: 8px;
   align-content: start;
   min-width: 0;
+  height: fit-content;
 }
-
-/* ------------------------------------------------------------------------- */
-/* Slots                                                                     */
-/*                                                                           */
-/* Wrappers exist purely so the sections can be re-ordered once the columns   */
-/* flatten. They carry no visual style of their own.                         */
-/* ------------------------------------------------------------------------- */
 
 .slotIdentity,
 .slotPersona,
 .slotTravels,
 .slotQuickTrip,
 .slotEditorial,
-.slotSaved {
+.slotLeaderboard {
   min-width: 0;
+}
+
+.root[data-map-expanded] .workspace {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  align-content: stretch;
+  overflow: hidden;
+}
+
+.root[data-map-expanded] .body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  height: auto;
+  min-height: 0;
+  align-items: stretch;
+  align-content: stretch;
+}
+
+.root[data-map-expanded] .main {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  height: auto;
+  min-height: 0;
+  align-content: stretch;
+}
+
+.root[data-map-expanded] .slotIdentity,
+.root[data-map-expanded] .island {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  height: auto;
+  min-height: 0;
+}
+
+.settingsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: 0 12px 0 16px;
+  min-width: 0;
+  z-index: var(--z-topbar);
+}
+
+.settingsBarStart {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.backLink {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+}
+
+.backLink:hover {
+  background: rgba(32, 33, 36, 0.08);
+  color: var(--text-primary);
+}
+
+.settingsTitle {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--slate-700);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.settingsActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.root[data-settings] .workspaceSettings,
+.root[data-board] .workspaceBoard {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 8px;
+  padding: 0 8px 8px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.root[data-board] .workspaceBoard {
+  grid-template-columns: 360px minmax(0, 1fr);
+}
+
+.boardIsland {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg-surface);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+}
+
+.boardIslandMain {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+}
+
+.settingsIsland {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
 }
 
 /* ------------------------------------------------------------------------- */
 /* Booting                                                                   */
 /* ------------------------------------------------------------------------- */
 
-/*
- * Held blank for the one frame it takes to read the persisted session. A
- * spinner here would be a spinner for 8ms, which is worse than nothing.
- */
 .booting {
   min-height: 100dvh;
-  background: var(--bg-canvas);
+  background: var(--planner-chrome);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -79,7 +197,7 @@
   place-items: center;
   min-height: 100dvh;
   padding: var(--space-10) var(--space-6);
-  background: var(--bg-canvas);
+  background: var(--planner-chrome);
 }
 
 .gateCard {
@@ -90,9 +208,8 @@
   max-width: 440px;
   padding: var(--space-10);
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
 }
 
 .gateTitle {
@@ -147,6 +264,10 @@
   width: 100%;
 }
 
+.newTripFab {
+  display: none;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Responsive                                                                */
 /* ------------------------------------------------------------------------- */
@@ -154,72 +275,163 @@
 @media (max-width: 1180px) {
   .body {
     grid-template-columns: minmax(0, 1fr) 312px;
-    gap: var(--space-7);
-  }
-
-  .page {
-    padding: var(--space-8) var(--space-6) var(--space-12);
   }
 }
 
-/*
- * One column, and RE-SEQUENCED. `display: contents` promotes the six sections
- * to siblings of the page grid so `order` can put them in the sequence a
- * phone user actually wants: who I am, start something, my trips, then the
- * rest. Simply stacking the desktop columns would put a seasonal feature and
- * a saved list above the trip you fly to on Tuesday.
- */
 @media (max-width: 1080px) {
   .body {
     grid-template-columns: 1fr;
-    gap: var(--space-7);
-  }
-
-  .main,
-  .support {
-    display: contents;
-  }
-
-  .slotIdentity {
-    order: 1;
-  }
-
-  .slotQuickTrip {
-    order: 2;
-  }
-
-  .slotTravels {
-    order: 3;
-  }
-
-  .slotPersona {
-    order: 4;
-  }
-
-  .slotEditorial {
-    order: 5;
-  }
-
-  .slotSaved {
-    order: 6;
   }
 }
 
 @media (max-width: 900px) {
-  .page {
-    padding: var(--space-6) var(--space-5) var(--space-12);
+  .root {
+    --topbar-h: 56px;
+    transition: grid-template-rows 280ms cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  .body {
-    gap: var(--space-6);
+  .root[data-chrome-hidden] {
+    --topbar-h: 0px;
+  }
+
+  .header {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .root[data-chrome-hidden] > header {
+    overflow: hidden;
+    padding-block: 0;
+  }
+
+  .workspace {
+    padding: 0 0 calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .root[data-map-expanded] .workspace,
+  .root[data-settings] .workspaceSettings,
+  .root[data-board] .workspaceBoard {
+    padding-bottom: 0;
+  }
+
+  .root[data-map-expanded] {
+    grid-template-rows: minmax(0, 1fr);
+    background: var(--map-water-tint);
+  }
+
+  .root[data-map-expanded] .workspace {
+    padding: 0;
+  }
+
+  .slotQuickTrip {
+    display: none;
+  }
+
+  .newTripFab {
+    position: absolute;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: var(--z-sticky);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 14px 0 10px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--purple-400);
+    color: var(--slate-0);
+    font-size: 13px;
+    font-weight: var(--weight-medium);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow:
+      0 1px 3px rgba(60, 64, 67, 0.28),
+      0 4px 8px rgba(60, 64, 67, 0.16);
+  }
+
+  .newTripFab:hover {
+    background: var(--purple-500);
+  }
+
+  .newTripFab:active {
+    background: var(--purple-600);
+  }
+
+  .root[data-settings] .newTripFab,
+  .root[data-board] .newTripFab,
+  .root[data-map-expanded] .newTripFab,
+  .root[data-new-trip] .newTripFab {
+    display: none;
+  }
+
+  .newTripSheet {
+    background: var(--bg-surface);
+  }
+
+  .island,
+  .boardIsland,
+  .settingsIsland {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .root[data-settings] .workspaceSettings,
+  .root[data-board] .workspaceBoard {
+    padding: 0;
+  }
+
+  .settingsTitle {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+  }
+
+  .root[data-settings="compact"] {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .root[data-settings="compact"] .workspaceSettings {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 56px minmax(0, 1fr);
+    align-content: stretch;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .root[data-board] .settingsBar {
+    background: var(--bg-surface);
+    box-shadow: 0 1px 0 rgba(60, 64, 67, 0.08);
+    padding: 0 16px 0 4px;
+  }
+
+  .root[data-board] .settingsTitle {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  .root[data-board] .workspaceBoard {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+    background: var(--planner-chrome);
+  }
+
+  .root[data-board] .boardIslandMain {
+    display: block;
+    overflow: auto;
+    height: auto;
+    min-height: 0;
+    align-items: start;
+    background: transparent;
+    box-shadow: none;
   }
 }
 
 @media (max-width: 400px) {
-  .page {
-    padding: var(--space-5) var(--space-4) var(--space-10);
-  }
-
   .gateCard {
     padding: var(--space-7);
   }

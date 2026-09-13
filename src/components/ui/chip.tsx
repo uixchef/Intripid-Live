@@ -10,9 +10,20 @@ import styles from "./chip.module.css";
 export interface ChipProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   selected?: boolean;
   icon?: ReactNode;
-  /** Show a check when selected. Good for multi-select sets. */
+  /** Show a check when selected. Only on the filled `solid` variant. */
   checkable?: boolean;
   size?: "sm" | "md";
+  /**
+   * `solid` is the filled brand pill.
+   * `soft` is the quiet filter: light selected fill, no check.
+   */
+  variant?: "solid" | "soft";
+  /**
+   * `single` — radio. Pill shape, one selected.
+   * `multiple` — multi-select. Rounded rectangle.
+   * Both use the same quiet selected fill when combined with `soft`.
+   */
+  selection?: "single" | "multiple";
   children: ReactNode;
 }
 
@@ -26,22 +37,36 @@ export function Chip({
   icon,
   checkable = false,
   size = "md",
+  variant = "solid",
+  selection,
   className,
   children,
   ...rest
 }: ChipProps) {
+  const soft = variant === "soft";
+  const pill = !soft || selection === "single";
+
   return (
     <button
       type="button"
-      aria-pressed={selected}
-      className={cn(styles.chip, styles[size], selected && styles.selected, className)}
       {...rest}
+      role={selection === "single" ? "radio" : rest.role}
+      aria-checked={selection === "single" ? selected : undefined}
+      aria-pressed={selection === "single" ? undefined : selected}
+      className={cn(
+        styles.chip,
+        soft ? styles.soft : styles[size],
+        soft && size === "sm" && styles.sm,
+        pill && styles.rounded,
+        selected && styles.selected,
+        className,
+      )}
     >
-      {checkable ? (
+      {!soft && checkable ? (
         <span className={styles.check} aria-hidden>
           <Check size={12} strokeWidth={3} />
         </span>
-      ) : icon ? (
+      ) : !soft && icon ? (
         <span className={styles.icon} aria-hidden>
           {icon}
         </span>
@@ -57,24 +82,39 @@ export interface TagProps {
   icon?: ReactNode;
   className?: string;
   children: ReactNode;
+  onClick?: () => void;
+  "aria-label"?: string;
 }
 
-/** A non-interactive label. Metadata, never a control. */
+/** Metadata chip. Pass `onClick` when it should jump somewhere. */
 export function Tag({
   tone = "neutral",
   size = "sm",
   icon,
   className,
   children,
+  onClick,
+  "aria-label": ariaLabel,
 }: TagProps) {
-  return (
-    <span className={cn(styles.tag, styles[`tone_${tone}`], styles[`tag_${size}`], className)}>
+  const classes = cn(styles.tag, styles[`tone_${tone}`], styles[`tag_${size}`], className);
+  const inner = (
+    <>
       {icon ? (
         <span className={styles.icon} aria-hidden>
           {icon}
         </span>
       ) : null}
       {children}
-    </span>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button type="button" className={classes} onClick={onClick} aria-label={ariaLabel}>
+        {inner}
+      </button>
+    );
+  }
+
+  return <span className={classes}>{inner}</span>;
 }

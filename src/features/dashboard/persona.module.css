@@ -1,7 +1,5 @@
 .panel {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  min-width: 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -13,14 +11,33 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-6);
-  padding: var(--space-7) var(--space-8) var(--space-6);
-  border-bottom: 1px solid var(--border-hairline);
+  padding: var(--space-12) var(--space-12) var(--space-6);
 }
 
 .headText {
   display: grid;
   gap: 1px;
   min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toggle {
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.toggle svg {
+  transition: transform var(--dur-micro) var(--ease-out);
+}
+
+.toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
 }
 
 .title {
@@ -49,19 +66,27 @@
 .body {
   display: grid;
   gap: var(--space-7);
-  padding: var(--space-7) var(--space-8) var(--space-8);
+  padding: 0 var(--space-12) var(--space-12);
 }
 
-/*
- * Prose gets a real measure. At full panel width this line would run past 100
- * characters, which is roughly twice a comfortable read — and the whole point
- * of keeping the prose is that someone actually reads it.
- */
+.body:not([data-open]) {
+  gap: 0;
+}
+
+.details {
+  display: grid;
+  gap: var(--space-7);
+}
+
+.details[hidden] {
+  display: none;
+}
+
 .summary {
   font-size: var(--text-base);
   line-height: var(--lh-relaxed);
   color: var(--text-secondary);
-  max-width: 66ch;
+  max-width: none;
 }
 
 .facts {
@@ -197,12 +222,12 @@
 .editor {
   display: grid;
   gap: var(--space-7);
-  padding: var(--space-7) var(--space-8) var(--space-8);
+  padding: 0 var(--space-12) var(--space-12);
 }
 
 .editRow {
   display: grid;
-  gap: var(--space-4);
+  gap: 4px;
   min-width: 0;
 }
 
@@ -253,12 +278,12 @@
 
 @media (max-width: 900px) {
   .head {
-    padding: var(--space-6) var(--space-6) var(--space-5);
+    padding: var(--space-8) var(--space-8) var(--space-5);
   }
 
   .body,
   .editor {
-    padding: var(--space-6);
+    padding: 0 var(--space-8) var(--space-8);
     gap: var(--space-6);
   }
 
@@ -280,6 +305,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .toggle svg,
   .footLink {
     transition: none;
   }

@@ -1,132 +1,274 @@
 /* ------------------------------------------------------------------------- */
-/* Offers                                                                    */
+/* Conversation canvas                                                       */
 /* ------------------------------------------------------------------------- */
 
-.offers {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-6);
+.canvas {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
-.offer {
+.thread {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  width: 100%;
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface-raised);
-  border: 1px solid var(--border-default);
-  cursor: pointer;
-  text-align: left;
+  flex-direction: column;
+  gap: 22px;
+  padding: 18px 16px 8px;
+}
+
+.turn {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.turnYou {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.turnYou .turnBody {
+  justify-self: end;
+  max-width: 92%;
+  padding: 10px 14px;
+  border-radius: 16px 16px 6px 16px;
+  background: var(--slate-100);
+}
+
+.turnYouMark {
+  display: none;
+}
+
+.turnMark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 1px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-ai-soft);
+  box-shadow: 0 0 0 1px rgba(174, 110, 255, 0.2);
+}
+
+.turnBody {
   min-width: 0;
+}
+
+.turnAi .turnBody {
+  padding-top: 4px;
+}
+
+.turnBody p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.turnBody p + p {
+  margin-top: 10px;
+}
+
+.prompts {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.prompt {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  background: var(--slate-0);
+  border: 1px solid var(--border-default);
   box-shadow: var(--shadow-xs);
   transition:
     border-color var(--dur-micro) var(--ease-out),
-    box-shadow var(--dur-micro) var(--ease-out),
-    transform var(--dur-micro) var(--ease-out);
+    background-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
 }
 
-.offer:hover {
-  border-color: var(--border-strong);
+.prompt:hover,
+.prompt:focus-visible {
+  outline: none;
+  border-color: rgba(174, 110, 255, 0.4);
+  background: var(--gradient-ai-soft);
   box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
 }
 
-/* An actual problem gets the attention colour; an opportunity does not. */
-.offerAttention {
-  background: var(--danger-50);
-  border-color: var(--danger-100);
-}
-
-.offerAttention:hover {
-  border-color: var(--danger-200, #f2c4c0);
-}
-
-.offerIcon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-md);
-  background: var(--purple-50);
-  border: 1px solid var(--purple-100);
-  color: var(--purple-600);
-}
-
-.offerAttention .offerIcon {
-  background: var(--slate-0);
-  border-color: var(--danger-100);
-  color: var(--danger-600);
-}
-
-.offerBody {
-  display: grid;
-  gap: 0;
-  min-width: 0;
-  flex: 1;
-}
-
-.offerLabel {
-  font-size: var(--text-sm);
+.promptLabel {
+  font-size: 13px;
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
 }
 
-.offerDetail {
-  font-size: var(--text-2xs);
+.promptDetail {
+  font-size: 12px;
+  line-height: 1.35;
   color: var(--text-tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.offerArrow {
-  flex: none;
-  color: var(--text-quaternary);
-  opacity: 0;
-  transition: opacity var(--dur-micro) var(--ease-out);
-}
-
-.offer:hover .offerArrow {
-  opacity: 1;
-}
-
-/* Nothing-to-do state */
-
-.quiet {
+.typing {
   display: flex;
-  gap: var(--space-5);
-  padding: var(--space-7) var(--space-6);
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 4px 2px;
 }
 
-.quietIcon {
-  display: grid;
-  place-items: center;
+.typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--purple-400);
+  animation: typing 1s ease-in-out infinite;
+}
+
+.typing span:nth-child(2) {
+  animation-delay: 0.15s;
+  background: var(--orange-400);
+}
+
+.typing span:nth-child(3) {
+  animation-delay: 0.3s;
+  background: var(--pink-400);
+}
+
+@keyframes typing {
+  0%,
+  80%,
+  100% {
+    opacity: 0.28;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.compose {
   flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-full);
-  background: var(--positive-50);
-  color: var(--positive-600);
-  border: 1px solid var(--positive-100);
-  margin-top: 1px;
+  padding: 10px 12px 14px;
+  overflow: visible;
+  background:
+    linear-gradient(180deg, transparent, var(--bg-surface) 28%);
 }
 
-.quietTitle {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
+@property --explore-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.composer {
+  --explore-angle: 0deg;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 10px 10px 14px;
+  border: 1.5px solid var(--border-default);
+  border-radius: 18px;
+  background: var(--slate-0);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.08),
+    0 8px 24px rgba(174, 110, 255, 0.08);
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    background var(--dur-micro) var(--ease-out);
+}
+
+.composer:focus-within {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--slate-0), var(--slate-0)) padding-box,
+    var(--gradient-ai-conic) border-box;
+  box-shadow:
+    0 8px 28px rgba(174, 110, 255, 0.16),
+    0 0 18px rgba(254, 149, 73, 0.1);
+  animation: aiComposerSpin 6s linear infinite;
+}
+
+@keyframes aiComposerSpin {
+  to {
+    --explore-angle: 360deg;
+  }
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 24px;
+  max-height: 132px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1.45;
   color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
+  resize: none;
+  outline: none;
 }
 
-.quietBody {
-  font-size: var(--text-xs);
-  line-height: var(--lh-relaxed);
+.input::placeholder {
   color: var(--text-tertiary);
-  margin-top: 1px;
+}
+
+.send:not(:disabled) {
+  background: var(--gradient-ai);
+  border-color: transparent;
+  color: var(--slate-0);
+  box-shadow:
+    var(--shadow-xs),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.send:hover:not(:disabled) {
+  background: var(--gradient-ai-rev);
+}
+
+.send:active:not(:disabled) {
+  background: var(--gradient-ai-rev);
+  filter: brightness(0.96);
+}
+
+.send:focus-visible:not(:disabled) {
+  outline: 2px solid var(--orange-300);
+  outline-offset: 2px;
+}
+
+.hint {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-quaternary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing span {
+    animation: none;
+    opacity: 0.7;
+    transform: none;
+  }
+
+  .composer:focus-within {
+    animation: none;
+  }
+
+  .prompt:hover {
+    box-shadow: var(--shadow-xs);
+  }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -138,7 +280,7 @@
   grid-template-rows: auto 1fr auto;
   min-height: 0;
   height: 100%;
-  background: var(--bg-surface);
+  background: transparent;
 }
 
 .panelHead {
@@ -159,26 +301,17 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  height: 20px;
-  padding: 0 var(--space-4);
+  height: 22px;
+  padding: 0 8px 0 6px;
   border-radius: var(--radius-full);
-  /* Purple is the system acting — the same channel as its map pins and its
-     proposals in the grid. Amber belongs to origin and to warnings. */
-  background: var(--purple-50);
-  border: 1px solid var(--purple-100);
-  color: var(--purple-700);
+  background: var(--gradient-ai-soft);
+  color: var(--purple-800);
   font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-tight);
 }
 
 .panelTitle {
-  /*
-   * UI face, not the editorial display face. The display serif belongs to
-   * Discovery's questions and to a date numeral; putting it on every panel
-   * heading in the planner is what made an operational tool read as an
-   * editorial concept.
-   */
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   line-height: 1.28;
@@ -222,8 +355,8 @@
   height: 17px;
   margin-top: 1px;
   border-radius: var(--radius-full);
-  background: var(--slate-150);
-  color: var(--text-tertiary);
+  background: var(--gradient-ai-soft);
+  color: var(--purple-800);
   font-size: 9px;
   font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
@@ -254,8 +387,8 @@
 }
 
 .change:hover {
-  border-color: var(--purple-300);
-  background: var(--purple-50);
+  border-color: rgba(174, 110, 255, 0.4);
+  background: var(--gradient-ai-soft);
 }
 
 .changeApplied {
@@ -294,77 +427,6 @@
   justify-content: flex-end;
   gap: var(--space-4);
   padding: var(--space-5) var(--space-6);
-  border-top: 1px solid var(--border-default);
-  background: var(--bg-surface);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .offer:hover {
-    transform: none;
-  }
-}
-
-/* ------------------------------------------------------------------------- */
-/* Day reading — the advisor showing its working                             */
-/* ------------------------------------------------------------------------- */
-
-.offersWrap {
-  display: grid;
-  gap: var(--space-5);
-  align-content: start;
-}
-
-.reading {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-5) var(--space-5) var(--space-6);
-  border-top: 1px solid var(--border-hairline);
-  margin: 0 var(--space-2);
-}
-
-.readingLabel {
-  font-size: 9px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--text-quaternary);
-}
-
-.readingGrid {
-  display: grid;
-  gap: 1px;
-}
-
-.readingRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-2) 0;
-  min-width: 0;
-}
-
-.readingRow dt {
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.readingRow dd {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  color: var(--text-secondary);
-  white-space: nowrap;
-  flex: none;
-}
-
-.readingBad {
-  color: var(--danger-600);
-}
-
-.readingWarn {
-  color: var(--warning-700);
+  border-top: 1px solid var(--border-subtle);
+  background: transparent;
 }

@@ -1,28 +1,10 @@
+import Image from "next/image";
+
 import { getDestination } from "@/data/destinations";
+import { coverPhotoSrc } from "@/data/place-photos";
 import { cn } from "@/lib/utils";
 
 import styles from "./destination-cover.module.css";
-
-/**
- * The visual on a trip card.
- *
- * WHY THIS AND NOT A PHOTOGRAPH. There are no images in this repository —
- * `public/` is empty and nothing uses `next/image`. Every visual in Intripid
- * is drawn, which is a constraint worth keeping: stock travel photography is
- * the fastest way to make a product look like a template, and the original
- * dashboard showed the failure mode by repeating one photo of Tower Bridge on
- * three different trips.
- *
- * So the cover is a contour drawing. A map product is entitled to use map
- * marks as its decoration, and contour lines are quiet enough to sit on an
- * operational surface — no photograph, no gradient drama, no text baked into
- * an image. It carries exactly two pieces of information: which continent
- * (through the hue) and which place (through the name and flag).
- *
- * DETERMINISTIC. The line shapes come from a hash of the destination id, so a
- * trip looks the same on every render and on every machine, and two different
- * destinations never accidentally look identical.
- */
 
 /**
  * Hue by continent rather than per destination.
@@ -68,7 +50,8 @@ function stream(seed: number) {
  *
  * Each is a cubic through three control points whose heights drift downward,
  * so the set reads as one landform seen from above rather than four unrelated
- * squiggles.
+ * squiggles. Used when there is no photograph, and as the planner's
+ * "destination drawing" cover option.
  */
 function contours(seed: number): string[] {
   const next = stream(seed);
@@ -91,51 +74,77 @@ export interface DestinationCoverProps {
   destinationId: string;
   /** Completed trips read back a step, so what is ahead of you leads. */
   muted?: boolean;
+  /** Drawing only — for tiny pickers. */
+  hideLabel?: boolean;
+  /** Taller crop for the seasonal feature. */
+  featured?: boolean;
+  /** Square crop for list rows. */
+  thumb?: boolean;
   className?: string;
 }
 
 export function DestinationCover({
   destinationId,
   muted = false,
+  hideLabel = false,
+  featured = false,
+  thumb = false,
   className,
 }: DestinationCoverProps) {
   const destination = getDestination(destinationId);
   if (!destination) return null;
 
   const channel = CONTINENT_CHANNEL[destination.continent] ?? "purple";
+  const photo =
+    !hideLabel || thumb ? (coverPhotoSrc(destination.id) ?? undefined) : undefined;
   const paths = contours(hash(destination.id));
 
   return (
     <div
       className={cn(styles.cover, muted && styles.muted, className)}
       data-channel={channel}
+      data-photo={photo ? "" : undefined}
+      data-featured={featured ? "" : undefined}
+      data-thumb={thumb ? "" : undefined}
     >
-      <svg
-        className={styles.lines}
-        viewBox="0 0 320 72"
-        preserveAspectRatio="none"
-        aria-hidden
-      >
-        {paths.map((path, index) => (
-          <path
-            key={path}
-            d={path}
-            /*
-             * Inner lines sit stronger, as on a real contour map. Raised from
-             * a 0.30 base: at that value the drawing was invisible against
-             * its own 4% tint and the band read as an empty rectangle.
-             */
-            style={{ opacity: 0.5 + index * 0.13 }}
+      {photo ? (
+        <>
+          <Image
+            src={photo}
+            alt=""
+            fill
+            priority={featured}
+            loading={featured ? "eager" : undefined}
+            sizes={thumb ? "72px" : featured ? "360px" : "(max-width: 1080px) 100vw, 50vw"}
+            className={styles.photo}
           />
-        ))}
-      </svg>
+          {!hideLabel ? <span className={styles.veil} aria-hidden /> : null}
+        </>
+      ) : (
+        <svg
+          className={styles.lines}
+          viewBox="0 0 320 72"
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          {paths.map((path, index) => (
+            <path
+              key={path}
+              d={path}
+              style={{ opacity: 0.5 + index * 0.13 }}
+            />
+          ))}
+        </svg>
+      )}
 
-      <div className={styles.label}>
-        <span className={styles.flag} aria-hidden>
-          {destination.flag}
-        </span>
-        <span className={styles.place}>{destination.name}</span>
-      </div>
+      {!hideLabel && !featured ? (
+        <div className={styles.label}>
+          <span className={styles.flag} aria-hidden>
+            {destination.flag}
+          </span>
+          <span className={styles.place}>{destination.name}</span>
+        </div>
+      ) : null}
     </div>
   );
 }

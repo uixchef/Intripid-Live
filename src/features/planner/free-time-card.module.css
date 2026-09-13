@@ -1,0 +1,132 @@
+.root {
+  --breath: 0px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  min-width: 0;
+  min-height: calc(52px + var(--breath) * 2);
+  padding: var(--breath) 18px var(--breath) 14px;
+  border: 1.5px dashed var(--slate-300);
+  border-radius: 8px;
+}
+
+.rail {
+  position: absolute;
+  left: 27px;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1.5px dashed var(--slate-300);
+  pointer-events: none;
+}
+
+.node {
+  position: relative;
+  z-index: 1;
+  grid-column: 1;
+  justify-self: center;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  border: 1.5px dashed var(--slate-400);
+  background: transparent;
+}
+
+.copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-secondary);
+}
+
+.body {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-style: italic;
+  color: var(--text-quaternary);
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.askAi {
+  background: transparent;
+  border-color: var(--purple-400);
+  box-shadow: none;
+  color: var(--purple-600);
+}
+
+.askAi:hover:not(:disabled) {
+  background: var(--purple-50);
+  border-color: var(--purple-500);
+}
+
+.askAi:active:not(:disabled) {
+  background: var(--purple-100);
+}
+
+.askAi > span:last-of-type {
+  background-image: var(--gradient-ai-text);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--purple-600);
+  animation: askAiLabel 5.5s ease-in-out infinite;
+}
+
+@keyframes askAiLabel {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .askAi > span:last-of-type {
+    animation: none;
+    background-position: 30% 50%;
+  }
+}
+
+@media (max-width: 900px) {
+  .root {
+    border-radius: 0;
+    grid-template-columns: 28px minmax(0, 1fr);
+    align-items: start;
+    padding: 8px 18px 8px 14px;
+  }
+
+  .node {
+    grid-row: 1 / span 2;
+    margin-top: 6px;
+  }
+
+  .actions {
+    grid-column: 2;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 2px;
+  }
+}

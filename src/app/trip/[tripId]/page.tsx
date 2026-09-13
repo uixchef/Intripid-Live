@@ -1,30 +1,43 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { NYC_TRIP, NYC_TRIP_ID } from "@/data/nyc-trip";
+import { plannerStaticTripIds, getPlannerTrip } from "@/data/trips";
 import { PlannerExperience } from "@/features/planner/planner-experience";
 import { TripStoreProvider } from "@/stores/trip-store";
 
 export const metadata: Metadata = {
   title: "Trip planner",
   description:
-    "A five-day New York itinerary on a calendar that knows what fits, with the map beside it.",
+    "Plan the trip on a calendar that knows what fits, with the map beside it.",
 };
 
-export default async function TripPage({ params }: PageProps<"/trip/[tripId]">) {
-  // `params` is a Promise in Next 16 — synchronous access is fully removed.
+export default async function TripPage({
+  params,
+  searchParams,
+}: PageProps<"/trip/[tripId]">) {
   const { tripId } = await params;
-
-  // One trip is seeded; anything else is a genuine 404 rather than an empty shell.
-  if (tripId !== NYC_TRIP_ID) notFound();
+  const query = await searchParams;
+  const from = typeof query.from === "string" ? query.from : undefined;
+  const to = typeof query.to === "string" ? query.to : undefined;
+  const place = typeof query.place === "string" ? query.place : undefined;
+  const lng = typeof query.lng === "string" ? Number(query.lng) : Number.NaN;
+  const lat = typeof query.lat === "string" ? Number(query.lat) : Number.NaN;
+  const trip = getPlannerTrip(tripId, {
+    startDate: from,
+    endDate: to,
+    name: place,
+    coords:
+      Number.isFinite(lng) && Number.isFinite(lat) ? { lng, lat } : undefined,
+  });
+  if (!trip) notFound();
 
   return (
-    <TripStoreProvider>
+    <TripStoreProvider trip={trip}>
       <PlannerExperience />
     </TripStoreProvider>
   );
 }
 
 export function generateStaticParams() {
-  return [{ tripId: NYC_TRIP.id }];
+  return plannerStaticTripIds().map((tripId) => ({ tripId }));
 }

@@ -7,120 +7,6 @@
 }
 
 /* ------------------------------------------------------------------------- */
-/* Stop marker                                                               */
-/* ------------------------------------------------------------------------- */
-
-.stop {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  cursor: pointer;
-  transform-origin: bottom center;
-  transition: opacity var(--dur-micro) var(--ease-out);
-}
-
-.stopLetter {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-full);
-  background: var(--stop-color, var(--purple-600));
-  color: var(--slate-0);
-  font-size: 11px;
-  font-weight: var(--weight-bold);
-  line-height: 1;
-  box-shadow:
-    0 0 0 2px var(--map-pin-ring),
-    var(--shadow-md);
-  transition:
-    width var(--dur-micro) var(--ease-out),
-    height var(--dur-micro) var(--ease-out),
-    box-shadow var(--dur-micro) var(--ease-out);
-}
-
-.stopSelected .stopLetter {
-  width: 27px;
-  height: 27px;
-  font-size: var(--text-xs);
-  box-shadow:
-    0 0 0 2.5px var(--map-pin-ring),
-    0 0 0 8px var(--map-halo),
-    var(--shadow-lg);
-}
-
-.stopHovered .stopLetter {
-  box-shadow:
-    0 0 0 2px var(--map-pin-ring),
-    0 0 0 6px var(--map-halo),
-    var(--shadow-lg);
-}
-
-/* Dimming the rest is what makes the selection legible on a dense day. */
-.stopDimmed {
-  opacity: 0.42;
-}
-
-.stopLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  background: var(--slate-900);
-  color: var(--slate-25);
-  box-shadow: var(--shadow-lg);
-  white-space: nowrap;
-  pointer-events: none;
-  max-width: 15rem;
-}
-
-.stopTitle {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-tight);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stopTime {
-  font-size: 10px;
-  opacity: 0.62;
-  flex: none;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Stay marker                                                               */
-/* ------------------------------------------------------------------------- */
-
-.stayPin {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-md);
-  background: var(--bg-surface-raised);
-  color: var(--cat-stay);
-  border: 1.5px solid var(--cat-stay);
-  cursor: pointer;
-  box-shadow:
-    0 0 0 2px var(--map-pin-ring),
-    var(--shadow-md);
-  transition: box-shadow var(--dur-micro) var(--ease-out);
-}
-
-.stayPinSelected {
-  background: var(--cat-stay);
-  color: var(--slate-0);
-  box-shadow:
-    0 0 0 2.5px var(--map-pin-ring),
-    0 0 0 7px var(--map-halo),
-    var(--shadow-lg);
-}
-
-/* ------------------------------------------------------------------------- */
 /* Empty                                                                     */
 /* ------------------------------------------------------------------------- */
 
@@ -152,4 +38,228 @@
   font-size: var(--text-xs);
   line-height: var(--lh-normal);
   color: var(--text-tertiary);
+}
+
+.relocate {
+  position: absolute;
+  right: 10px;
+  bottom: 36px;
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--slate-0);
+  border: 0;
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  color: var(--slate-700);
+}
+
+.relocate:hover {
+  background: var(--slate-50);
+}
+
+.root[data-deck] {
+  --map-deck-h: 132px;
+}
+
+.root[data-deck] .relocate {
+  /* Sit above Ask AI + Add, which share this bottom edge. */
+  right: 16px;
+  bottom: calc(
+    var(--map-deck-h) + 12px + 104px + 8px + env(safe-area-inset-bottom, 0px)
+  );
+}
+
+.root[data-deck] .emptyNote {
+  bottom: calc(var(--map-deck-h) + 16px);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Compact overlay deck                                                      */
+/* ------------------------------------------------------------------------- */
+
+.deck {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  padding: 8px 0 12px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--slate-900) 22%, transparent) 36%
+  );
+  pointer-events: none;
+}
+
+.deck > * {
+  pointer-events: auto;
+}
+
+.cards {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 16px;
+  scrollbar-width: none;
+  padding: 4px 0 6px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cards::after {
+  content: "";
+  flex: none;
+  width: 6px;
+}
+
+.cards::-webkit-scrollbar {
+  display: none;
+}
+
+.card {
+  flex: none;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  width: min(268px, calc(100vw - 80px));
+  height: 112px;
+  overflow: hidden;
+  text-align: left;
+  border: 0;
+  border-radius: 12px;
+  background: var(--slate-0);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.25),
+    0 2px 8px rgba(60, 64, 67, 0.14);
+  scroll-snap-align: start;
+  scroll-margin-inline: 16px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.cardOn {
+  box-shadow:
+    0 0 0 2px var(--purple-500),
+    0 1px 2px rgba(60, 64, 67, 0.2),
+    0 2px 8px rgba(60, 64, 67, 0.14);
+}
+
+.cardPhoto {
+  width: 88px;
+  height: 112px;
+  object-fit: cover;
+  background: var(--slate-100);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px 8px 12px;
+  border-left: 3px solid var(--cat-color, var(--purple-400));
+}
+
+.cardKicker {
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--slate-500);
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--slate-800);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.cardTime,
+.cardPlace,
+.cardAddress,
+.cardNote {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--slate-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardPlace {
+  color: var(--slate-700);
+}
+
+.cardAddress,
+.cardNote {
+  color: var(--slate-500);
+}
+
+.cardWho {
+  margin-top: auto;
+}
+
+.emptyCard {
+  flex: none;
+  width: min(268px, calc(100vw - 80px));
+  height: 112px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--slate-0);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.2),
+    0 2px 6px rgba(60, 64, 67, 0.12);
+  scroll-snap-align: start;
+  scroll-margin-inline: 16px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Mobile — strip place name, address, and note from stop cards              */
+/* ------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .root[data-deck] {
+    --map-deck-h: 154px;
+  }
+
+  .card,
+  .emptyCard {
+    height: 132px;
+  }
+
+  .cardPhoto {
+    height: 132px;
+  }
+
+  .cardAddress,
+  .cardNote {
+    display: none;
+  }
+}
+
+.emptyCardTitle {
+  font-size: 14px;
+  font-weight: var(--weight-semibold);
+  color: var(--slate-800);
+}
+
+.emptyCardBody {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--slate-500);
 }

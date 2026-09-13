@@ -16,6 +16,32 @@
   overscroll-behavior: contain;
 }
 
+.popoverOverflowVisible {
+  overflow: visible;
+}
+
+.popoverDark {
+  background: var(--slate-900);
+  border-color: transparent;
+  color: var(--slate-25);
+}
+
+.popoverDraggable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.popoverDraggable :is(button, a, input, textarea, label) {
+  cursor: pointer;
+  user-select: auto;
+  touch-action: auto;
+}
+
+.popoverDragging {
+  cursor: grabbing;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Sheet                                                                     */
 /* ------------------------------------------------------------------------- */
@@ -45,6 +71,20 @@
   overflow: hidden;
 }
 
+.sheetHeight {
+  transition: height 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheetHeight[data-dragging="true"] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheetHeight {
+    transition: none;
+  }
+}
+
 .grabber {
   flex: none;
   display: grid;
@@ -60,10 +100,22 @@
   height: 4px;
   border-radius: var(--radius-full);
   background: var(--slate-300);
+  transition: background-color var(--dur-micro) var(--ease-out);
 }
 
-.grabber:active {
-  cursor: grabbing;
+.grabber:active span {
+  background: var(--slate-400);
+}
+
+.sheetFit {
+  height: auto;
+  max-height: 92dvh;
+}
+
+.sheetFit .sheetBody {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .sheetBody {
@@ -72,6 +124,54 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+.sheetSnap {
+  touch-action: none;
+}
+
+.scrimPeek {
+  background: rgba(16, 24, 40, 0.32);
+  backdrop-filter: none;
+}
+
+.scrimModal {
+  z-index: var(--z-modal);
+}
+
+.sheetModal {
+  z-index: calc(var(--z-modal) + 1);
+}
+
+.modalSheetBody {
+  padding: 4px 20px 16px;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: calc(var(--z-sheet) + 1);
+  display: flex;
+  flex-direction: column;
+  width: min(320px, 86vw);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.drawer > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.drawerPeek {
+  width: min(372px, calc(100vw - 52px));
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -96,6 +196,7 @@
 
 .modal {
   position: relative;
+  padding: var(--space-10);
   background: var(--bg-surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
@@ -103,6 +204,20 @@
   max-width: 100%;
   max-height: calc(100dvh - var(--space-16));
   overflow: auto;
+}
+
+.modalFlush {
+  padding: 0;
+}
+
+@media (max-width: 460px) {
+  .modal {
+    padding: var(--space-8) var(--space-6);
+  }
+
+  .modalFlush {
+    padding: 0;
+  }
 }
 
 /* ------------------------------------------------------------------------- */

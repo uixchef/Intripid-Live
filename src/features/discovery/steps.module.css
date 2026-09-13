@@ -12,75 +12,78 @@
 }
 
 .stepHead {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.stepMeta {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-right: 5.75rem;
 }
 
-.ordinal {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--purple-700);
+.stepHeadBare {
+  padding-right: 0;
 }
 
-/*
- * The filter/rank badge — the core algorithmic IA made visible. An answer
- * either eliminates candidates or merely sorts them, and the traveller should
- * never have to guess which.
- */
-.kind {
-  display: inline-flex;
-  align-items: center;
-  height: 18px;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-full);
-  font-size: 10px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-tight);
-  white-space: nowrap;
+.stepCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
-.kindFilter {
-  background: var(--purple-100);
-  color: var(--purple-800);
-}
-
-.kindRank {
-  background: var(--teal-100);
-  color: var(--teal-800);
-}
-
-.optional {
-  font-size: 10px;
-  font-weight: var(--weight-medium);
-  color: var(--text-quaternary);
-  letter-spacing: var(--tracking-tight);
-}
-
-/* The question itself is one of the few places display type earns its keep. */
 .stepTitle {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: var(--text-3xl);
-  line-height: 1.06;
-  letter-spacing: var(--tracking-tight);
-  color: var(--text-primary);
-  margin-top: -0.06em;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--slate-800);
   text-wrap: balance;
 }
 
 .stepWhy {
+  margin: 0;
+  font-family: var(--font-sans);
   font-size: var(--text-sm);
-  line-height: var(--lh-relaxed);
-  color: var(--text-secondary);
-  max-width: 38ch;
+  font-weight: var(--weight-normal);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--tracking-normal);
+  color: var(--slate-500);
+}
+
+.meter {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.meterLabel {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--purple-700);
+}
+
+.meterTrack {
+  display: grid;
+  gap: 4px;
+  height: 6px;
+}
+
+.meterSeg {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--slate-150);
+}
+
+.meterSegDone {
+  background: var(--purple-300);
+}
+
+.meterSegOn {
+  background: var(--purple-400);
 }
 
 .stepBody {
@@ -92,30 +95,17 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  font-family: var(--font-sans);
   font-size: var(--text-xs);
+  font-weight: var(--weight-normal);
   line-height: var(--lh-normal);
+  letter-spacing: var(--tracking-normal);
   color: var(--text-tertiary);
 }
 
 .readout strong {
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
-}
-
-.skipLink {
-  justify-self: start;
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  color: var(--purple-700);
-  padding: var(--space-2) 0;
-  cursor: pointer;
-  border-bottom: 1px solid var(--purple-200);
-  transition: color var(--dur-micro) var(--ease-out);
-}
-
-.skipLink:hover {
-  color: var(--purple-800);
-  border-bottom-color: var(--purple-400);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -155,9 +145,13 @@
 }
 
 .rowOn {
-  border-color: var(--purple-500);
-  background: var(--purple-50);
-  box-shadow: 0 0 0 1px var(--purple-500);
+  border-color: var(--purple-400);
+  background: var(--purple-100);
+  box-shadow: none;
+}
+
+.rowOn .rowTitle {
+  color: var(--purple-800);
 }
 
 .rowIcon {
@@ -175,7 +169,7 @@
 }
 
 .rowOn .rowIcon {
-  background: var(--purple-600);
+  background: var(--purple-400);
   color: var(--slate-0);
 }
 
@@ -194,13 +188,20 @@
 }
 
 .rowBlurb {
+  font-family: var(--font-sans);
   font-size: var(--text-xs);
-  line-height: var(--lh-snug);
+  font-weight: var(--weight-normal);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--tracking-normal);
   color: var(--text-tertiary);
 }
 
 .rowOn .rowBlurb {
   color: var(--purple-700);
+}
+
+.rowBlurbError {
+  color: var(--danger-600);
 }
 
 .rowCheck {
@@ -219,8 +220,8 @@
 }
 
 .rowOn .rowCheck {
-  background: var(--purple-600);
-  border-color: var(--purple-600);
+  background: var(--purple-400);
+  border-color: var(--purple-400);
   color: var(--slate-0);
 }
 
@@ -231,69 +232,15 @@
 .pairRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
-.select {
-  height: 34px;
-  width: 100%;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
-  background: var(--slate-0);
-  color: var(--text-primary);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  min-width: 0;
-  transition:
-    border-color var(--dur-micro) var(--ease-out),
-    box-shadow var(--dur-micro) var(--ease-out);
-}
-
-.select:hover {
-  border-color: var(--border-strong);
-}
-
-.select:focus {
-  outline: none;
-  border-color: var(--purple-500);
-  box-shadow: 0 0 0 3px var(--purple-100);
-}
-
-.note {
-  display: flex;
-  gap: var(--space-5);
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  background: var(--teal-50);
-  border: 1px solid var(--teal-100);
-}
-
-.noteIcon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-md);
-  background: var(--slate-0);
-  color: var(--teal-600);
-  border: 1px solid var(--teal-100);
-}
-
-.noteTitle {
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  color: var(--teal-900);
-  letter-spacing: var(--tracking-tight);
-}
-
-.noteBody {
+.fieldSupportError {
+  margin: 0;
   font-size: var(--text-xs);
-  line-height: var(--lh-normal);
-  color: var(--teal-800);
-  margin-top: 2px;
-  opacity: 0.86;
+  font-weight: var(--weight-medium);
+  line-height: 1.2;
+  color: var(--danger-600);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -328,27 +275,20 @@
 }
 
 .originItemOn {
-  border-color: var(--purple-500);
-  background: var(--purple-50);
-  box-shadow: 0 0 0 1px var(--purple-500);
-}
-
-/*
- * A saved address is called out: the original product made the known-origin
- * path materially shorter, and that should be visible.
- */
-.savedTag {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-4);
-  font-size: 9px;
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--teal-700);
+  border-color: var(--purple-400);
+  background: var(--purple-100);
+  box-shadow: none;
 }
 
 .originCity {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.originCityName {
+  min-width: 0;
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
@@ -356,6 +296,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.originDefaultMark {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-accent);
+}
+
+.originItemOn .originDefaultMark {
+  color: var(--purple-700);
 }
 
 .originCountry {
@@ -379,10 +329,74 @@
   padding: var(--space-4);
   border-radius: var(--radius-md);
   border: 1px dashed var(--border-strong);
+  background: transparent;
+  font: inherit;
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   color: var(--text-quaternary);
-  cursor: default;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
+}
+
+.addAddress:hover {
+  border-color: var(--purple-300);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.addAddress:focus-visible {
+  outline: 2px solid var(--purple-400);
+  outline-offset: 2px;
+}
+
+.addForm {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.addForm .pairRow {
+  gap: 12px;
+}
+
+.orDivider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.orDivider::before,
+.orDivider::after {
+  content: "";
+  flex: 1;
+  height: 0;
+  border-top: 1px solid var(--border-default);
+}
+
+.orDivider span {
+  flex: none;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-quaternary);
+  text-transform: lowercase;
+}
+
+.row:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.spin {
+  animation: originSpin 0.8s linear infinite;
+}
+
+@keyframes originSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Origin confirmation */
@@ -429,15 +443,6 @@
   opacity: 0.8;
 }
 
-.confirmActions {
-  display: flex;
-  gap: var(--space-4);
-}
-
-.confirmActions > * {
-  flex: 1;
-}
-
 /* ------------------------------------------------------------------------- */
 /* Budget                                                                    */
 /* ------------------------------------------------------------------------- */
@@ -469,9 +474,9 @@
 }
 
 .budgetCardOn {
-  border-color: var(--purple-500);
-  background: var(--purple-50);
-  box-shadow: 0 0 0 1px var(--purple-500);
+  border-color: var(--purple-400);
+  background: var(--purple-100);
+  box-shadow: none;
 }
 
 .budgetTop {
@@ -512,6 +517,38 @@
   color: var(--purple-700);
 }
 
+.incomeDialog {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.incomeTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.25;
+  color: var(--text-primary);
+  overflow-wrap: break-word;
+}
+
+.incomeWhy {
+  margin-top: var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--tracking-normal);
+  color: var(--text-tertiary);
+}
+
+.incomeActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-4);
+}
+
 /* ------------------------------------------------------------------------- */
 /* Experiences — verb-led, with definitions                                  */
 /* ------------------------------------------------------------------------- */
@@ -519,20 +556,20 @@
 .experienceGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .expCard {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
+  display: grid;
+  gap: 4px;
   text-align: left;
-  padding: var(--space-5);
-  border-radius: var(--radius-md);
+  padding: var(--space-7) var(--space-6);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-default);
   background: rgba(255, 255, 255, 0.66);
   cursor: pointer;
   min-width: 0;
+  min-height: 76px;
   transition:
     border-color var(--dur-micro) var(--ease-out),
     background-color var(--dur-micro) var(--ease-out);
@@ -544,48 +581,24 @@
 }
 
 .expCardOn {
-  border-color: var(--purple-500);
+  border-color: var(--purple-300);
   background: var(--purple-50);
-  box-shadow: 0 0 0 1px var(--purple-500);
-}
-
-.expCheck {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 16px;
-  height: 16px;
-  margin-top: 1px;
-  border-radius: var(--radius-xs);
-  border: 1.5px solid var(--border-strong);
-  color: transparent;
-  transition:
-    background-color var(--dur-micro) var(--ease-out),
-    border-color var(--dur-micro) var(--ease-out),
-    color var(--dur-micro) var(--ease-out);
-}
-
-.expCardOn .expCheck {
-  background: var(--purple-600);
-  border-color: var(--purple-600);
-  color: var(--slate-0);
-}
-
-.expBody {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
+  box-shadow: none;
 }
 
 .expTitle {
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
 }
 
+.expCardOn .expTitle {
+  color: var(--purple-900);
+}
+
 .expBlurb {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   line-height: var(--lh-snug);
   color: var(--text-tertiary);
 }
@@ -609,60 +622,16 @@
 }
 
 .groupLabel {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--text-quaternary);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-tertiary);
 }
 
 .chipWrap {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.activityChip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 30px;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-default);
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-tight);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    border-color var(--dur-micro) var(--ease-out),
-    background-color var(--dur-micro) var(--ease-out),
-    color var(--dur-micro) var(--ease-out);
-}
-
-.activityChip:hover {
-  border-color: var(--teal-300);
-  background: var(--slate-0);
-  color: var(--text-primary);
-}
-
-/*
- * Teal, not purple. Activities are YOUR data — the thing you chose — and the
- * palette's purple-versus-teal split is system-versus-you.
- */
-.activityChipOn {
-  background: var(--teal-600);
-  border-color: var(--teal-600);
-  color: var(--slate-0);
-}
-
-.activityChipOn:hover {
-  background: var(--teal-700);
-  border-color: var(--teal-700);
-  color: var(--slate-0);
+  gap: var(--space-4);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -675,16 +644,22 @@
   }
 
   .pairRow,
-  .originGrid,
   .budgetGrid,
   .experienceGrid {
     grid-template-columns: 1fr;
+  }
+
+  .originGrid {
+    gap: var(--space-3);
+  }
+
+  .originItem {
+    padding: var(--space-4) var(--space-4);
   }
 }
 
 @media (max-width: 360px) {
   .row,
-  .originItem,
   .budgetCard {
     padding: var(--space-5);
   }

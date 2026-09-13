@@ -18,117 +18,161 @@
  *   orange  — origin and departure: "you are here"
  *   pink    — the reveal: the payoff moment, the emotional register
  *
- * The historical values are the anchors (purple #AE6EFF, teal #00909B,
- * orange #FE9549, pink #CC7BCC, ink #31374A); the ramps around them are
- * rebuilt for contrast and for use at product density.
+ * Core palette (named in the brand file):
+ *   Intripid Purple      #AE6EFF
+ *   Intripid Orange      #FE9549
+ *   Intripid Blue Green  #00909B
+ *   Intripid Pink        #CC7BCC
+ *   Intripid Dark Grey   #31374A
+ *   Intripid Light Blue  #D2D9E4
+ *
+ * Ramps below are the official Primary / Secondary / Neutral / semantic
+ * scales from that file. Core hues sit on the 400 stop (600 for teal,
+ * because that is how the file names Blue Green).
  */
 
 :root {
   /* ---------------------------------------------------------------------- */
-  /* Purple — the brand anchor. 400 is the inherited #AE6EFF.               */
+  /* Purple — Primary. 400 is Intripid Purple.                              */
   /* ---------------------------------------------------------------------- */
-  --purple-50: #f7f3ff;
-  --purple-100: #efe7ff;
-  --purple-200: #ded0ff;
-  --purple-300: #c6aaff;
+  --purple-50: #f7f3fb;
+  --purple-100: #e4d3fa;
+  --purple-200: #d2b6f8;
+  --purple-300: #c398f8;
   --purple-400: #ae6eff;
-  --purple-500: #9a4dfa;
-  --purple-600: #8730ec;
-  --purple-700: #7222c9;
-  --purple-800: #5d1da4;
-  --purple-900: #4a1a80;
-  --purple-950: #2c0f52;
+  --purple-500: #9b63e2;
+  --purple-600: #784caf;
+  --purple-700: #56367e;
+  --purple-800: #322049;
+  --purple-900: #20152e;
+  --purple-950: #140c1c;
 
   /* ---------------------------------------------------------------------- */
-  /* Teal — you and your data. 600 is the inherited #00909B.                */
+  /* Teal — Secondary / Blue Green. 600 is Intripid Blue Green.             */
   /* ---------------------------------------------------------------------- */
-  --teal-50: #ecfbfc;
-  --teal-100: #cbf3f6;
-  --teal-200: #9ae7ee;
-  --teal-300: #59d2de;
-  --teal-400: #22b3c4;
-  --teal-500: #0a97a6;
+  --teal-50: #e5f1f2;
+  --teal-100: #b2dcde;
+  --teal-200: #83c1c9;
+  --teal-300: #4caeba;
+  --teal-400: #1599a6;
+  --teal-500: #047e8b;
   --teal-600: #00909b;
-  --teal-700: #0a737c;
-  --teal-800: #0e5b63;
-  --teal-900: #114a51;
+  --teal-700: #03606c;
+  --teal-800: #02444a;
+  --teal-900: #01272b;
 
   /* ---------------------------------------------------------------------- */
-  /* Orange — origin, departure, warmth. 400 is the inherited #FE9549.      */
+  /* Orange — Secondary. 400 is Intripid Orange.                            */
   /* ---------------------------------------------------------------------- */
-  --orange-50: #fff6ed;
-  --orange-100: #ffe8d2;
-  --orange-200: #ffcda1;
-  --orange-300: #feb075;
+  --orange-50: #fce9db;
+  --orange-100: #fbd5b6;
+  --orange-200: #fabf92;
+  --orange-300: #f9a96e;
   --orange-400: #fe9549;
-  --orange-500: #f4741b;
-  --orange-600: #d95a08;
-  --orange-700: #b1470c;
-  --orange-800: #8d3a11;
-  --orange-900: #743112;
+  --orange-500: #fc7e22;
+  --orange-600: #f96800;
+  --orange-700: #d55900;
+  --orange-800: #ac4801;
+  --orange-900: #602902;
 
   /* ---------------------------------------------------------------------- */
-  /* Pink — the reveal. 400 is the inherited #CC7BCC.                       */
+  /* Pink — Secondary. 400 is Intripid Pink.                                */
   /* ---------------------------------------------------------------------- */
-  --pink-50: #fdf4fd;
-  --pink-100: #f9e7f9;
-  --pink-200: #f1cdf1;
-  --pink-300: #e3a8e3;
+  --pink-50: #f3e5f2;
+  --pink-100: #ecc8ec;
+  --pink-200: #dfadde;
+  --pink-300: #d195d2;
   --pink-400: #cc7bcc;
-  --pink-500: #b85cb8;
-  --pink-600: #9d439d;
-  --pink-700: #813681;
-  --pink-800: #6a2d6a;
-  --pink-900: #582758;
+  --pink-500: #bf5ebf;
+  --pink-600: #b344b4;
+  --pink-700: #963d97;
+  --pink-800: #7c2e7f;
+  --pink-900: #4a1a4a;
 
   /* ---------------------------------------------------------------------- */
-  /* Slate — cool product neutrals. 800 is the inherited ink #31374A.       */
-  /* Deliberately cool: the previous warm-paper scale is what made the      */
-  /* planner read as an editorial mock rather than a scheduling tool.       */
+  /* Slate — Neutral / Black Blue Grey. 800 is Intripid Dark Grey.          */
+  /* Light Blue Grey sits on 150–200; Intripid Light Blue is 200.           */
   /* ---------------------------------------------------------------------- */
   --slate-0: #ffffff;
   --slate-25: #fcfdfe;
-  --slate-50: #f8fafc;
-  --slate-100: #f1f4f8;
-  --slate-150: #e9eef4;
-  --slate-200: #dde4ed;
-  --slate-300: #c4cfdd;
-  --slate-400: #98a6b9;
-  --slate-500: #6d7b90;
-  --slate-600: #4e5b6e;
-  --slate-700: #3a4557;
+  --slate-50: #f8f8f9;
+  --slate-100: #eff0f4;
+  --slate-150: #e3e8eb;
+  --slate-200: #d2d9e4;
+  --slate-300: #c2c3c7;
+  --slate-400: #9899a0;
+  --slate-500: #6d737e;
+  --slate-600: #454959;
+  --slate-700: #3a3f4e;
   --slate-800: #31374a;
-  --slate-900: #232838;
-  --slate-950: #161a25;
+  --slate-900: #2f3646;
+  --slate-950: #1a1d27;
 
   /* ---------------------------------------------------------------------- */
-  /* Semantic                                                               */
-  /* Error shouts, success murmurs. Red is reserved absolutely for          */
-  /* leave / remove / delete / decline — never for emphasis.                */
+  /* Semantic — Error / Warning / Success / Info from the brand file.       */
+  /* Red is reserved for leave / remove / delete / decline.                 */
   /* ---------------------------------------------------------------------- */
-  --positive-50: #ecfaf1;
-  --positive-100: #cff0dc;
-  --positive-500: #21976a;
-  --positive-600: #167a55;
-  --positive-700: #12603f;
+  --positive-50: #dae8d1;
+  --positive-100: #b6d29e;
+  --positive-500: #629240;
+  --positive-600: #4e7532;
+  --positive-700: #3c5a26;
 
-  --warning-50: #fff8eb;
-  --warning-100: #ffeccc;
-  --warning-300: #f5bd52;
-  --warning-500: #d98a10;
-  --warning-600: #b06c0b;
-  --warning-700: #8a540d;
+  --warning-50: #f3dec2;
+  --warning-100: #f0be84;
+  --warning-300: #f0be84;
+  --warning-500: #bb6f17;
+  --warning-600: #9a5c12;
+  --warning-700: #7a490e;
 
-  --danger-50: #fef2f2;
-  --danger-100: #fcdcda;
-  --danger-200: #f7bab6;
-  --danger-500: #de3b34;
-  --danger-600: #c22823;
-  --danger-700: #9d201d;
+  --danger-50: #f4b8ba;
+  --danger-100: #ee7275;
+  --danger-200: #ee7275;
+  --danger-500: #b40e10;
+  --danger-600: #9a0c0e;
+  --danger-700: #7a0a0b;
+
+  --info-50: #bdcdf3;
+  --info-100: #7e9dee;
+  --info-500: #1947ac;
+  --info-600: #143a8c;
+
+  /*
+   * AI gradients from the brand file. Use these for discovery / assistant
+   * moments — never for operational chrome like Build trip.
+   */
+  --gradient-ai: linear-gradient(90deg, var(--purple-400), var(--orange-400));
+  --gradient-ai-rev: linear-gradient(90deg, var(--orange-400), var(--purple-400));
+  --gradient-ai-soft: linear-gradient(
+    90deg,
+    rgba(174, 110, 255, 0.24),
+    rgba(254, 149, 73, 0.24)
+  );
+  --gradient-ai-text: linear-gradient(
+    90deg,
+    var(--purple-600),
+    var(--orange-500),
+    var(--pink-500),
+    var(--purple-600)
+  );
+  --gradient-ai-conic: conic-gradient(
+    from var(--explore-angle, 0deg),
+    var(--purple-400),
+    var(--orange-400),
+    var(--pink-400),
+    var(--purple-400)
+  );
+
+  /* Destination types in the core palette. */
+  --brand-city: #e92c2e;
+  --brand-nature: #ea9e46;
+  --brand-food: #92bf70;
+  --brand-mix: #3c6fde;
 
   /* ====================================================================== */
   /* APP SURFACES — Trip Planner. Near-white, calendar-grade calm.          */
   /* ====================================================================== */
+  --planner-chrome: #e8eef4;
   --bg-canvas: var(--slate-50);
   --bg-surface: var(--slate-0);
   --bg-surface-raised: var(--slate-0);
@@ -164,13 +208,13 @@
   /* warming through pink toward an orange horizon. It stays dark enough    */
   /* on the trailing edge to hold a light glass console at full contrast.   */
   /* ====================================================================== */
-  --env-base: #2a1150;
-  --env-deep: #1d0b3a;
-  --env-violet: #5a1fa8;
-  --env-magenta: #8e2f8e;
-  --env-pink: #c4569e;
-  --env-ember: #e0713f;
-  --env-glow: #ffa963;
+  --env-base: var(--purple-800);
+  --env-deep: var(--purple-900);
+  --env-violet: var(--purple-600);
+  --env-magenta: var(--pink-700);
+  --env-pink: var(--pink-400);
+  --env-ember: var(--orange-500);
+  --env-glow: var(--orange-300);
 
   /*
    * Glass. Light frosted panels over the environment: text legibility wins
@@ -230,43 +274,43 @@
    */
 
   /* eat — orange */
-  --cat-food: #d95a08;
-  --cat-food-soft: #fff9f4;
-  --cat-food-ink: #8d3a11;
+  --cat-food: var(--orange-700);
+  --cat-food-soft: var(--orange-50);
+  --cat-food-ink: var(--orange-800);
 
   /* do — purple, the brand's own. Culture leads, sightseeing is its lighter
      sibling: they are genuinely the same kind of thing. */
-  --cat-culture: #8730ec;
-  --cat-culture-soft: #faf7fe;
-  --cat-culture-ink: #5d1da4;
+  --cat-culture: var(--purple-600);
+  --cat-culture-soft: var(--purple-50);
+  --cat-culture-ink: var(--purple-800);
 
-  --cat-sightseeing: #ae6eff;
-  --cat-sightseeing-soft: #fbf8ff;
-  --cat-sightseeing-ink: #5d1da4;
+  --cat-sightseeing: var(--purple-400);
+  --cat-sightseeing-soft: var(--purple-50);
+  --cat-sightseeing-ink: var(--purple-800);
 
   /* outside — teal */
-  --cat-outdoors: #0a97a6;
-  --cat-outdoors-soft: #f2fbfc;
-  --cat-outdoors-ink: #0e5b63;
+  --cat-outdoors: var(--teal-400);
+  --cat-outdoors-soft: var(--teal-50);
+  --cat-outdoors-ink: var(--teal-800);
 
   /* play — pink. Shopping is nightlife's lighter sibling. */
-  --cat-nightlife: #b85cb8;
-  --cat-nightlife-soft: #fdf8fd;
-  --cat-nightlife-ink: #742f74;
+  --cat-nightlife: var(--pink-500);
+  --cat-nightlife-soft: var(--pink-50);
+  --cat-nightlife-ink: var(--pink-800);
 
-  --cat-shopping: #e3a8e3;
-  --cat-shopping-soft: #fefaff;
-  --cat-shopping-ink: #813681;
+  --cat-shopping: var(--pink-300);
+  --cat-shopping-soft: var(--pink-50);
+  --cat-shopping-ink: var(--pink-700);
 
   /* move — neutral by design. Travel time is structure, not content, and it
      must never compete with something the traveller actually chose. */
-  --cat-transit: #98a6b9;
-  --cat-transit-soft: #f6f9fb;
-  --cat-transit-ink: #4e5b6e;
+  --cat-transit: var(--slate-400);
+  --cat-transit-soft: var(--slate-50);
+  --cat-transit-ink: var(--slate-600);
 
   /* the trip's frame — renders as the all-day band, never as a card, so it
      can share purple with culture without ever sitting beside it */
-  --cat-stay: #7222c9;
+  --cat-stay: var(--purple-700);
   --cat-stay-soft: #f8f4ff;
   --cat-stay-ink: #5d1da4;
 
@@ -308,37 +352,53 @@
   /* ---------------------------------------------------------------------- */
   /* Typography                                                             */
   /*                                                                        */
-  /* Inter carries the product. The serif is reserved for moments that      */
-  /* genuinely benefit from character — discovery questions, destination     */
-  /* names, the day date — and never for operational labels or controls.    */
+  /* Inter carries the product. Familjen Grotesk is reserved for moments    */
+  /* that genuinely benefit from character — discovery questions,            */
+  /* destination names, the day date — and never for operational labels or  */
+  /* controls.                                                              */
   /* ---------------------------------------------------------------------- */
   --font-sans:
     var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-display:
-    var(--font-instrument-serif), "Iowan Old Style", "Palatino Linotype",
-    Palatino, Georgia, serif;
+    var(--font-familjen), var(--font-inter), system-ui, -apple-system,
+    "Segoe UI", sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 
   --text-2xs: 0.6875rem; /* 11 */
+  --text-2xs-lh: 1rem; /* 16 — Untitled label */
   --text-xs: 0.75rem; /* 12 */
+  --text-xs-lh: 1.125rem; /* 18 */
   --text-sm: 0.8125rem; /* 13 */
+  --text-sm-lh: 1.25rem; /* 20 */
   --text-base: 0.875rem; /* 14 */
+  --text-base-lh: 1.25rem; /* 20 */
   --text-md: 0.9375rem; /* 15 */
+  --text-md-lh: 1.375rem; /* 22 */
   --text-lg: 1.0625rem; /* 17 */
+  --text-lg-lh: 1.625rem; /* 26 */
   --text-xl: 1.25rem; /* 20 */
+  --text-xl-lh: 1.875rem; /* 30 */
   --text-2xl: 1.5rem; /* 24 */
+  --text-2xl-lh: 2rem; /* 32 */
   --text-3xl: 1.875rem; /* 30 */
+  --text-3xl-lh: 2.25rem; /* 36 */
   --display-sm: 2.125rem; /* 34 */
+  --display-sm-lh: 2.5rem; /* 40 */
   --display-md: 2.75rem; /* 44 */
+  --display-md-lh: 3.25rem; /* 52 */
   --display-lg: 3.75rem; /* 60 */
+  --display-lg-lh: 4.5rem; /* 72 */
 
+  /*
+   * Body ~1.5. Headings tighter: 1.12–1.2 (Untitled/Material display).
+   */
   --lh-tight: 1.12;
-  --lh-snug: 1.3;
+  --lh-snug: 1.2;
   --lh-normal: 1.5;
-  --lh-relaxed: 1.62;
+  --lh-relaxed: 1.5;
 
   --tracking-tighter: -0.024em;
   --tracking-tight: -0.013em;

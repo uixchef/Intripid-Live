@@ -1,74 +1,70 @@
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 
+import lockupOnDark from "./lockup-on-dark.png";
+import lockup from "./lockup.png";
+import mascot from "./mascot.png";
 import styles from "./mark.module.css";
 
+const LOCKUP_ASPECT = lockup.width / lockup.height;
+
 /**
- * The Intripid mark.
- *
- * Redrawn from the historical hummingbird. The original was an illustrated,
- * cartoon character; this is a geometric glyph that doubles as a map pin —
- * a hovering bird whose tail tapers into a pin point. That double reading is
- * the whole idea: a travel product's identity should point at a place.
- *
- * Palette is the hummingbird's own — violet body, teal wing, amber beak — so
- * the brand DNA survives even though the execution does not.
+ * The Intripid mascot — the bird mark from the current lockup, without the
+ * word. Used where chrome is tight (the planner top bar) and the bird has
+ * to sit next to a trip name rather than repeat "Intripid".
  */
 export function Mark({
   size = 24,
   className,
-  mono = false,
 }: {
   size?: number;
   className?: string;
-  /** Single-colour rendering, for tight or inverted contexts. */
-  mono?: boolean;
 }) {
   return (
-    <svg
+    <Image
+      src={mascot}
+      alt="Intripid"
       width={size}
       height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      role="img"
-      aria-label="Intripid"
       className={cn(styles.mark, className)}
-    >
-      {/* The place: a pin silhouette, which is what survives at 20px */}
-      <path
-        d="M16 2.5c5.8 0 10.5 4.7 10.5 10.5 0 6.4-6.6 12.4-10.5 18.5C12.1 25.4 5.5 19.4 5.5 13 5.5 7.2 10.2 2.5 16 2.5Z"
-        fill={mono ? "currentColor" : "var(--purple-600)"}
-      />
-      {/* The wing: the part that reads as motion */}
-      <path
-        d="M8.6 16.4c1.5-4.8 5.8-7.4 11.4-6.6-3 3.6-6.9 5.8-11.4 6.6Z"
-        fill={mono ? "currentColor" : "var(--teal-400)"}
-        opacity={mono ? 0.5 : 1}
-      />
-      {/* The beak: a hummingbird's one unmistakable feature */}
-      <path
-        d="M24.9 10.2l6.4-2.7c.62-.26 1.05.6.46.98l-5.5 3.5-1.36-1.78Z"
-        fill={mono ? "currentColor" : "var(--orange-400)"}
-        opacity={mono ? 0.8 : 1}
-      />
-      <circle cx="19.4" cy="7.5" r="1.75" fill="var(--slate-0)" />
-    </svg>
+      quality={90}
+    />
   );
 }
 
-/** The mark plus wordmark. */
+/** Full lockup: mascot plus the Intripid wordmark. */
 export function Logo({
-  size = 22,
+  size = 24,
   className,
   showWord = true,
+  onDark = false,
+  priority = false,
 }: {
   size?: number;
   className?: string;
   showWord?: boolean;
+  /** White wordmark for dark / environment surfaces. */
+  onDark?: boolean;
+  priority?: boolean;
 }) {
+  if (!showWord) {
+    return <Mark size={size} className={className} />;
+  }
+
+  const width = Math.round(LOCKUP_ASPECT * size);
+
   return (
     <span className={cn(styles.logo, className)}>
-      <Mark size={size} />
-      {showWord ? <span className={styles.word}>Intripid</span> : null}
+      <Image
+        src={onDark ? lockupOnDark : lockup}
+        alt="Intripid"
+        width={width}
+        height={size}
+        className={styles.lockup}
+        quality={90}
+        priority={priority}
+      />
     </span>
   );
 }

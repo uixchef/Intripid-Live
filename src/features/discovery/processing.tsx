@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Check } from "lucide-react";
+import { motion } from "motion/react";
 
 import { Hummingbird } from "@/components/brand/hummingbird";
-import { cn } from "@/lib/utils";
 import type { DiscoveryPreferences, RecommendationSet } from "@/lib/types";
 
 import styles from "./processing.module.css";
@@ -84,7 +82,7 @@ export function Processing({
         </div>
       </div>
 
-      {/* Real progress, not a shimmer. */}
+      {/* Real progress, not a shimmer. The Figma bar is different; keep ours. */}
       <div className={styles.track} aria-hidden>
         <motion.span
           className={styles.fill}
@@ -93,46 +91,6 @@ export function Processing({
           transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.2, 0, 0, 1] }}
         />
       </div>
-
-      <ol className={styles.lines} aria-live="polite">
-        <AnimatePresence initial={false}>
-          {lines.slice(0, shown).map((line, index) => {
-            const isLatest = index === shown - 1 && !reduceMotion;
-            return (
-              <motion.li
-                key={line.text}
-                className={styles.line}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
-              >
-                <span
-                  className={cn(
-                    styles.bullet,
-                    isLatest ? styles.bulletActive : styles.bulletDone,
-                  )}
-                  aria-hidden
-                >
-                  {isLatest ? (
-                    <span className={styles.dot} />
-                  ) : (
-                    <Check size={11} strokeWidth={3.2} />
-                  )}
-                </span>
-                <span className={styles.lineBody}>
-                  <span className={styles.lineText}>{line.text}</span>
-                  <span className={styles.lineDetail}>{line.detail}</span>
-                </span>
-                {line.count !== null ? (
-                  <span className={cn(styles.count, "tabular")}>
-                    {line.count}
-                  </span>
-                ) : null}
-              </motion.li>
-            );
-          })}
-        </AnimatePresence>
-      </ol>
     </div>
   );
 }
@@ -180,6 +138,15 @@ function buildLines(
     lines.push({
       text: `Ranking the ${remaining} survivors against what you'd like to do`,
       detail: "Activities order the results; they never eliminate a city.",
+      count: null,
+    });
+  } else if (prefs.populated && prefs.populated !== "open") {
+    lines.push({
+      text:
+        prefs.populated === "popular"
+          ? "Giving well-known cities a boost"
+          : "Giving quieter places a boost",
+      detail: "Scale is a preference, not a filter — nothing is ruled out.",
       count: null,
     });
   }

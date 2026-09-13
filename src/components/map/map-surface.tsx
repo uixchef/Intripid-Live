@@ -74,5 +74,6 @@ export function MapSurface(props: MapCanvasProps) {
   return <MapCanvas {...props} />;
 }
 
-export { MapCamera, MapMarker, MapRoute } from "./map-primitives";
+export { MapCamera, MapMarker, MapRoute, useMapViewRevision } from "./map-primitives";
+export { MapAvoidAreas } from "./map-avoid";
 export { useMap } from "./map-context";

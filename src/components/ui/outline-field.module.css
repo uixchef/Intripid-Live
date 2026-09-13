@@ -1,0 +1,144 @@
+.field {
+  position: relative;
+  display: grid;
+  align-content: end;
+  max-width: 328px;
+  min-height: 56px;
+  padding: 22px 12px 8px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  background: #fff;
+  cursor: text;
+}
+
+.label {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: #5f6368;
+  pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform-origin: left center;
+  transition:
+    top var(--dur-element) var(--ease-out),
+    transform var(--dur-element) var(--ease-out),
+    font-size var(--dur-element) var(--ease-out),
+    color var(--dur-element) var(--ease-out);
+}
+
+.control {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  min-width: 0;
+}
+
+.prefix {
+  flex: none;
+  font-size: 16px;
+  line-height: 1.25;
+  color: #5f6368;
+  opacity: 0;
+  transition: opacity var(--dur-element) var(--ease-out);
+}
+
+.field input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1.25;
+  color: #202124;
+  outline: none;
+}
+
+.field:focus-within .label,
+.field:has(input:not(:placeholder-shown)) .label,
+.float .label {
+  top: 8px;
+  transform: none;
+  font-size: 12px;
+}
+
+.field:focus-within .prefix,
+.field:has(input:not(:placeholder-shown)) .prefix,
+.float .prefix {
+  opacity: 1;
+}
+
+.field:focus-within {
+  border-color: var(--purple-500);
+  box-shadow: 0 0 0 3px var(--purple-100);
+}
+
+.field:focus-within .label {
+  color: var(--purple-700);
+}
+
+.readOnly {
+  background: #f8f9fa;
+  cursor: default;
+}
+
+.readOnly:focus-within {
+  border-color: #dadce0;
+  box-shadow: none;
+}
+
+.readOnly:focus-within .label {
+  color: #5f6368;
+}
+
+@media (max-width: 900px) {
+  .field {
+    max-width: none;
+    min-height: 64px;
+    border: 0;
+    border-radius: 0;
+    padding: 24px 16px 10px;
+    box-shadow: inset 0 -1px 0 var(--slate-100);
+  }
+
+  .label {
+    left: 16px;
+    right: 16px;
+  }
+
+  .field:focus-within {
+    border-color: transparent;
+    box-shadow: inset 0 -2px 0 var(--purple-500);
+  }
+
+  .readOnly {
+    background: transparent;
+  }
+
+  .readOnly:focus-within {
+    box-shadow: inset 0 -1px 0 var(--slate-100);
+  }
+
+  .field:last-child {
+    box-shadow: none;
+  }
+
+  .field:last-child:focus-within {
+    box-shadow: inset 0 -2px 0 var(--purple-500);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label,
+  .prefix {
+    transition: none;
+  }
+}

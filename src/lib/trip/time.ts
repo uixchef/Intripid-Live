@@ -1,10 +1,14 @@
 import {
+  addDays,
   addMinutes,
+  addMonths,
   differenceInMinutes,
   eachDayOfInterval,
+  endOfWeek,
   format,
   isSameDay,
   parseISO,
+  startOfWeek,
 } from "date-fns";
 
 /**
@@ -86,6 +90,45 @@ export function tripDays(startDate: string, endDate: string): string[] {
   }).map((d) => format(d, "yyyy-MM-dd"));
 }
 
+/**
+ * Local calendar date from a day key. Avoids ISO date-only UTC shifting,
+ * which would move "2026-04-14" onto the 13th in US timezones.
+ */
+export function dateFromDayKey(key: string): Date {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+export function shiftDayKey(key: string, days: number): string {
+  return format(addDays(dateFromDayKey(key), days), "yyyy-MM-dd");
+}
+
+export function shiftMonthKey(key: string, months: number): string {
+  return format(addMonths(dateFromDayKey(key), months), "yyyy-MM-dd");
+}
+
+export type ClockFormat = "12h" | "24h";
+
+/** Week containing the given day, starting Sunday or Monday. */
+export function weekDayKeys(
+  anchorKey: string,
+  weekStartsOn: 0 | 1 = 0,
+): string[] {
+  const date = dateFromDayKey(anchorKey);
+  return eachDayOfInterval({
+    start: startOfWeek(date, { weekStartsOn }),
+    end: endOfWeek(date, { weekStartsOn }),
+  }).map((d) => format(d, "yyyy-MM-dd"));
+}
+
+/** Rolling four-day window starting on the given day. */
+export function fourDayKeys(anchorKey: string): string[] {
+  const date = dateFromDayKey(anchorKey);
+  return Array.from({ length: 4 }, (_, index) =>
+    format(addDays(date, index), "yyyy-MM-dd"),
+  );
+}
+
 export function isSameDayKey(iso: string, key: string): boolean {
   return dayKey(iso) === key;
 }
@@ -98,22 +141,27 @@ export function sameDay(a: string, b: string): boolean {
 /* Display                                                                    */
 /* -------------------------------------------------------------------------- */
 
-/** "9:30 AM" — the canonical time label. */
-export function timeLabel(iso: string): string {
-  return format(parseWall(iso), "h:mm a");
+/** "9:30 AM" or "09:30". */
+export function timeLabel(iso: string, clock: ClockFormat = "12h"): string {
+  return format(parseWall(iso), clock === "24h" ? "HH:mm" : "h:mm a");
 }
 
-/** "9:30" with no meridiem, for tight calendar chrome. */
-export function timeLabelCompact(iso: string): string {
+/** Tight calendar chrome. */
+export function timeLabelCompact(iso: string, clock: ClockFormat = "12h"): string {
   const date = parseWall(iso);
+  if (clock === "24h") return format(date, "HH:mm");
   return date.getMinutes() === 0
     ? format(date, "h a").toLowerCase()
     : format(date, "h:mm").toLowerCase();
 }
 
 /** "9:30 AM – 11:00 AM" */
-export function timeRangeLabel(start: string, end: string): string {
-  return `${timeLabel(start)} – ${timeLabel(end)}`;
+export function timeRangeLabel(
+  start: string,
+  end: string,
+  clock: ClockFormat = "12h",
+): string {
+  return `${timeLabel(start, clock)} – ${timeLabel(end, clock)}`;
 }
 
 /** "Tue 14 Apr" */
@@ -124,6 +172,12 @@ export function dayLabel(key: string): string {
 /** "Tuesday 14 April" */
 export function dayLabelLong(key: string): string {
   return format(parseWall(key), "EEEE d MMMM");
+}
+
+/** "9:00am" / "2:00 pm" / "14:00" for itinerary time pills. */
+export function timeLabelPill(iso: string, clock: ClockFormat = "12h"): string {
+  if (clock === "24h") return format(parseWall(iso), "HH:mm");
+  return format(parseWall(iso), "h:mm a").toLowerCase();
 }
 
 /** "TUE" / "14" split for the day rail. */
@@ -156,4 +210,51 @@ export function relativeGapLabel(gapMinutes: number): string {
   const hours = Math.round((gapMinutes / 60) * 10) / 10;
   const rounded = Number.isInteger(hours) ? hours : Math.round(hours);
   return `${rounded}hr later`;
+}
+
+/**
+ * Right now, as a destination wall-clock day and minutes-since-midnight.
+ * The planner stores times without a zone; this is the conversion so "now"
+ * on the grid means now where the trip is, not where the browser is.
+ */
+/**
+ * How far through a stop we are, in destination wall-clock.
+ * `null` when the stop is not happening now — upcoming and past stay empty
+ * so purple means "this is the one you are on".
+ */
+export function liveProgress(
+  start: string,
+  end: string,
+  wall: { day: string; minutes: number },
+): number | null {
+  const now = parseWall(atMinutes(wall.day, wall.minutes)).getTime();
+  const from = parseWall(start).getTime();
+  const to = parseWall(end).getTime();
+  if (to <= from || now < from || now > to) return null;
+  return Math.min(1, Math.max(0, (now - from) / (to - from)));
+}
+
+export function wallNow(
+  timeZone: string,
+  date: Date = new Date(),
+): { day: string; minutes: number; seconds: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "0";
+  let hour = Number(read("hour"));
+  if (hour === 24) hour = 0;
+  return {
+    day: `${read("year")}-${read("month")}-${read("day")}`,
+    minutes: hour * 60 + Number(read("minute")),
+    seconds: Number(read("second")),
+  };
 }

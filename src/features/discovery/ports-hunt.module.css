@@ -1,0 +1,36 @@
+.root {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-right: 5.75rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--slate-800);
+  text-wrap: balance;
+}
+
+.detail {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
+  line-height: var(--lh-normal);
+  color: var(--slate-500);
+}
+
+@media (max-width: 900px) {
+  .root {
+    padding-right: 4.5rem;
+  }
+
+  .title {
+    font-size: var(--text-lg);
+  }
+}

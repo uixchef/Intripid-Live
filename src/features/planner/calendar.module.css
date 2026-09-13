@@ -34,70 +34,6 @@
   min-width: 0;
 }
 
-.stayBar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  width: 100%;
-  padding: 4px var(--space-4);
-  border-radius: var(--radius-sm);
-  background: var(--cat-stay-soft);
-  border-left: 3px solid var(--cat-stay);
-  cursor: pointer;
-  min-width: 0;
-  text-align: left;
-  transition:
-    box-shadow var(--dur-micro) var(--ease-out),
-    background-color var(--dur-micro) var(--ease-out);
-}
-
-.stayBar:hover {
-  background: var(--purple-100);
-}
-
-.stayBarSelected {
-  background: var(--slate-0);
-  box-shadow: inset 0 0 0 1.5px var(--purple-600);
-}
-
-.stayName {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  color: var(--cat-stay-ink);
-  letter-spacing: var(--tracking-tight);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: none;
-  max-width: 42%;
-}
-
-.stayPlace {
-  font-size: 10.5px;
-  color: var(--purple-800);
-  opacity: 0.62;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-/*
- * The confirmation code is reference data you read once and copy: tabular
- * figures, not a monospace face, which put a second typeface on the grid for
- * the sake of eleven characters.
- */
-.stayBooking {
-  margin-left: auto;
-  flex: none;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
-  color: var(--purple-800);
-  opacity: 0.55;
-  white-space: nowrap;
-}
-
 /* ------------------------------------------------------------------------- */
 /* Grid                                                                      */
 /*                                                                           */
@@ -114,8 +50,10 @@
 }
 
 .grid {
+  position: relative;
   display: grid;
   grid-template-columns: var(--gutter-w) repeat(var(--col-count), minmax(0, 1fr));
+  height: calc(var(--hour-count) * var(--hour-h));
   min-height: 100%;
   min-width: 0;
 }
@@ -124,7 +62,6 @@
   position: sticky;
   left: 0;
   z-index: 12;
-  border-right: 1px solid var(--grid-day);
   background: var(--bg-surface);
 }
 
@@ -140,45 +77,82 @@
  */
 .gutterLabel {
   position: absolute;
-  top: -0.62em;
-  right: var(--space-4);
+  top: -0.55em;
+  right: 10px;
   font-size: 10px;
   font-weight: var(--weight-medium);
-  color: var(--text-quaternary);
+  color: var(--slate-500);
   white-space: nowrap;
   letter-spacing: 0.01em;
-}
-
-/* Nothing above the first hour, so its label drops below the rule instead. */
-.gutterHour:first-child .gutterLabel {
-  top: 2px;
 }
 
 /* Columns */
 
 .column {
   position: relative;
-  border-right: 1px solid var(--grid-day);
+  border-left: 1px solid var(--grid-day);
   min-width: 0;
-  /*
-   * Days you are not working on recede to the canvas tone; the focused day is
-   * plain white. The previous rule painted both white, so the focused day was
-   * indistinguishable from its neighbours.
-   */
-  background: var(--bg-canvas);
-  transition: background-color var(--dur-micro) var(--ease-out);
-}
-
-.column:last-child {
-  border-right: 0;
-}
-
-.columnActive {
+  overflow: hidden;
   background: var(--bg-surface);
 }
 
 .columnOver {
   background: var(--purple-50);
+}
+
+.hoursShade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--slate-200) 28%, transparent);
+}
+
+.nowTrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: var(--gutter-w) repeat(var(--col-count), minmax(0, 1fr));
+  align-items: center;
+  height: 0;
+}
+
+.nowTime {
+  grid-column: 1;
+  justify-self: end;
+  margin-right: 10px;
+  padding: 0 3px;
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  color: var(--grid-now);
+  background: var(--bg-surface);
+}
+
+.now {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.nowDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: var(--radius-full);
+  background: var(--grid-now);
+}
+
+.nowLine {
+  flex: 1;
+  height: 2px;
+  background: var(--grid-now);
 }
 
 .lines {
@@ -230,23 +204,63 @@
 .drawing {
   position: absolute;
   left: 1px;
-  right: 3px;
+  right: 12px;
   z-index: 14;
-  border-radius: var(--radius-sm);
-  background: var(--purple-100);
-  box-shadow: inset 0 0 0 1.5px var(--purple-600);
+  border-radius: 4px;
+  background: var(--purple-50);
+  box-shadow: inset 0 0 0 1.5px var(--purple-500);
   display: grid;
   place-items: center;
   pointer-events: none;
 }
 
 .drawing span {
-  font-size: 10.5px;
-  font-weight: var(--weight-semibold);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
   color: var(--purple-800);
   letter-spacing: var(--tracking-tight);
   padding: 0 var(--space-3);
   text-align: center;
+}
+
+.createGhost {
+  z-index: 15;
+  align-content: start;
+  justify-items: stretch;
+  padding: 4px 6px;
+  gap: 2px;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.createGhostCompact {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-content: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+
+.createGhostTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.createGhostTime {
+  flex: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.createGhost span {
+  text-align: left;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -260,7 +274,7 @@
 .gap {
   position: absolute;
   left: 1px;
-  right: 3px;
+  right: 12px;
   border-radius: var(--radius-sm);
   display: grid;
   place-items: center;
@@ -330,15 +344,24 @@
  * the tight-connection warning.
  */
 .gapButtonAi {
-  color: var(--purple-700);
-  border-color: var(--purple-200);
-  background: var(--purple-50);
+  color: var(--slate-700);
+  border-color: transparent;
+  background: var(--slate-0);
 }
 
 .gapButtonAi:hover {
-  background: var(--purple-100);
-  border-color: var(--purple-300);
-  color: var(--purple-800);
+  color: var(--slate-800);
+  border-color: transparent;
+  background: linear-gradient(
+    90deg,
+    rgba(174, 110, 255, 0.16),
+    rgba(254, 149, 73, 0.16)
+  );
+}
+
+.gapButtonAi:hover :global([data-ai-mark]) {
+  animation-duration: 2.2s;
+  filter: brightness(1.08);
 }
 
 .gapButton svg {
@@ -355,166 +378,262 @@
 .dayRail {
   display: grid;
   grid-template-columns: var(--gutter-w) repeat(var(--day-count, 5), minmax(0, 1fr));
-  background: var(--bg-canvas);
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--grid-day);
   flex: none;
 }
 
-/* The gutter column is empty here; the first tab starts after it. */
-.dayRail::before {
-  content: "";
-  border-right: 1px solid var(--grid-day);
-  background: var(--bg-surface);
-}
-
-.dayTab {
+.dayRailGutter {
   display: grid;
-  gap: 3px;
-  align-content: start;
-  padding: var(--space-4) var(--space-5) var(--space-4);
-  border-right: 1px solid var(--grid-day);
-  cursor: pointer;
-  min-width: 0;
-  text-align: left;
-  transition:
-    background-color var(--dur-micro) var(--ease-out),
-    box-shadow var(--dur-micro) var(--ease-out);
-}
-
-.dayTab:last-child {
-  border-right: 0;
-}
-
-.dayTab:hover {
-  background: var(--bg-hover);
-}
-
-/* The focused day's header is white and continues into its column, so the
-   two read as one object rather than a tab above a grid. */
-.dayTabActive,
-.dayTabActive:hover {
-  background: var(--bg-surface);
-  box-shadow: inset 0 2px 0 var(--purple-600);
-}
-
-.dayDate {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.dayWeekday {
-  font-size: 10px;
-  font-weight: var(--weight-bold);
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-caps);
+  place-items: center;
+  align-content: center;
 }
 
 /*
- * The one place display type is allowed in the planner: a date is the
- * character moment in an otherwise operational surface, and it is a numeral,
- * so it costs nothing in legibility.
+ * GCal create: white squircle, Material elevation, not a brand-filled disc.
+ * Primary already lives on the top-bar Add on phones; this is the quiet
+ * create in the week header.
  */
+.dayRailGutter .addActivity {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: var(--slate-0);
+  border-color: transparent;
+  color: var(--slate-700);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.dayRailGutter .addActivity:hover:not(:disabled) {
+  background: var(--slate-0);
+  border-color: transparent;
+  color: var(--slate-800);
+  box-shadow:
+    0 1px 3px rgba(60, 64, 67, 0.3),
+    0 4px 8px 3px rgba(60, 64, 67, 0.15);
+}
+
+.dayRailGutter .addActivity:active:not(:disabled) {
+  background: var(--slate-50);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.dayTab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px 4px;
+  cursor: pointer;
+  min-width: 0;
+  text-align: center;
+}
+
+.dayTab:focus-visible {
+  outline: 2px solid var(--purple-400);
+  outline-offset: -2px;
+}
+
+.dayTab:hover .dayNum:not(.dayNumActive):not(.dayNumToday) {
+  background: var(--bg-hover);
+}
+
+.dayWeekday {
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  color: var(--slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.dayTabActive .dayWeekday,
+.dayTabToday .dayWeekday {
+  color: var(--purple-700);
+}
+
 .dayNum {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  line-height: 0.92;
-  color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--slate-800);
+  letter-spacing: -0.02em;
 }
 
-.dayTabActive .dayNum {
-  color: var(--purple-800);
+/* Selected: wash disc. Stronger than the month-picker cell so it reads
+ * at week-header size; today still owns the solid fill. */
+.dayNumActive {
+  background: var(--purple-100);
+  color: var(--purple-700);
+  font-weight: 500;
 }
 
-.dayMonth {
-  font-size: 10.5px;
-  color: var(--text-tertiary);
+.dayTab:hover .dayNumActive {
+  background: var(--purple-200);
+}
+
+/* Today: filled disc, inverted type. Wins over selected when they stack. */
+.dayNumToday {
+  background: var(--purple-500);
+  color: var(--slate-0);
+  font-weight: 500;
+}
+
+.dayTab:hover .dayNumToday {
+  background: var(--purple-600);
 }
 
 .dayConflict {
-  display: grid;
-  place-items: center;
-  flex: none;
-  margin-left: auto;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 4px;
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
   border-radius: var(--radius-full);
   background: var(--danger-500);
   color: var(--slate-0);
   font-size: 9px;
-  font-weight: var(--weight-bold);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--bg-surface);
+  pointer-events: auto;
+}
+
+.dayNumToday .dayConflict {
+  box-shadow: 0 0 0 2px var(--purple-500);
+}
+
+.dayNumActive .dayConflict {
+  box-shadow: 0 0 0 2px var(--purple-100);
+}
+
+.dayConflictCount {
+  display: block;
+  font-size: 9px;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-/*
- * A tight connection is advice. It gets a small amber dot rather than a red
- * count, so a day that merely needs attention does not look broken.
- */
 .dayWarning {
-  flex: none;
-  margin-left: auto;
-  width: 6px;
-  height: 6px;
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
   border-radius: var(--radius-full);
   background: var(--warning-300);
+  box-shadow: 0 0 0 2px var(--bg-surface);
 }
 
-.dayMeta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10.5px;
-  color: var(--text-quaternary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+.issueTip {
+  background: var(--slate-900);
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  overflow: visible;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.12),
+    0 8px 16px rgba(16, 24, 40, 0.18);
 }
 
-.dayIndex {
-  font-weight: var(--weight-semibold);
-  color: var(--text-tertiary);
+.issueTipBody {
+  position: relative;
+  padding: 10px 12px 12px;
 }
 
-.dayTabActive .dayIndex {
-  color: var(--purple-700);
+.issueTipTail {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid var(--slate-900);
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
-.dayMetaDot {
-  opacity: 0.6;
+.issueTipTitle {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate-25);
 }
 
-.dayLoad {
-  display: block;
-  height: 2px;
-  border-radius: var(--radius-full);
-  background: var(--slate-150);
-  overflow: hidden;
-  margin-top: var(--space-2);
+.issueTipBody ul {
+  display: grid;
+  gap: 6px;
 }
 
-.dayLoadFill {
-  display: block;
-  height: 100%;
-  border-radius: var(--radius-full);
-  background: var(--slate-300);
-  transition: width var(--dur-element) var(--ease-out);
+.issueTipBody li {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--slate-200);
 }
 
-.dayTabActive .dayLoadFill {
-  background: var(--purple-500);
+.dayRailCompact .dayNum {
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
 }
 
-.dayRailCompact {
-  grid-template-columns: repeat(var(--day-count, 5), minmax(0, 1fr));
+/*
+ * GCal Week / 3-day (our 4-day) / multi-day: the header IS the column
+ * labels. Empty gutter (timezone lives elsewhere), small letter + disc.
+ */
+.dayRailColumns .dayTab {
+  padding: 6px 2px 8px;
 }
 
-.dayRailCompact::before {
-  display: none;
+.dayRailColumns .dayWeekday {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.dayRailColumns .dayNum {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
+
+.dayRailColumns[data-span="4"] .dayNum,
+.dayRailColumns[data-span="3"] .dayNum {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+
+.dayRailColumns .dayConflict {
+  top: -3px;
+  right: -5px;
+  width: 14px;
+  height: 14px;
+}
+
+.dayRailColumns .dayWarning {
+  top: -1px;
+  right: -1px;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -522,44 +641,82 @@
 /* ------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
+  .gap[data-labelled] {
+    background: rgba(135, 48, 236, 0.04);
+  }
+
+  .gap:hover {
+    background: rgba(135, 48, 236, 0.04);
+  }
+
+  .gapInner {
+    gap: 6px;
+  }
+
+  .gapLabel {
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  .gapButton {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+    border-radius: 16px;
+    box-shadow: none;
+    background: var(--slate-0);
+  }
+
+  .gapButtonIcon {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
   .allDay {
     padding-right: var(--space-3);
   }
 
-  .stayBooking {
-    display: none;
-  }
-
-  .stayName {
-    max-width: 60%;
-  }
-
-  /*
-   * Day tabs scroll horizontally on a phone. This is the one intentional
-   * horizontal scroll in the product: five days will not fit at 390px and
-   * paging between them is slower than swiping.
-   */
-  .dayRail {
+  .dayRailCompact {
     display: flex;
+    width: 100%;
+    min-width: 0;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
   }
 
-  .dayRail::-webkit-scrollbar {
+  .dayRailCompact::-webkit-scrollbar {
     display: none;
   }
 
-  .dayRail::before {
-    display: none;
-  }
-
-  .dayTab {
-    flex: none;
-    min-width: 92px;
-    padding: var(--space-3) var(--space-4);
+  .dayRailCompact .dayTab {
+    flex: 1 0 0;
+    min-width: 48px;
+    padding: 8px 2px;
     scroll-snap-align: start;
+  }
+
+  .dayRailCompact .dayNum {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .dayRailCompact .dayWeekday {
+    font-size: 10px;
+  }
+
+  .dayRailCompact .dayConflict {
+    top: -4px;
+    right: -5px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .dayRailCompact .dayTab {
+    overflow: visible;
   }
 }
 
@@ -567,8 +724,7 @@
   .column,
   .gap,
   .dayTab,
-  .dayLoadFill,
-  .stayBar {
+  .dayLoadFill {
     transition: none;
   }
 }

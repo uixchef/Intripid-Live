@@ -1,47 +1,69 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { getMonth, parseISO } from "date-fns";
-import { motion } from "motion/react";
+import type { Route } from "next";
+import { format, getMonth, parseISO } from "date-fns";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ArrowLeft,
+  ArrowRight,
   ArrowUpRight,
-  Banknote,
-  CalendarRange,
-  Clock3,
-  Languages,
+  ChevronDown,
+  SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Confidence,
-  FactorBar,
-  ScoreRing,
-  SeasonSpark,
-} from "@/components/ui/meter";
-import { Modal } from "@/components/ui/overlay";
-import { INTEREST_META } from "@/lib/categories";
+import { Mark } from "@/components/brand/mark";
+import { coverPhotoSrc } from "@/data/place-photos";
+import { Button, IconButton } from "@/components/ui/button";
+import { Confidence, ScoreRing, SeasonSpark } from "@/components/ui/meter";
+import { INTEREST_META, STYLE_META } from "@/lib/categories";
 import { distinctReasons, resolveWindow } from "@/lib/discovery/scoring";
+import { splitBriefPlaces } from "@/lib/discovery/places";
+import { useIsCompact } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
-import type {
-  DiscoveryPreferences,
-  FilterStage,
-  Recommendation,
-  RecommendationSet,
+import {
+  INTERESTS,
+  type DiscoveryPreferences,
+  type FilterStage,
+  type Interest,
+  type Recommendation,
+  type RecommendationSet,
 } from "@/lib/types";
 
 import styles from "./results.module.css";
 
-/** "New York, United States" — skips a region that just repeats the city. */
+/** Region and country for compact cards. */
 function locationLine(recommendation: Recommendation): string {
   const { region, country, name } = recommendation.destination;
-  if (!region || region === name || name.includes(region)) return country;
-  return `${region}, ${country}`;
+  return [region && region !== name ? region : null, country]
+    .filter(Boolean)
+    .join(", ");
+}
+
+/** Full place line as designed: "Mexico City, Ciudad de México, Mexico". */
+function placeHeadline(recommendation: Recommendation): string {
+  const { name, region, country } = recommendation.destination;
+  return [name, region && region !== name ? region : null, country]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function monthName(month: number) {
+  return format(new Date(2026, month, 1), "MMMM");
 }
 
 const PLACE_LABEL = ["Best match", "Second", "Third"];
+
+const MATCH_EASE = [0.45, 0, 0.15, 1] as const;
+
+const matchPane = {
+  enter: { opacity: 0 },
+  show: { opacity: 1 },
+  leave: { opacity: 0, pointerEvents: "none" as const },
+};
 
 /* -------------------------------------------------------------------------- */
 /* The decision — exactly three                                              */
@@ -72,6 +94,7 @@ const RULED_OUT_WHY: Record<FilterStage["key"], string> = {
   reach: "too far for the time you have",
   afford: "over your budget",
   experiences: "missing a must-have",
+  activities: "missing something you want to do",
 };
 
 export function Results({
@@ -84,6 +107,7 @@ export function Results({
 }: ResultsProps) {
   const [best, ...rest] = result.top;
   const removed = result.eliminated.length;
+  const empty = !best;
 
   /*
    * Phrased against each other, not independently — see `distinctReasons`.
@@ -92,9 +116,12 @@ export function Results({
    */
   const reasons = useMemo(() => distinctReasons(result.top), [result.top]);
 
-  if (!best) {
+  if (empty) {
     return (
       <div className={styles.empty}>
+        <span className={styles.emptyBird} aria-hidden>
+          <Mark size={88} />
+        </span>
         <p className={styles.emptyTitle}>Nothing fits those constraints</p>
         <p className={styles.emptyBody}>
           Loosen a must-have or widen the dates and we&rsquo;ll try again.
@@ -252,161 +279,355 @@ export function Results({
 export interface DestinationBriefProps {
   recommendation: Recommendation;
   prefs: DiscoveryPreferences;
-  /** The full top three, so the brief can offer the other two. */
   top: Recommendation[];
   onBack: () => void;
   onSelect: (id: string) => void;
-  tripId: string | null;
+  onNext: () => void;
+  onAdjust: () => void;
+  plannerHref: Route;
+  celebrate: boolean;
+  onCelebrateDone: () => void;
+}
+
+function activityScores(
+  recommendation: Recommendation,
+  prefs: DiscoveryPreferences,
+): { label: string; score: number }[] {
+  const { destination } = recommendation;
+  const picked =
+    prefs.interests.length > 0
+      ? prefs.interests
+      : ([...INTERESTS] as Interest[]);
+  const fromInterests = picked
+    .map((interest) => ({
+      label: INTEREST_META[interest].label,
+      score: Math.round((destination.interestFit[interest] ?? 0) * 100),
+    }))
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (fromInterests.length > 0) return fromInterests;
+
+  return prefs.styles
+    .map((style) => ({
+      label: STYLE_META[style].label,
+      score: Math.round((destination.styleFit[style] ?? 0) * 100),
+    }))
+    .sort((a, b) => b.score - a.score);
+}
+
+function PlaceCard({
+  attraction,
+  variant = "spot",
+}: {
+  attraction: Recommendation["destination"]["attractions"][number];
+  variant?: "spot" | "event";
+}) {
+  const photo = attraction.photo;
+  return (
+    <article className={cn(styles.spotCard, variant === "event" && styles.eventCard)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={photo ?? "/discovery/pins/place.png"}
+        alt=""
+        width={200}
+        height={variant === "event" ? 200 : 160}
+        className={styles.spotPhoto}
+        onError={(event) => {
+          event.currentTarget.src = "/discovery/pins/place.png";
+        }}
+      />
+      <div className={styles.spotBody}>
+        <p className={styles.spotName}>{attraction.name}</p>
+        {variant === "event" && attraction.note ? (
+          <p className={styles.spotMeta}>{attraction.note}</p>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function ConfettiBurst({ onDone }: { onDone: () => void }) {
+  const reduceMotion = useReducedMotion();
+  const [alive, setAlive] = useState(!reduceMotion);
+
+  useEffect(() => {
+    onDone();
+    if (!alive) return;
+    const timer = window.setTimeout(() => setAlive(false), 1600);
+    return () => window.clearTimeout(timer);
+    // Fire once on mount so a new parent callback does not retrigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alive]);
+
+  if (!alive || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className={styles.confetti} aria-hidden>
+      {Array.from({ length: 32 }, (_, index) => (
+        <span key={index} className={styles.confettiPiece} />
+      ))}
+    </div>,
+    document.body,
+  );
 }
 
 /**
- * The handoff from discovery to planning.
- *
- * Deliberately not a tourism page. It answers only the questions a traveller
- * has at the moment of committing — why here, does it fit my dates and money,
- * what will I actually do — then gets out of the way.
- *
- * The other two matches stay reachable in the header as a ranked selector,
- * which replaces the original's corner ribbon and floating chevrons: the set
- * size is visible and switching is one tap.
+ * One match at a time, 3rd → 2nd → 1st. Confetti fires on the opening card.
  */
 export function DestinationBrief({
   recommendation,
   prefs,
   top,
   onBack,
-  onSelect,
-  tripId,
+  onNext,
+  onAdjust,
+  plannerHref,
+  celebrate,
+  onCelebrateDone,
 }: DestinationBriefProps) {
   const router = useRouter();
-  const [notSeeded, setNotSeeded] = useState(false);
-  const { destination, score, confidence, factors, estimatedBudgetUsd } =
-    recommendation;
+  const isCompact = useIsCompact();
+  const reduceMotion = useReducedMotion();
+  const actionSize = isCompact ? "md" : "lg";
+  const actionIcon = isCompact ? 14 : 15;
+  const navIcon = isCompact ? 14 : 16;
+  const paneRef = useRef<HTMLDivElement>(null);
+  const [moreScores, setMoreScores] = useState(false);
+  const [tab, setTab] = useState("why");
+  const { destination, estimatedBudgetUsd } = recommendation;
 
-  const window = resolveWindow(prefs);
-  const tripMonths = window.months.length
-    ? window.months
+  const reveal = [...top].reverse();
+  const revealIndex = Math.max(
+    0,
+    reveal.findIndex((entry) => entry.destination.id === destination.id),
+  );
+  const isOpening = revealIndex === 0;
+  const hasPrev = revealIndex > 0;
+  const hasNext = revealIndex < reveal.length - 1;
+  const matchRank =
+    top.findIndex((entry) => entry.destination.id === destination.id) + 1;
+
+  const tripWindow = resolveWindow(prefs);
+  const tripMonths = tripWindow.months.length
+    ? tripWindow.months
     : prefs.startDate
       ? [getMonth(parseISO(prefs.startDate))]
       : [];
-  const nights = window.nights;
+  const nights = tripWindow.nights;
+  const seasonMonths =
+    tripMonths.length > 0
+      ? tripMonths.map((month) => destination.season[month]).filter(Boolean)
+      : destination.season;
+  const season = seasonMonths[0] ?? null;
+  const seasonHigh = Math.round(
+    seasonMonths.reduce((sum, month) => sum + month.highC, 0) /
+      Math.max(1, seasonMonths.length),
+  );
+  const seasonLow = Math.round(
+    seasonMonths.reduce((sum, month) => sum + month.lowC, 0) /
+      Math.max(1, seasonMonths.length),
+  );
+  const seasonFit = Math.round(
+    (seasonMonths.reduce((sum, month) => sum + month.score, 0) /
+      Math.max(1, seasonMonths.length)) *
+      100,
+  );
+  const seasonWindow =
+    tripMonths.length === 0
+      ? "Year round"
+      : tripMonths.length === 1
+        ? monthName(tripMonths[0])
+        : `${monthName(tripMonths[0])} – ${monthName(tripMonths[tripMonths.length - 1])}`;
+  const scores = activityScores(recommendation, prefs);
+  const visibleScores = moreScores ? scores : scores.slice(0, 4);
+  const { immersive, exciting, food } = splitBriefPlaces(destination.attractions);
+  const cover =
+    coverPhotoSrc(destination.id) ?? "/discovery/pins/place.png";
 
-  const [idealMin, idealMax] = destination.idealDays;
-  const lengthNote =
-    nights === null
-      ? `${idealMin}–${idealMax} days is about right here.`
-      : nights < idealMin
-        ? `You have ${nights} nights; ${idealMin} is the realistic minimum.`
-        : nights > idealMax
-          ? `${nights} nights is generous — there's room to go slowly.`
-          : `${nights} nights fits ${destination.name} well.`;
+  const tabs = [
+    { id: "why", label: "Why here", count: destination.whyYoullLoveIt.length },
+    { id: "scores", label: "Scores", count: scores.length },
+    immersive.length > 0
+      ? { id: "attractions", label: "Famous attractions", count: immersive.length }
+      : null,
+    exciting.length > 0
+      ? { id: "activities", label: "Recommendations", count: exciting.length }
+      : null,
+    food.length > 0
+      ? { id: "food", label: "Food & dining", count: food.length }
+      : null,
+  ].filter(
+    (item): item is { id: string; label: string; count: number } => item !== null,
+  );
+
+  const tabKey = tabs.map((item) => item.id).join("|");
+  const jumpLock = useRef(false);
+
+  const jump = (id: string) => {
+    setTab(id);
+    const root = paneRef.current;
+    const section = root?.querySelector(`#brief-${id}`);
+    const tabsEl = root?.querySelector("[role='tablist']");
+    if (!root || !(section instanceof HTMLElement)) return;
+    jumpLock.current = true;
+    const tabsH = tabsEl instanceof HTMLElement ? tabsEl.offsetHeight : 40;
+    root.scrollTo({
+      top: Math.max(0, section.offsetTop - tabsH - 8),
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+    window.setTimeout(() => {
+      jumpLock.current = false;
+    }, reduceMotion ? 50 : 700);
+  };
+
+  const prevIndex = useRef(revealIndex);
+  const direction = revealIndex >= prevIndex.current ? 1 : -1;
+  useEffect(() => {
+    prevIndex.current = revealIndex;
+    setMoreScores(false);
+    setTab("why");
+  }, [revealIndex]);
+
+  useEffect(() => {
+    const root = paneRef.current;
+    if (!root) return;
+    const ids = tabKey.split("|").filter(Boolean);
+    let frame = 0;
+
+    const sync = () => {
+      if (jumpLock.current || ids.length === 0) return;
+      const tabsEl = root.querySelector("[role='tablist']");
+      const offset =
+        (tabsEl instanceof HTMLElement ? tabsEl.offsetHeight : 40) + 12;
+      const y = root.scrollTop + offset;
+      let next = ids[0];
+      for (const id of ids) {
+        const section = root.querySelector(`#brief-${id}`);
+        if (!(section instanceof HTMLElement)) continue;
+        if (section.offsetTop <= y) next = id;
+      }
+      setTab((current) => (current === next ? current : next));
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        sync();
+      });
+    };
+
+    root.addEventListener("scroll", onScroll, { passive: true });
+    sync();
+    return () => {
+      root.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [destination.id, tabKey]);
+
+  useEffect(() => {
+    const tabsEl = paneRef.current?.querySelector("[role='tablist']");
+    const button = paneRef.current?.querySelector(`[data-brief-tab="${tab}"]`);
+    if (!(tabsEl instanceof HTMLElement) || !(button instanceof HTMLElement)) {
+      return;
+    }
+    const left = button.offsetLeft;
+    const right = left + button.offsetWidth;
+    const viewLeft = tabsEl.scrollLeft;
+    const viewRight = viewLeft + tabsEl.clientWidth;
+    if (left >= viewLeft && right <= viewRight) return;
+    tabsEl.scrollTo({
+      left: Math.max(0, left - 24),
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [tab, reduceMotion, destination.id]);
+
+  const paneTransition = reduceMotion
+    ? { duration: 0.16, ease: MATCH_EASE }
+    : { duration: 0.4, ease: MATCH_EASE };
 
   return (
     <motion.div
       className={styles.brief}
       data-brief=""
-      initial={{ opacity: 0, x: 16 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 12 }}
-      transition={{ duration: 0.26, ease: [0.2, 0, 0, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0.12 : 0.32, ease: MATCH_EASE }}
     >
-      <div className={styles.briefNav}>
-        <button type="button" onClick={onBack} className={styles.backLink}>
-          <ArrowLeft size={13} strokeWidth={2.2} />
-          All three
-        </button>
-        <div className={styles.slots} role="tablist" aria-label="Your matches">
-          {top.map((entry, index) => (
-            <button
-              key={entry.destination.id}
-              type="button"
-              role="tab"
-              aria-selected={entry.destination.id === destination.id}
-              className={cn(
-                styles.slot,
-                entry.destination.id === destination.id && styles.slotOn,
-              )}
-              onClick={() => onSelect(entry.destination.id)}
+      {isOpening && celebrate ? (
+        <ConfettiBurst onDone={onCelebrateDone} />
+      ) : null}
+
+      <div className={styles.briefStage}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={destination.id}
+            ref={paneRef}
+            className={styles.briefScroll}
+            custom={direction}
+            variants={matchPane}
+            initial={reduceMotion ? { opacity: 0 } : "enter"}
+            animate={reduceMotion ? { opacity: 1 } : "show"}
+            exit={reduceMotion ? { opacity: 0 } : "leave"}
+            transition={paneTransition}
+          >
+        <div className={styles.hero}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cover}
+            alt=""
+            width={720}
+            height={240}
+            aria-hidden
+            onError={(event) => {
+              event.currentTarget.src = "/discovery/pins/place.png";
+            }}
+          />
+          {matchRank > 0 ? (
+            <span
+              className={styles.heroRank}
+              aria-label={`Match ${matchRank} of ${top.length}`}
             >
-              <span className={styles.slotRank}>{index + 1}</span>
-              <span className={styles.slotName}>{entry.destination.name}</span>
-            </button>
-          ))}
+              #{matchRank}
+            </span>
+          ) : null}
         </div>
-      </div>
 
-      <div className={styles.briefScroll}>
         <header className={styles.briefHead}>
-          <div className={styles.briefTitleRow}>
-            <div className={styles.briefTitleBlock}>
-              <span className={styles.briefRank}>
-                {PLACE_LABEL[recommendation.rank - 1] ??
-                  `#${recommendation.rank} match`}
-              </span>
-              <h2 className={styles.briefName}>
-                {destination.name}
-                <span className={styles.briefFlag} aria-hidden>
-                  {destination.flag}
-                </span>
-              </h2>
-              <p className={styles.briefWhere}>{locationLine(recommendation)}</p>
-            </div>
-            <div className={styles.briefScore}>
-              <ScoreRing score={score} size={54} />
-              <Confidence confidence={confidence} />
-            </div>
-          </div>
-
+          <h2 className={styles.briefName}>
+            <span className={styles.briefFlag} aria-hidden>
+              {destination.flag}
+            </span>
+            <span className={styles.briefTitle}>
+              {placeHeadline(recommendation)}
+            </span>
+          </h2>
           <p className={styles.briefBlurb}>{destination.blurb}</p>
         </header>
 
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Does it fit?</h3>
-          <dl className={styles.fitGrid}>
-            <div className={styles.fitCell}>
-              <dt>
-                <CalendarRange size={13} strokeWidth={1.9} />
-                Your window
-              </dt>
-              <dd>{nights !== null ? `${nights} nights` : "Not set"}</dd>
-              <p>{lengthNote}</p>
-            </div>
-            <div className={styles.fitCell}>
-              <dt>
-                <Banknote size={13} strokeWidth={1.9} />
-                On the ground
-              </dt>
-              <dd className="tabular">
-                {estimatedBudgetUsd !== null
-                  ? `~$${estimatedBudgetUsd.toLocaleString()}`
-                  : "Set a budget"}
-              </dd>
-              <p>
-                {prefs.budget
-                  ? `About $${destination.dailyBudgetUsd[prefs.budget]} a day per person, excluding flights.`
-                  : "Pick a budget band to see an estimate."}
-              </p>
-            </div>
-          </dl>
-        </section>
+        <div className={styles.briefTabs} role="tablist" aria-label="In this brief">
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.id}
+              data-brief-tab={item.id}
+              className={cn(styles.briefTab, tab === item.id && styles.briefTabOn)}
+              onClick={() => jump(item.id)}
+            >
+              {item.label}
+              {item.count > 0 ? (
+                <span className={styles.tabCount}>{item.count}</span>
+              ) : null}
+            </button>
+          ))}
+        </div>
 
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Why it placed here</h3>
-          <div className={styles.factors}>
-            {factors.map((factor) => (
-              <FactorBar
-                key={factor.key}
-                label={factor.label}
-                score={factor.score}
-                weight={factor.weight}
-                detail={factor.detail}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Why you&rsquo;ll love it</h3>
+        <section id="brief-why" className={styles.briefBlock}>
+          <h3 className={styles.blockTitle}>Why you&rsquo;ll love it</h3>
           <ul className={styles.loveList}>
             {destination.whyYoullLoveIt.map((reason) => (
               <li key={reason}>{reason}</li>
@@ -414,114 +635,203 @@ export function DestinationBrief({
           </ul>
         </section>
 
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Through the year</h3>
-          <SeasonSpark
-            values={destination.season.map((month) => month.score)}
-            highlight={tripMonths}
-          />
-          {tripMonths.length > 0 ? (
-            <p className={styles.sectionNote}>
-              {destination.season[tripMonths[0]].label} when you&rsquo;re going —
-              highs around {destination.season[tripMonths[0]].highC}°C, lows{" "}
-              {destination.season[tripMonths[0]].lowC}°C.
+        {scores.length > 0 ? (
+          <section id="brief-scores" className={styles.briefBlock}>
+            <div className={styles.blockHead}>
+              <h3 className={styles.blockTitle}>Experience &amp; activities</h3>
+              <p className={styles.blockLead}>
+                Scores reflect how well this city matches your chosen
+                experiences and activities.
+              </p>
+            </div>
+            <div className={styles.scoreSheet}>
+              {visibleScores.map((row) => (
+                <div key={row.label} className={styles.scoreBar}>
+                  <span
+                    className={styles.scoreFill}
+                    style={{ width: `${row.score}%` }}
+                  />
+                  <span className={styles.scoreLabel}>{row.label}</span>
+                  <span className={cn(styles.scorePill, "tabular")}>
+                    {row.score}
+                  </span>
+                </div>
+              ))}
+              {scores.length > 4 ? (
+                <button
+                  type="button"
+                  className={cn(
+                    styles.viewMore,
+                    moreScores && styles.viewMoreOpen,
+                  )}
+                  onClick={() => setMoreScores((value) => !value)}
+                >
+                  {moreScores ? "View less" : "View more"}
+                  <ChevronDown size={16} strokeWidth={2.2} />
+                </button>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        <section
+          id={scores.length > 0 ? undefined : "brief-scores"}
+          className={styles.briefBlock}
+        >
+          <div className={styles.blockHead}>
+            <h3 className={styles.blockTitle}>Seasonal weather</h3>
+            <p className={styles.blockLead}>
+              How pleasant the weather is in {destination.name} through the
+              year, with your dates highlighted.
             </p>
-          ) : null}
+          </div>
+          <div className={styles.weatherCard}>
+            <p className={styles.weatherCardHead}>
+              {tripMonths.length > 0
+                ? `Trip window · ${seasonWindow}`
+                : seasonWindow}
+            </p>
+            <div className={styles.weatherCardBody}>
+              <dl className={styles.weatherStats}>
+                <div className={styles.weatherStat}>
+                  <dt>High</dt>
+                  <dd className="tabular">{seasonHigh}°C</dd>
+                </div>
+                <div className={styles.weatherStat}>
+                  <dt>Low</dt>
+                  <dd className="tabular">{seasonLow}°C</dd>
+                </div>
+                <div className={styles.weatherStat}>
+                  <dt>Pleasant</dt>
+                  <dd className="tabular">{seasonFit}%</dd>
+                </div>
+              </dl>
+              <SeasonSpark
+                values={destination.season.map((month) => month.score)}
+                highlight={tripMonths}
+                height={44}
+              />
+              {season ? (
+                <p className={styles.weatherNote}>
+                  {season.label} when you&rsquo;re going.
+                </p>
+              ) : null}
+            </div>
+          </div>
         </section>
 
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>
-            What you&rsquo;d actually do
-            <span className={styles.sectionHint}>Shown on the map</span>
-          </h3>
-          <ul className={styles.attractionList}>
-            {destination.attractions.slice(0, 5).map((attraction) => (
-              <li key={attraction.name}>
-                <span className={styles.attractionName}>{attraction.name}</span>
-                <span className={styles.attractionNote}>{attraction.note}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {immersive.length > 0 ? (
+          <section id="brief-attractions" className={styles.briefBlock}>
+            <div className={styles.blockHead}>
+              <h3 className={styles.blockTitle}>
+                Immersive experiences: dive into the heart of {destination.name}
+              </h3>
+              <p className={styles.blockLead}>
+                Places that make {destination.name} itself, chosen against what
+                you said you care about.
+              </p>
+            </div>
+            <div className={styles.spotRail}>
+              {immersive.map((attraction) => (
+                <PlaceCard key={attraction.name} attraction={attraction} />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-        <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Good to know</h3>
-          <ul className={styles.practicalList}>
-            <li>
-              <Clock3 size={13} strokeWidth={1.9} />
-              <span>{destination.timezone.replace(/_/g, " ")}</span>
-            </li>
-            <li>
-              <Banknote size={13} strokeWidth={1.9} />
-              <span>{destination.currency}</span>
-            </li>
-            <li>
-              <Languages size={13} strokeWidth={1.9} />
-              <span>{destination.language}</span>
-            </li>
-            <li>
-              <CalendarRange size={13} strokeWidth={1.9} />
-              <span>
-                Best in {idealMin}–{idealMax} days
-              </span>
-            </li>
-          </ul>
-        </section>
+        {exciting.length > 0 ? (
+          <section id="brief-activities" className={styles.briefBlock}>
+            <div className={styles.blockHead}>
+              <h3 className={styles.blockTitle}>
+                Exciting activities: adventure awaits at every corner
+              </h3>
+              <p className={styles.blockLead}>
+                Things to do that match the energy of the trip.
+              </p>
+            </div>
+            <div className={styles.spotRail}>
+              {exciting.map((attraction) => (
+                <PlaceCard
+                  key={attraction.name}
+                  attraction={attraction}
+                  variant="event"
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {food.length > 0 ? (
+          <section id="brief-food" className={styles.briefBlock}>
+            <div className={styles.blockHead}>
+              <h3 className={styles.blockTitle}>Food &amp; dining</h3>
+              <p className={styles.blockLead}>
+                Where to eat in {destination.name}, from the everyday to the
+                booked-ahead.
+              </p>
+            </div>
+            <div className={styles.spotRail}>
+              {food.map((attraction) => (
+                <PlaceCard
+                  key={attraction.name}
+                  attraction={attraction}
+                  variant="event"
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {estimatedBudgetUsd !== null ? (
+          <p className={styles.budgetNote}>
+            About ${estimatedBudgetUsd.toLocaleString()} on the ground
+            {nights !== null ? ` for ${nights} nights` : ""}, per person.
+          </p>
+        ) : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <footer className={styles.briefFooter}>
-        <div className={styles.footerCopy}>
-          <p className={styles.footerTitle}>Ready to build it out?</p>
-          <p className={styles.footerBody}>
-            We&rsquo;ll open a{" "}
-            {nights !== null ? `${nights}-night` : ""} timeline you can fill in.
-          </p>
+        <div className={styles.footerNav} role="group" aria-label="Matches">
+          <IconButton
+            label="Previous match"
+            size={actionSize}
+            variant="secondary"
+            disabled={!hasPrev}
+            onClick={onBack}
+          >
+            <ArrowLeft size={navIcon} strokeWidth={2.2} />
+          </IconButton>
+          <IconButton
+            label="Next match"
+            size={actionSize}
+            variant="secondary"
+            disabled={!hasNext}
+            onClick={onNext}
+          >
+            <ArrowRight size={navIcon} strokeWidth={2.2} />
+          </IconButton>
         </div>
-        <Button
-          variant="primary"
-          size="lg"
-          iconRight={<ArrowUpRight size={15} strokeWidth={2.2} />}
-          onClick={() => {
-            if (tripId) router.push(`/trip/${tripId}`);
-            else setNotSeeded(true);
-          }}
-        >
-          Start planning
-        </Button>
+        <div className={styles.footerActions}>
+          <Button
+            variant="secondary"
+            size={actionSize}
+            iconLeft={<SlidersHorizontal size={actionIcon} strokeWidth={2.2} />}
+            onClick={onAdjust}
+          >
+            Adjust
+          </Button>
+          <Button
+            variant="primary"
+            size={actionSize}
+            iconRight={<ArrowUpRight size={actionIcon} strokeWidth={2.2} />}
+            onClick={() => router.push(plannerHref)}
+          >
+            Build trip here
+          </Button>
+        </div>
       </footer>
-
-      <Modal
-        open={notSeeded}
-        onClose={() => setNotSeeded(false)}
-        label="Itinerary not seeded"
-        width={430}
-      >
-        <div className={styles.modalBody}>
-          <span className={styles.modalIcon} aria-hidden>
-            <Sparkles size={16} strokeWidth={1.9} />
-          </span>
-          <h3 className={styles.modalTitle}>
-            {destination.name} has no seeded itinerary yet
-          </h3>
-          <p className={styles.modalText}>
-            This build ships one fully planned trip — five days in New York — so
-            the planner can be explored with real content rather than an empty
-            grid.
-          </p>
-          <div className={styles.modalActions}>
-            <Button variant="ghost" onClick={() => setNotSeeded(false)}>
-              Keep looking
-            </Button>
-            <Button
-              variant="primary"
-              iconRight={<ArrowUpRight size={14} strokeWidth={2.2} />}
-              onClick={() => router.push("/trip/nyc-spring")}
-            >
-              Open the New York trip
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </motion.div>
   );
 }

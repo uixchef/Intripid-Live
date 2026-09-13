@@ -11,6 +11,7 @@ import {
   activitiesForDay,
   conflictsForDay,
   gapsForDay,
+  commentsFromText,
   itemsForDay,
   routeForDay,
   tripDayKeys,
@@ -301,7 +302,7 @@ export function planFillGap(
     place: pick.idea.place,
     start,
     end,
-    notes: pick.idea.reason,
+    comments: commentsFromText("assistant", pick.idea.reason),
     flexible: true,
     assignedTo: [],
     createdBy: "assistant",
@@ -462,17 +463,24 @@ export function ideasNearRoute(
     return ideas.map((idea) => ({ idea, km: Number.POSITIVE_INFINITY, nearest: "" }));
   }
 
-  return ideas
-    .filter((idea) => idea.place !== null)
-    .map((idea) => {
-      let best = { km: Number.POSITIVE_INFINITY, nearest: "" };
-      for (const stop of route) {
-        const km = distanceKm(stop.place.coords, idea.place!.coords);
-        if (km < best.km) best = { km, nearest: stop.item.title };
-      }
-      return { idea, ...best };
-    })
-    .sort((a, b) => a.km - b.km);
+  const ranked: { idea: Idea; km: number; nearest: string }[] = [];
+  const loose: { idea: Idea; km: number; nearest: string }[] = [];
+
+  for (const idea of ideas) {
+    if (!idea.place) {
+      loose.push({ idea, km: Number.POSITIVE_INFINITY, nearest: "" });
+      continue;
+    }
+    let best = { km: Number.POSITIVE_INFINITY, nearest: "" };
+    for (const stop of route) {
+      const km = distanceKm(stop.place.coords, idea.place.coords);
+      if (km < best.km) best = { km, nearest: stop.item.title };
+    }
+    ranked.push({ idea, ...best });
+  }
+
+  ranked.sort((a, b) => a.km - b.km);
+  return [...loose, ...ranked];
 }
 
 /* -------------------------------------------------------------------------- */

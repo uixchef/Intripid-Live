@@ -1,15 +1,124 @@
 .card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
   overflow: hidden;
   min-width: 0;
+  position: relative;
+}
+
+.covers {
+  position: relative;
+  display: grid;
+}
+
+.coverLayer {
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 480ms ease;
+}
+
+.coverLayer[data-active] {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.dots {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border-radius: var(--radius-full);
+  background: rgba(12, 16, 22, 0.45);
+  backdrop-filter: blur(8px);
+}
+
+.dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.38);
+  cursor: pointer;
+}
+
+.dot:hover,
+.dot:focus-visible {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.dot:focus-visible {
+  outline: 2px solid var(--slate-0);
+  outline-offset: 2px;
+}
+
+.dotActive {
+  width: 28px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.dotFill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--slate-0);
+  animation-name: editorialFill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.dots[data-paused] .dotFill {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dotFill {
+    animation: none;
+    width: 100%;
+  }
+
+  .coverLayer,
+  .body {
+    transition: none;
+  }
+}
+
+@keyframes editorialFill {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.bodies {
+  display: grid;
 }
 
 .body {
+  grid-area: 1 / 1;
   display: grid;
   gap: var(--space-4);
-  padding: var(--space-6);
+  padding: var(--space-8);
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 480ms ease;
+}
+
+.body[data-active] {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .eyebrow {
@@ -21,8 +130,8 @@
 }
 
 /*
- * Display serif, legitimately: this is editorial copy about a place, which is
- * the one register in the dashboard where the expressive face belongs. It is
+ * Display face, legitimately: this is editorial copy about a place, which is
+ * the one register in the dashboard where Familjen Grotesk belongs. It is
  * also the only headline on the support column, so it cannot be confused with
  * an operational label.
  */
@@ -32,7 +141,6 @@
   line-height: 1.14;
   letter-spacing: var(--tracking-tight);
   color: var(--text-primary);
-  text-wrap: balance;
 }
 
 .text {
@@ -42,22 +150,41 @@
 }
 
 .window {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: var(--space-3);
-  width: fit-content;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-sm);
-  background: var(--orange-50);
-  border: 1px solid var(--orange-100);
-  color: var(--orange-800);
-  font-size: 10px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-tight);
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  margin: 2px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--border-hairline);
 }
 
-.window svg {
+.windowLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   flex: none;
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+.windowLabel svg {
+  flex: none;
+  color: var(--purple-500);
+}
+
+.windowValue {
+  min-width: 0;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* The recommender's own voice, so it reads as reasoning, not marketing. */
@@ -69,35 +196,30 @@
   border-left: 2px solid var(--purple-200);
 }
 
-.action {
-  display: inline-flex;
+.actions {
+  display: flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-3);
-  height: 34px;
   margin-top: var(--space-2);
-  padding: 0 var(--space-6);
-  border-radius: var(--radius-md);
-  background: var(--purple-600);
-  color: var(--slate-0);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-tight);
-  white-space: nowrap;
-  transition: background-color var(--dur-micro) var(--ease-out);
+  min-width: 0;
 }
 
-.action:hover {
-  background: var(--purple-700);
+.actionLink {
+  display: block;
+  min-width: 0;
+  flex: 1;
+  text-decoration: none;
 }
 
-.action svg {
-  flex: none;
-  transition: transform var(--dur-micro) var(--ease-out);
+.actionLink > button {
+  width: 100%;
 }
 
-.action:hover svg {
-  transform: translateX(2px);
+.keep[data-on],
+.remind[data-on] {
+  color: var(--purple-700);
+  border-color: var(--purple-200);
+  background: var(--purple-50);
 }
 
 .footNote {
@@ -107,8 +229,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .action,
-  .action svg {
+  .coverLayer,
+  .body {
+    transition: none;
+  }
+
+  .dotFill {
+    animation: none;
+    width: 100%;
+  }
+
+  .actionLink svg {
     transition: none;
   }
 }

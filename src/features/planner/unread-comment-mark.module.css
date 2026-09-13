@@ -1,0 +1,15 @@
+.mark {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: #ec2d30;
+  color: var(--slate-0);
+  box-shadow: 0 0 0 1.5px var(--slate-0);
+  pointer-events: none;
+}

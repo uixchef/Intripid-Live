@@ -1,0 +1,12 @@
+---
+description: Keep trip-builder mobile work off desktop unless asked
+alwaysApply: true
+---
+
+# Trip builder: mobile vs desktop
+
+Do not inherit, copy, or “sync” trip-builder (planner) changes from the **mobile** view onto **desktop** unless the user explicitly asks.
+
+- Style, layout, density, chrome, and interaction changes made for mobile stay behind mobile breakpoints / compact flags.
+- Shared components keep desktop behavior as the default. Add a mobile override; do not restyle the desktop surface to match.
+- If a request is ambiguous, assume it applies only to the viewport they pointed at (DOM path, screenshot, or “mobile”).

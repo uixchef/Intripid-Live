@@ -4,11 +4,17 @@ import { forwardRef } from "react";
 import { AlertTriangle, Lock } from "lucide-react";
 
 import { AvatarStack } from "@/components/ui/avatar";
+import { ACCOUNT_USER } from "@/data/account";
 import { categoryMeta, COMMUTE_LABELS } from "@/lib/categories";
+import { isPartyMember } from "@/lib/collaboration";
 import { cn } from "@/lib/utils";
+import { commentViewerId, itemHasUnreadComments } from "@/lib/trip/schedule";
 import { durationLabel, timeLabelCompact } from "@/lib/trip/time";
 import type { ItineraryItem, Traveller } from "@/lib/types";
+import { useSession } from "@/stores/session-store";
+import { useTrip } from "@/stores/trip-store";
 
+import { UnreadCommentMark } from "./unread-comment-mark";
 import styles from "./event-card.module.css";
 
 /**
@@ -94,19 +100,27 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
     },
     ref,
   ) {
+    const clock = useTrip((s) => s.prefs.timeFormat);
+    const commentSeen = useTrip((s) => s.commentSeen);
+    const sessionId = useSession((s) => s.user?.id ?? ACCOUNT_USER.id);
     const meta = categoryMeta(item.category);
     const Icon = meta.icon;
     const isCommute = item.kind === "commute";
     const isStay = item.kind === "stay";
     const tier = tierFor(height);
+    const unreadComments = itemHasUnreadComments(
+      item,
+      commentViewerId(travellers, sessionId),
+      commentSeen,
+    );
 
     const assigned = item.assignedTo
       .map((id) => travellers.find((t) => t.id === id))
-      .filter((t): t is Traveller => Boolean(t));
+      .filter((t): t is Traveller => t != null && isPartyMember(t));
 
     const timeText =
       item.start && item.end
-        ? `${timeLabelCompact(item.start)}–${timeLabelCompact(item.end)}`
+        ? `${timeLabelCompact(item.start, clock)}–${timeLabelCompact(item.end, clock)}`
         : "";
 
     if (isCommute) {
@@ -183,6 +197,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
           dragging && styles.dragging,
           stacked && styles.stacked,
           isStay && styles.stay,
+          unreadComments && styles.hasUnread,
           className,
         )}
         style={{
@@ -191,6 +206,12 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
           ["--cat-soft" as string]: meta.soft,
           ["--cat-ink" as string]: meta.ink,
         }}
+        aria-label={`${item.title}${timeText ? `, ${timeText}` : ""}${
+          conflicted ? ", overlaps another activity" : unreadComments ? ", new comment" : ""
+        }`}
+        {...dragHandleProps}
+        role="button"
+        tabIndex={0}
         onClick={(e) => {
           e.stopPropagation();
           onSelect?.();
@@ -199,23 +220,20 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
           e.stopPropagation();
           onOpen?.();
         }}
-        role="button"
-        tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            onOpen?.();
-          } else if (e.key === " ") {
+          const fromHandle = dragHandleProps?.onKeyDown as
+            | ((event: typeof e) => void)
+            | undefined;
+          fromHandle?.(e);
+          if (e.defaultPrevented) return;
+          if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             onSelect?.();
           }
         }}
-        aria-label={`${item.title}${timeText ? `, ${timeText}` : ""}${
-          conflicted ? ", overlaps another activity" : ""
-        }`}
-        {...dragHandleProps}
       >
         <span className={styles.spine} aria-hidden />
+        {unreadComments ? <UnreadCommentMark /> : null}
 
         <div className={styles.cardInner}>
           {/*
@@ -229,7 +247,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
               {badge}
               {timeText ? (
                 <span className={cn(styles.timeInline, "tabular")}>
-                  {timeLabelCompact(item.start!)}
+                  {timeLabelCompact(item.start!, clock)}
                 </span>
               ) : null}
             </div>
@@ -256,7 +274,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                    * says "this one is just Priya and Jules".
                    */}
                   {assigned.length > 0 &&
-                  assigned.length < travellers.length ? (
+                  assigned.length < travellers.filter(isPartyMember).length ? (
                     <AvatarStack travellers={assigned} size="xs" max={3} />
                   ) : null}
                 </div>

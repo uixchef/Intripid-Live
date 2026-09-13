@@ -12,67 +12,315 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
-  height: 264px;
+  height: 320px;
   flex: none;
   border-bottom: 1px solid var(--border-subtle);
   transition: height var(--dur-surface) var(--ease-out);
 }
 
-.mapSectionTall {
-  height: 58%;
+.mapSectionFill {
+  height: auto;
+  flex: 1;
+  border-bottom: none;
+}
+
+.mapSectionFlush {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+  background: var(--bg-surface);
+}
+
+.panelAi {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(174, 110, 255, 0.1) 0%,
+      rgba(254, 149, 73, 0.05) 72px,
+      var(--bg-surface) 168px
+    );
+}
+
+.panelAiHead {
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(
+      90deg,
+      rgba(174, 110, 255, 0.45),
+      rgba(254, 149, 73, 0.35),
+      rgba(232, 121, 249, 0.25)
+    )
+    1;
+}
+
+.panelAiTitle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.panelAiName {
+  font-size: 16px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.2;
+  background-image: var(--gradient-ai-text);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--purple-700);
+  animation: panelAiName 5.5s ease-in-out infinite;
+}
+
+@keyframes panelAiName {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panelAiName {
+    animation: none;
+    background-position: 30% 50%;
+  }
+}
+
+.panelBody {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+}
+
+.panelBodyFill {
+  overflow: hidden;
+  min-height: 0;
+  align-content: stretch;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.panelBodyFill > * {
+  min-height: 0;
+  height: 100%;
 }
 
 .mapHead {
   display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: 16px 8px 8px 16px;
   background: var(--bg-surface);
   min-width: 0;
 }
 
-.mapDay {
-  font-size: var(--text-2xs);
+.mapHeadBack {
+  align-items: center;
+  height: 56px;
+  padding: 0 16px 0 4px;
+  gap: 4px;
+  border-bottom: 1px solid #dadce0;
+}
+
+.backBtn {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.backBtn:hover,
+.backBtn:focus-visible {
+  color: var(--slate-800);
+  background: rgba(32, 33, 36, 0.08);
+}
+
+.mapHeadBack .mapDay,
+.mapHeadBack .panelAiName {
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.mapHeadBack .panelAiTitle {
+  align-items: center;
+}
+
+.mapHeadCopy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mapHeadTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.headCount {
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--slate-100);
+  color: var(--slate-700);
+  font-size: 11px;
   font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+
+.mapDay {
+  font-size: 16px;
+  font-weight: var(--weight-medium);
   color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
-  flex: 1;
 }
 
-.mapStats {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  flex: none;
-}
-
-.mapStat {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  font-weight: var(--weight-medium);
+.mapSub {
+  font-size: 12px;
   color: var(--text-tertiary);
   white-space: nowrap;
-}
-
-.mapStat svg {
-  color: var(--text-quaternary);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mapBody {
   position: relative;
   min-height: 0;
-  /*
-   * Map markers carry their own z-index (a selected pin must sit above its
-   * neighbours). `isolation` keeps that ordering inside the map, so a marker
-   * label cannot paint over the section below it.
-   */
   isolation: isolate;
+}
+
+.mapSearchRow {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mapSearchBack {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--slate-0);
+  border: 0;
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.2),
+    0 2px 6px rgba(60, 64, 67, 0.12);
+  color: var(--slate-700);
+}
+
+.mapSearchBack:hover,
+.mapSearchBack:focus-visible {
+  background: var(--slate-50);
+  color: var(--slate-800);
+}
+
+.mapSearch {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--slate-0);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.2),
+    0 2px 6px rgba(60, 64, 67, 0.12);
+  color: var(--slate-500);
+  transition:
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.mapSearch:focus-within {
+  border-color: var(--purple-500);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.2),
+    0 2px 6px rgba(60, 64, 67, 0.12),
+    0 0 0 3px var(--purple-100);
+}
+
+.mapSearch input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.mapSearchClear {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--slate-500);
+  cursor: pointer;
+}
+
+.mapSearchClear:hover {
+  background: var(--bg-hover);
+}
+
+.mapSearchClear:focus-visible {
+  outline: none;
+  background: var(--bg-hover);
+  box-shadow: 0 0 0 2px var(--purple-100);
+}
+
+.mapHits {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  padding: 6px 0;
+  border-radius: 8px;
+  background: var(--slate-0);
+  box-shadow: var(--shadow-lg);
+  list-style: none;
+}
+
+.mapHits button {
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mapHits button:hover {
+  background: var(--bg-hover);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -89,8 +337,9 @@
 .tabs {
   display: flex;
   align-items: stretch;
+  justify-content: space-around;
   gap: 0;
-  padding: 0 var(--space-4);
+  padding: 0 8px;
   border-bottom: 1px solid var(--border-subtle);
   min-width: 0;
 }
@@ -99,14 +348,15 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-4) calc(var(--space-4) + 1px);
-  border-bottom: 2px solid transparent;
+  flex: 1;
+  padding: 14px 8px 12px;
+  border-bottom: 3px solid transparent;
   margin-bottom: -1px;
-  font-size: var(--text-2xs);
+  font-size: 14px;
   font-weight: var(--weight-medium);
   color: var(--text-tertiary);
-  letter-spacing: var(--tracking-tight);
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -119,9 +369,9 @@
 }
 
 .tabOn {
-  color: var(--purple-800);
-  font-weight: var(--weight-semibold);
-  border-bottom-color: var(--purple-600);
+  color: var(--purple-600);
+  font-weight: var(--weight-medium);
+  border-bottom-color: var(--purple-500);
 }
 
 .tabCount {
@@ -165,25 +415,28 @@
 /* Empty state                                                               */
 /* ------------------------------------------------------------------------- */
 
-.empty {
-  display: grid;
-  gap: var(--space-2);
-  align-content: start;
-  padding: var(--space-8) var(--space-6);
-}
-
 .emptyTitle {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-tertiary);
   letter-spacing: var(--tracking-tight);
+  text-align: center;
 }
 
 .emptyBody {
-  font-size: var(--text-2xs);
+  font-size: 13px;
   line-height: var(--lh-normal);
   color: var(--text-quaternary);
-  max-width: 30ch;
+  max-width: 28ch;
+  text-align: center;
+}
+
+.empty {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  align-content: start;
+  padding: 48px var(--space-6);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -204,7 +457,7 @@
 
 .peopleOpen {
   /* Open, it may need to scroll without pushing the map off the top. */
-  max-height: 52%;
+  max-height: 58%;
   overflow: hidden;
 }
 
@@ -273,11 +526,285 @@
   border-top: 1px solid var(--border-hairline);
 }
 
+/* ------------------------------------------------------------------------- */
+/* Action dock                                                               */
+/* ------------------------------------------------------------------------- */
+
+.dock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 0 0 12px;
+  min-height: 0;
+  overflow: visible;
+}
+
+.dockPeople,
+.dockTools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dockPeople {
+  padding-top: 2px;
+  gap: 8px;
+}
+
+.dockAvatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+}
+
+/*
+ * Mirror the mobile people-rail tick: half-capsule on the outer edge.
+ * 30px face in a 48px column, then the workspace's 8px padding — sit the
+ * 4px bar on that padding's far right so hover and selected share an edge.
+ */
+.dockPill {
+  position: absolute;
+  right: -17px;
+  left: auto;
+  top: 50%;
+  width: 4px;
+  height: 8px;
+  border-radius: 4px 0 0 4px;
+  background: var(--slate-700);
+  transform: translateY(-50%) scaleY(0);
+  transform-origin: center right;
+  transition:
+    height var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
+}
+
+.dockAvatar:hover .dockPill,
+.dockAvatar:focus-visible .dockPill {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.dockAvatarPicked .dockPill {
+  height: 24px;
+  background: var(--who-ring, var(--purple-500));
+  transform: translateY(-50%) scaleY(1);
+}
+
+.dockFace {
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px transparent;
+  transition:
+    border-radius var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.dockAvatarPicked .dockFace {
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--who-ring, var(--purple-400));
+}
+
+.dockAvatarOn .dockFace {
+  box-shadow: 0 0 0 2px var(--slate-700);
+}
+
+.dockAvatarPicked.dockAvatarOn .dockFace {
+  box-shadow: 0 0 0 2px var(--who-ring, var(--purple-500));
+}
+
+.dockTools {
+  gap: 2px;
+}
+
+.dockMore,
+.dockRoles {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  color: var(--slate-600);
+}
+
+.dockMore {
+  background: var(--slate-100);
+}
+
+.dockMoreOn,
+.dockMoreOn:hover {
+  background: var(--slate-200);
+  color: var(--slate-800);
+}
+
+.dockRoles {
+  border: 1px solid var(--slate-200);
+  background: var(--slate-0);
+  color: var(--slate-600);
+  box-shadow: var(--shadow-xs);
+}
+
+.dockRoles:hover,
+.dockRoles:focus-visible,
+.dockRolesOn {
+  background: var(--purple-50);
+  border-color: var(--purple-200);
+  color: var(--purple-700);
+  outline: none;
+}
+
+.dockMore:hover {
+  background: var(--slate-50);
+  color: var(--slate-800);
+}
+
+.dockMorePopover {
+  border: 0;
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.06),
+    0 4px 8px -2px rgba(16, 24, 40, 0.1),
+    0 12px 24px -4px rgba(16, 24, 40, 0.08);
+  overflow: hidden;
+}
+
+.dockMoreList {
+  display: grid;
+  gap: 2px;
+}
+
+.dockMoreItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dockMoreCopy {
+  display: grid;
+  min-width: 0;
+}
+
+.dockMoreName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.dockMoreRole {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.dockMoreItem:hover,
+.dockMoreItem:focus-visible {
+  background: #f9fafb;
+  outline: none;
+}
+
+.dockMoreItemPicked {
+  background: var(--purple-50);
+}
+
+.dockBtn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--slate-600);
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.dockBtn:hover {
+  background: rgba(32, 33, 36, 0.08);
+}
+
+.dockBtnOn {
+  color: var(--purple-600);
+  background: var(--purple-50);
+}
+
+.dockBtnOn:hover {
+  background: var(--purple-100);
+}
+
+.dockAi {
+  color: inherit;
+}
+
+.dockAi:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(174, 110, 255, 0.16),
+    rgba(254, 149, 73, 0.16)
+  );
+}
+
+.dockAi.dockBtnOn,
+.dockAi.dockBtnOn:hover {
+  color: inherit;
+  background: var(--gradient-ai-soft);
+  box-shadow: 0 0 0 1px rgba(174, 110, 255, 0.28);
+}
+
+.dockAi:hover :global([data-ai-mark]) {
+  animation-duration: 2.2s;
+  filter: brightness(1.08);
+}
+
+.dockAi.dockBtnOn :global([data-ai-mark]) {
+  animation-duration: 3.2s;
+  filter: brightness(1.04);
+}
+
+.dockDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--purple-500);
+  box-shadow: 0 0 0 2px var(--planner-chrome, var(--bg-surface));
+}
+
+@media (max-width: 900px) {
+  .mapHeadBack {
+    border-bottom: 0;
+    box-shadow: 0 1px 0 rgba(60, 64, 67, 0.08);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mapSection,
   .tab,
   .peopleHead,
   .peopleChevron {
     transition: none;
+    animation: none;
+  }
+
+  .dockAi :global([data-ai-mark]) {
+    animation: none;
+    filter: none;
   }
 }

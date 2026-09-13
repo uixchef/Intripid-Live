@@ -30,7 +30,7 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: var(--text-base);
-  line-height: var(--lh-normal);
+  line-height: var(--text-base-lh);
   letter-spacing: var(--tracking-normal);
   font-feature-settings:
     "cv05" 1,
@@ -167,8 +167,9 @@ hr {
 }
 
 /**
- * Display type. Reserved for discovery questions, destination names and the
- * day date — never for operational labels, controls or data.
+ * Display type (Familjen Grotesk). Reserved for discovery questions,
+ * destination names and the day date — never for operational labels,
+ * controls or data.
  */
 .display {
   font-family: var(--font-display);

@@ -1,32 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
-  ChevronRight,
   Map as MapIcon,
+  MapPin,
   SlidersHorizontal,
-  X,
 } from "lucide-react";
 
-import { Hummingbird } from "@/components/brand/hummingbird";
 import { Logo } from "@/components/brand/mark";
+import { BackLink } from "@/components/nav/back-link";
 import { Button } from "@/components/ui/button";
-import { NYC_TRIP_ID } from "@/data/nyc-trip";
+import { plannerHrefForDestination } from "@/data/trips";
+import { BUDGET_META } from "@/lib/categories";
+import { resolvedDates } from "@/lib/discovery/scoring";
 import { useIsCompact } from "@/lib/use-media-query";
-import { BUDGET_META, INTEREST_META, STYLE_META } from "@/lib/categories";
+import { useHideOnScroll } from "@/lib/use-hide-on-scroll";
 import { cn } from "@/lib/utils";
 import {
   DISCOVERY_STEPS,
-  STEP_KIND,
-  STEP_LABEL,
   activeRecommendation,
-  canSkipToResults,
-  dateSummary,
   survivingCount,
   useDiscovery,
   useDiscoveryApi,
@@ -34,6 +29,7 @@ import {
 
 import { DiscoveryMap } from "./discovery-map";
 import env from "./environment.module.css";
+import { PortHunt } from "./ports-hunt";
 import { Processing } from "./processing";
 import { DestinationBrief, Results } from "./results";
 import {
@@ -41,23 +37,30 @@ import {
   BudgetStep,
   DatesStep,
   ExperiencesStep,
+  IncomePrompt,
   OriginStep,
   ScopeStep,
 } from "./steps";
 
 import styles from "./discovery-experience.module.css";
 
+const RESULTS_CONSOLE_MAX = 720;
+
+function subscribeViewport(onChange: () => void) {
+  window.addEventListener("resize", onChange);
+  return () => window.removeEventListener("resize", onChange);
+}
+
 /**
  * Destination Discovery.
  *
- * A full-screen takeover: the map is the entire canvas, and it lives inside
- * an Intripid atmosphere rather than a white app chrome. There is no
- * destination field anywhere here — destination is an output.
+ * A full-screen takeover: Mapbox is the entire canvas. Chrome floats on
+ * top. There is no destination field anywhere here — destination is an
+ * output.
  *
- * The console sits on the trailing edge as a light frosted panel, which is
- * where the original product put it and where the environment is deepest, so
- * the glass has real contrast to sit on. One question at a time, six in all,
- * each labelled as narrowing or ordering the field.
+ * The console sits on the trailing edge as a light frosted panel. One
+ * question at a time, six in all, each labelled as narrowing or ordering
+ * the field.
  */
 
 export function DiscoveryExperience() {
@@ -69,24 +72,41 @@ export function DiscoveryExperience() {
   const step = useDiscovery((s) => s.step);
   const subStep = useDiscovery((s) => s.subStep);
   const prefs = useDiscovery((s) => s.prefs);
-  const answered = useDiscovery((s) => s.answered);
   const result = useDiscovery((s) => s.result);
   const activeId = useDiscovery((s) => s.activeId);
+  const celebrateOpening = useDiscovery((s) => s.celebrateOpening);
   const hoveredId = useDiscovery((s) => s.hoveredId);
   const processingStage = useDiscovery((s) => s.processingStage);
+  const portsHuntBeat = useDiscovery((s) => s.portsHuntBeat);
+  const portsFound = useDiscovery((s) => s.portsFound);
+  const destinationsFound = useDiscovery((s) => s.destinationsFound);
   const surviving = useDiscovery(survivingCount);
-  const canSkip = useDiscovery(canSkipToResults);
   const active = useDiscovery(activeRecommendation);
 
   /** Mobile: whether the map is expanded over the console. */
   const [mapExpanded, setMapExpanded] = useState(false);
+  const scrollChrome = useHideOnScroll(isCompact && !mapExpanded);
+  /** White lockup on dark globe; black lockup when land behind chrome is light. */
+  const [chromeOnDark, setChromeOnDark] = useState(true);
+  const chromeRegionRef = useRef<HTMLDivElement>(null);
+  const sheetDockRef = useRef<HTMLDivElement>(null);
+  const [mapInsetBottom, setMapInsetBottom] = useState(0);
 
   useEffect(() => {
     if (api.getState().stage === "intro") api.getState().begin();
   }, [api]);
 
   const stepIndex = DISCOVERY_STEPS.indexOf(step);
-  const consoleWidth = active ? 560 : stage === "results" ? 440 : 428;
+  const viewportWidth = useSyncExternalStore(
+    subscribeViewport,
+    () => window.innerWidth,
+    () => 1440,
+  );
+  /* Questions + processing stay on one width so the card does not reflow. */
+  const consoleWidth =
+    stage === "results"
+      ? Math.min(RESULTS_CONSOLE_MAX, Math.round(viewportWidth * 0.5))
+      : 428;
 
   /*
    * On a phone the console sits BELOW the map, so it steals no horizontal
@@ -95,7 +115,48 @@ export function DiscoveryExperience() {
    * whichever two pins survived the clamp — at the opening question that
    * showed Lisbon and Marrakesh instead of the world.
    */
-  const mapInsetRight = isCompact ? 0 : consoleWidth;
+  const pagePad = 16;
+  const mapInsetRight =
+    isCompact || mapExpanded ? 0 : consoleWidth + pagePad;
+  const mapGutter = isCompact ? 24 : 48;
+  const mapInsetTop = isCompact ? 72 : 80;
+  const mapCameraBottom = isCompact
+    ? Math.max(20, mapInsetBottom)
+    : 64;
+
+  useLayoutEffect(() => {
+    if (!isCompact) {
+      setMapInsetBottom(0);
+      return;
+    }
+    const node = sheetDockRef.current;
+    if (!node) return;
+    const update = () => {
+      const card = node.querySelector("aside");
+      const cardHidden =
+        !card || getComputedStyle(card).display === "none";
+      if (cardHidden) {
+        setMapInsetBottom(Math.round(node.getBoundingClientRect().height));
+        return;
+      }
+      setMapInsetBottom(
+        Math.max(
+          0,
+          Math.round(window.innerHeight - card.getBoundingClientRect().top),
+        ),
+      );
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    const card = node.querySelector("aside");
+    if (card) observer.observe(card);
+    return () => observer.disconnect();
+  }, [isCompact, mapExpanded, stage, step, subStep]);
+
+  useEffect(() => {
+    if (stage !== "results") setMapExpanded(false);
+  }, [stage]);
 
   const handleSelect = useCallback(
     (id: string) => {
@@ -107,6 +168,11 @@ export function DiscoveryExperience() {
     [api],
   );
 
+  const handleCelebrateDone = useCallback(
+    () => api.getState().clearCelebrate(),
+    [api],
+  );
+
   const handleHover = useCallback(
     (id: string | null) => api.getState().setHovered(id),
     [api],
@@ -114,143 +180,121 @@ export function DiscoveryExperience() {
 
   /* The sub-step gates change what the primary action means. */
   const primaryLabel =
-    subStep === "income"
-      ? "Use this"
-      : subStep === "weekend-shape"
-        ? "That's the one"
-        : stepIndex === DISCOVERY_STEPS.length - 1
-          ? "Find my matches"
-          : "Continue";
+    subStep === "weekend-shape"
+      ? "That's the one"
+      : stepIndex === DISCOVERY_STEPS.length - 1
+        ? "Find my matches"
+        : "Continue";
 
-  /* Origin confirmation owns its own buttons, so hide the generic nav. */
-  const hideNav = step === "origin" && subStep === "confirm-origin";
+  const addingOrigin = step === "origin" && subStep === "add-origin";
+  const huntingDeparture = subStep === "ports-hunt";
+  const huntingDest = subStep === "dest-hunt";
+  const hunting = huntingDeparture || huntingDest;
+  const searching = hunting;
+  const originBusy = useDiscovery((s) => s.originBusy);
 
   return (
-    <div className={cn(styles.root, env.root, "onEnv")}>
-      {/* The Intripid world the map lives inside. */}
-      <div className={env.atmosphere} aria-hidden />
-      <div className={env.grain} aria-hidden />
-
-      {/* ---------------------------------------------------------------- */}
-      {/* Top bar — floats on the environment, not a solid app header       */}
-      {/* ---------------------------------------------------------------- */}
-      <header className={styles.topbar}>
-        <Link href="/" className={styles.brand} aria-label="Intripid home">
-          <Logo size={20} />
-        </Link>
-
-        {stage === "questions" ? (
-          <ol className={styles.stepper} aria-label="Progress">
-            {DISCOVERY_STEPS.map((item, index) => {
-              const isDone = answered.includes(item);
-              const isCurrent = item === step;
-              return (
-                <li key={item}>
-                  <button
-                    type="button"
-                    className={cn(
-                      styles.pip,
-                      isCurrent && styles.pipCurrent,
-                      isDone && !isCurrent && styles.pipDone,
-                    )}
-                    onClick={() => api.getState().goToStep(item)}
-                    aria-current={isCurrent}
-                    title={`${STEP_LABEL[item]} — ${
-                      STEP_KIND[item] === "filter"
-                        ? "narrows results"
-                        : "orders results"
-                    }`}
-                  >
-                    <span className={styles.pipDot} aria-hidden>
-                      {isDone && !isCurrent ? (
-                        <Check size={9} strokeWidth={3.6} />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    <span className={styles.pipLabel}>{STEP_LABEL[item]}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        ) : (
-          <p className={styles.topbarTitle}>
-            {stage === "processing"
-              ? "Searching"
-              : active
-                ? active.destination.name
-                : "Your matches"}
-          </p>
+    <div
+      className={cn(
+        styles.root,
+        env.root,
+        "onEnv",
+        mapExpanded && styles.rootMapExpanded,
+        scrollChrome.hidden && styles.rootChromeHidden,
+      )}
+      style={
+        {
+          ["--map-inset-bottom" as string]: `${mapInsetBottom}px`,
+        }
+      }
+    >
+      {/* Mapbox is the page — chrome floats over it. */}
+      <div
+        className={cn(
+          styles.mapWrap,
+          mapExpanded && styles.mapWrapExpanded,
         )}
+      >
+        <DiscoveryMap
+          stage={stage}
+          step={step}
+          origin={prefs.origin?.coords ?? null}
+          originLabel={prefs.origin?.city ?? null}
+          originConfirmed={prefs.originConfirmed}
+          huntKind={
+            huntingDeparture ? "departure" : huntingDest ? "dest" : null
+          }
+          huntBeat={hunting ? portsHuntBeat : null}
+          portsFound={portsFound}
+          destinationsFound={destinationsFound}
+          home={prefs.origin}
+          result={result}
+          processingStage={processingStage}
+          activeId={activeId}
+          hoveredId={hoveredId}
+          onSelect={handleSelect}
+          onHover={handleHover}
+          insetRight={mapInsetRight}
+          insetTop={mapInsetTop}
+          insetBottom={mapCameraBottom}
+          insetLeft={mapGutter}
+          reduceMotion={reduceMotion}
+          chromeRegionRef={chromeRegionRef}
+          onChromeOnDark={setChromeOnDark}
+        />
+      </div>
 
-        <div className={styles.topbarEnd}>
-          {/* A live count of what is still in the running. */}
-          {stage === "questions" ? (
-            <span className={styles.liveCount} aria-live="polite">
-              <span className={cn(styles.liveNumber, "tabular")}>
-                {surviving}
-              </span>
-              still in the running
-            </span>
-          ) : null}
-          {stage === "results" ? (
-            <button
-              type="button"
-              className={styles.envButton}
-              onClick={() => {
-                api.getState().setActive(null);
-                api.getState().goToStep("experiences");
-              }}
-            >
-              <SlidersHorizontal size={13} strokeWidth={2.1} />
-              Adjust
-            </button>
-          ) : null}
-          <Link href="/" className={styles.exitLink} aria-label="Leave discovery">
-            <X size={15} strokeWidth={2.2} />
-          </Link>
+      <header className={styles.topbar}>
+        <div
+          ref={chromeRegionRef}
+          className={styles.topbarStart}
+          data-on-dark={chromeOnDark ? "true" : "false"}
+        >
+          <BackLink fallback="/" className={styles.backLink}>
+            <ArrowLeft size={15} strokeWidth={2} />
+          </BackLink>
+          <Logo size={36} onDark={chromeOnDark} priority />
         </div>
+
+        <span />
+
+        <div className={styles.topbarEnd} />
       </header>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Canvas                                                            */}
-      {/* ---------------------------------------------------------------- */}
       <div className={styles.body}>
-        <div
-          className={cn(
-            styles.mapWrap,
-            env.well,
-            mapExpanded && styles.mapWrapExpanded,
-          )}
-        >
-          <DiscoveryMap
-            stage={stage}
-            step={step}
-            origin={prefs.origin?.coords ?? null}
-            originLabel={prefs.origin?.city ?? null}
-            originConfirmed={prefs.originConfirmed}
-            result={result}
-            processingStage={processingStage}
-            activeId={activeId}
-            hoveredId={hoveredId}
-            onSelect={handleSelect}
-            onHover={handleHover}
-            insetRight={mapInsetRight}
-            reduceMotion={reduceMotion}
-          />
-          <div className={env.wellVignette} aria-hidden />
-        </div>
+        {stage === "results" && mapExpanded ? (
+          <button
+            type="button"
+            className={styles.mapReveal}
+            onClick={() => setMapExpanded(false)}
+          >
+            <MapPin size={13} strokeWidth={2.2} />
+            Places
+          </button>
+        ) : null}
 
+        <div className={styles.sheetDock} ref={sheetDockRef}>
         <button
           type="button"
           className={styles.mapToggle}
+          aria-pressed={mapExpanded}
+          aria-label={
+            mapExpanded
+              ? stage === "results"
+                ? "Show places"
+                : "Back to questions"
+              : "Show map"
+          }
           onClick={() => setMapExpanded((value) => !value)}
         >
           {mapExpanded ? (
             <>
-              <SlidersHorizontal size={13} strokeWidth={2.2} />
-              {stage === "results" ? "Matches" : "Questions"}
+              {stage === "results" ? (
+                <MapPin size={13} strokeWidth={2.2} />
+              ) : (
+                <SlidersHorizontal size={13} strokeWidth={2.2} />
+              )}
+              {stage === "results" ? "Places" : "Questions"}
             </>
           ) : (
             <>
@@ -261,98 +305,34 @@ export function DiscoveryExperience() {
         </button>
 
         {/* -------------------------------------------------------------- */}
-        {/* Console — trailing edge, light frosted glass                    */}
-        {/* -------------------------------------------------------------- */}
+        {/* Console — solid card on the map, not glass. */}
         <motion.aside
           className={cn(
             styles.console,
-            env.glass,
-            /*
-             * The console wraps its content rather than running the full
-             * height of the well in the two stages that do not fill it.
-             *
-             * At results: three cards and a ruled-out list do not fill 780px,
-             * and a panel with 380px of empty glass under it reads as an
-             * unfinished layout rather than as breathing room.
-             *
-             * While searching it earns something better than tidiness — the
-             * panel grows by one line as each stage of reasoning lands, so
-             * the search visibly accumulates instead of sitting inside a
-             * fixed frame waiting to be filled.
-             */
-            ((stage === "results" && !active) || stage === "processing") &&
-              styles.consoleFit,
+            searching && styles.consoleSearching,
+            stage === "results" && styles.consoleResults,
             mapExpanded && styles.consoleHidden,
           )}
-          animate={{ width: consoleWidth }}
+          style={{ ["--console-max-w" as string]: `${consoleWidth}px` }}
           initial={false}
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : { duration: 0.26, ease: [0.2, 0, 0, 1] }
-          }
         >
-          {/* Answered summary — state you can see and jump back into. */}
-          {stage !== "processing" && answered.length > 0 && !active ? (
-            <div className={styles.summary}>
-              {answered.includes("dates") ? (
-                <button
-                  type="button"
-                  className={styles.summaryChip}
-                  onClick={() => api.getState().goToStep("dates")}
-                >
-                  {dateSummary(prefs)}
-                </button>
-              ) : null}
-              {prefs.origin ? (
-                <button
-                  type="button"
-                  className={styles.summaryChip}
-                  onClick={() => api.getState().goToStep("origin")}
-                >
-                  from {prefs.origin.city}
-                </button>
-              ) : null}
-              {prefs.budget ? (
-                <button
-                  type="button"
-                  className={styles.summaryChip}
-                  onClick={() => api.getState().goToStep("budget")}
-                >
-                  {BUDGET_META[prefs.budget].label}
-                </button>
-              ) : null}
-              {prefs.styles.slice(0, 2).map((style) => (
-                <button
-                  key={style}
-                  type="button"
-                  className={styles.summaryChip}
-                  onClick={() => api.getState().goToStep("experiences")}
-                >
-                  {STYLE_META[style].label}
-                </button>
-              ))}
-              {prefs.styles.length > 2 ? (
-                <button
-                  type="button"
-                  className={styles.summaryChip}
-                  onClick={() => api.getState().goToStep("experiences")}
-                >
-                  +{prefs.styles.length - 2}
-                </button>
-              ) : null}
-              {prefs.interests.length > 0 ? (
-                <button
-                  type="button"
-                  className={cn(styles.summaryChip, styles.summaryChipYours)}
-                  onClick={() => api.getState().goToStep("activities")}
-                >
-                  {prefs.interests.length === 1
-                    ? INTEREST_META[prefs.interests[0]].label
-                    : `${prefs.interests.length} activities`}
-                </button>
-              ) : null}
-            </div>
+          {searching ? (
+            <span className={styles.siri} aria-hidden>
+              <span className={styles.siriBloom} />
+              <span className={styles.siriRing} />
+              <span className={styles.siriWash} />
+            </span>
+          ) : null}
+
+          {stage === "results" ? (
+            <button
+              type="button"
+              className={styles.consoleCollapse}
+              onClick={() => setMapExpanded(true)}
+            >
+              <MapIcon size={13} strokeWidth={2.2} />
+              Map
+            </button>
           ) : null}
 
           <div
@@ -360,7 +340,21 @@ export function DiscoveryExperience() {
               styles.consoleScroll,
               active && styles.consoleScrollBrief,
             )}
+            onScroll={scrollChrome.onScroll}
           >
+            <div className={styles.consoleScrollInner}>
+              {stage === "questions" ? (
+                <span className={styles.consoleMascotClip}>
+                  <img
+                    className={styles.consoleMascot}
+                    src="/discovery/hummingbird-peek.png"
+                    alt=""
+                    width={91}
+                    height={121}
+                    aria-hidden
+                  />
+                </span>
+              ) : null}
             <AnimatePresence mode="wait" initial={false}>
               {stage === "processing" ? (
                 <motion.div
@@ -368,7 +362,7 @@ export function DiscoveryExperience() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: reduceMotion ? 0.1 : 0.2 }}
+                  transition={{ duration: reduceMotion ? 0.1 : 0.36 }}
                 >
                   <Processing
                     prefs={prefs}
@@ -381,15 +375,40 @@ export function DiscoveryExperience() {
                 </motion.div>
               ) : stage === "results" && active ? (
                 <DestinationBrief
-                  key={`brief-${active.destination.id}`}
+                  key="brief"
                   recommendation={active}
                   prefs={prefs}
                   top={result.top}
-                  onBack={() => api.getState().setActive(null)}
+                  onBack={() => {
+                    const reveal = [...result.top].reverse();
+                    const index = reveal.findIndex(
+                      (entry) => entry.destination.id === active.destination.id,
+                    );
+                    if (index > 0) {
+                      api.getState().setActive(reveal[index - 1].destination.id);
+                      return;
+                    }
+                    api.getState().goToStep("activities");
+                  }}
                   onSelect={(id) => api.getState().setActive(id)}
-                  tripId={
-                    active.destination.id === "nyc" ? NYC_TRIP_ID : null
-                  }
+                  onNext={() => {
+                    const reveal = [...result.top].reverse();
+                    const index = reveal.findIndex(
+                      (entry) => entry.destination.id === active.destination.id,
+                    );
+                    const next = reveal[index + 1];
+                    if (next) api.getState().setActive(next.destination.id);
+                  }}
+                  onAdjust={() => {
+                    api.getState().setActive(null);
+                    api.getState().goToStep("experiences");
+                  }}
+                  plannerHref={plannerHrefForDestination(
+                    active.destination.id,
+                    resolvedDates(prefs) ?? undefined,
+                  )}
+                  celebrate={celebrateOpening}
+                  onCelebrateDone={handleCelebrateDone}
                 />
               ) : stage === "results" ? (
                 <motion.div
@@ -397,7 +416,7 @@ export function DiscoveryExperience() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: reduceMotion ? 0.1 : 0.22 }}
+                  transition={{ duration: reduceMotion ? 0.1 : 0.36 }}
                 >
                   <Results
                     result={result}
@@ -410,13 +429,13 @@ export function DiscoveryExperience() {
                 </motion.div>
               ) : (
                 <motion.div
-                  key={`${step}-${subStep ?? "main"}`}
+                  key={`${step}-${subStep === "income" ? "main" : (subStep ?? "main")}`}
                   initial={{ opacity: 0, x: 14 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -14 }}
                   transition={{
-                    duration: reduceMotion ? 0.1 : 0.2,
-                    ease: [0.2, 0, 0, 1],
+                    duration: reduceMotion ? 0.1 : 0.38,
+                    ease: [0.22, 1, 0.36, 1],
                   }}
                 >
                   {step === "dates" ? (
@@ -430,14 +449,21 @@ export function DiscoveryExperience() {
                       onWeekendShape={(shape) =>
                         api.getState().setWeekendShape(shape)
                       }
-                      onFlexible={(month, nights) =>
-                        api.getState().setFlexible(month, nights)
+                      onFlexible={(month, nights, year) =>
+                        api.getState().setFlexible(month, nights, year)
                       }
                     />
-                  ) : step === "scope" ? (
-                    <ScopeStep
-                      prefs={prefs}
-                      onScopeChange={(scope) => api.getState().setScope(scope)}
+                  ) : hunting ? (
+                    <PortHunt
+                      kind={huntingDeparture ? "departure" : "dest"}
+                      beat={portsHuntBeat}
+                      onAdvance={() => api.getState().advancePortsHunt()}
+                      onDone={() =>
+                        huntingDeparture
+                          ? api.getState().finishPortsHunt()
+                          : api.getState().finishDestHunt()
+                      }
+                      reduceMotion={reduceMotion}
                     />
                   ) : step === "origin" ? (
                     <OriginStep
@@ -446,27 +472,25 @@ export function DiscoveryExperience() {
                       onOriginChange={(origin) =>
                         api.getState().setOrigin(origin)
                       }
-                      onConfirm={() => api.getState().confirmOrigin()}
-                      onReopen={() => api.getState().reopenOrigin()}
+                      onOpenAdd={() => api.getState().setSubStep("add-origin")}
+                      onProposeOrigin={(origin) =>
+                        api.getState().proposeOrigin(origin)
+                      }
+                    />
+                  ) : step === "scope" ? (
+                    <ScopeStep
+                      prefs={prefs}
+                      onScopeChange={(scope) => api.getState().setScope(scope)}
                     />
                   ) : step === "budget" ? (
                     <BudgetStep
                       prefs={prefs}
-                      subStep={subStep}
                       topDailyByTier={
                         result.ranked[0]?.destination.dailyBudgetUsd ?? null
                       }
                       onBudgetChange={(budget) =>
                         api.getState().setBudget(budget)
                       }
-                      onIncomeBand={(band) =>
-                        api.getState().setIncomeBand(band)
-                      }
-                      onSkipIncome={() => {
-                        api.getState().setIncomeBand(null);
-                        api.getState().setSubStep(null);
-                        api.getState().next();
-                      }}
                     />
                   ) : step === "experiences" ? (
                     <ExperiencesStep
@@ -482,6 +506,10 @@ export function DiscoveryExperience() {
                   ) : (
                     <ActivitiesStep
                       prefs={prefs}
+                      removedCount={
+                        result.stages.find((s) => s.key === "activities")
+                          ?.removed ?? 0
+                      }
                       onToggleInterest={(interest) =>
                         api.getState().toggleInterest(interest)
                       }
@@ -490,70 +518,17 @@ export function DiscoveryExperience() {
                 </motion.div>
               )}
             </AnimatePresence>
+            </div>
           </div>
 
-          {/*
-           * The console is full height, and the early questions are short. On
-           * the very first one that space carries the product's premise — a
-           * low-information moment, which is exactly where the character is
-           * allowed. From the second question on it carries the live
-           * front-runners, so every answer visibly moves the answer.
-           */}
-          {stage === "questions" && subStep === null ? (
-            answered.length === 0 ? (
-              <div className={styles.premise}>
-                <Hummingbird mood="curious" size={52} className={styles.premiseBird} />
-                <p className={styles.premiseText}>
-                  We&rsquo;ll never ask where you want to go. That&rsquo;s the
-                  answer, not the question.
-                </p>
-              </div>
-            ) : (
-              <div className={styles.leaders}>
-                <div className={styles.leadersHead}>
-                  <span className={styles.leadersLabel}>Leading right now</span>
-                  <span className={styles.leadersCount}>
-                    {surviving} in the running
-                  </span>
-                </div>
-                <ol className={styles.leadersList}>
-                  {result.ranked.slice(0, 3).map((recommendation, index) => (
-                    <li key={recommendation.destination.id}>
-                      <button
-                        type="button"
-                        className={styles.leader}
-                        onPointerEnter={() =>
-                          handleHover(recommendation.destination.id)
-                        }
-                        onPointerLeave={() => handleHover(null)}
-                        onClick={() =>
-                          handleSelect(recommendation.destination.id)
-                        }
-                      >
-                        <span className={cn(styles.leaderRank, "tabular")}>
-                          {index + 1}
-                        </span>
-                        <span className={styles.leaderName}>
-                          {recommendation.destination.name}
-                        </span>
-                        <span className={cn(styles.leaderScore, "tabular")}>
-                          {Math.round(recommendation.score)}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )
-          ) : null}
-
-          {stage === "questions" && !hideNav ? (
+          {stage === "questions" && !hunting ? (
             <footer className={styles.consoleFooter}>
               <div className={styles.navRow}>
                 <Button
                   variant="ghost"
                   size="md"
                   iconLeft={<ArrowLeft size={14} strokeWidth={2.1} />}
+                  disabled={originBusy || (stepIndex === 0 && subStep === null)}
                   onClick={() => api.getState().back()}
                 >
                   Back
@@ -562,37 +537,34 @@ export function DiscoveryExperience() {
                   variant="primary"
                   size="md"
                   iconRight={<ArrowRight size={14} strokeWidth={2.1} />}
-                  onClick={() => api.getState().next()}
+                  type={addingOrigin ? "submit" : "button"}
+                  form={addingOrigin ? "discovery-add-origin" : undefined}
+                  loading={originBusy}
+                  onClick={
+                    addingOrigin ? undefined : () => api.getState().next()
+                  }
                 >
                   {primaryLabel}
                 </Button>
               </div>
-
-              {/*
-               * The escape hatch. A short flow is only honest if you can leave
-               * it at any point and still get a real answer.
-               */}
-              {canSkip &&
-              stepIndex < DISCOVERY_STEPS.length - 1 &&
-              subStep === null ? (
-                <button
-                  type="button"
-                  className={styles.skip}
-                  onClick={() => api.getState().startProcessing()}
-                >
-                  <span className={cn(styles.skipCount, "tabular")}>
-                    {surviving}
-                  </span>
-                  <span className={styles.skipLabel}>
-                    places still fit — show me the best three now
-                  </span>
-                  <ChevronRight size={14} strokeWidth={2.2} />
-                </button>
-              ) : null}
             </footer>
           ) : null}
         </motion.aside>
+        </div>
       </div>
+
+      <IncomePrompt
+        open={stage === "questions" && step === "budget" && subStep === "income"}
+        tierLabel={prefs.budget ? BUDGET_META[prefs.budget].label : "that budget"}
+        value={prefs.incomeBand}
+        onPick={(band) => api.getState().setIncomeBand(band)}
+        onSkip={() => {
+          api.getState().setIncomeBand(null);
+          api.getState().setSubStep(null);
+          api.getState().next();
+        }}
+        onContinue={() => api.getState().next()}
+      />
     </div>
   );
 }

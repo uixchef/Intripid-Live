@@ -1,39 +1,42 @@
 .root {
   display: grid;
   align-content: start;
+  justify-items: stretch;
   gap: var(--space-8);
-  /*
-   * Capped measure. This view is read, not scanned — at full width the notes
-   * ran to ~140 characters a line, which is roughly twice a comfortable
-   * measure. The cap is on the content, not the panel, so the surface still
-   * fills the space it is given.
-   */
-  max-width: 60rem;
-  /*
-   * Centred inside the panel. Left-aligned, the cap left a 140px dead strip
-   * against the rail that read as an unfinished layout rather than as a
-   * measure.
-   */
-  margin-inline: auto;
   width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
   padding: var(--space-10);
   overflow-y: auto;
   overscroll-behavior: contain;
-  height: 100%;
-  min-height: 0;
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--slate-500) 8%, var(--slate-0));
+}
+
+.section {
+  height: auto;
+  overflow: visible;
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+  background: transparent;
+}
+
+.section + .section {
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* ------------------------------------------------------------------------- */
-/* Day header                                                                */
+/* Header — trip title + calendar / pin meta                                 */
 /* ------------------------------------------------------------------------- */
 
-.dayHeader {
+.header {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-4);
+  padding-inline: 2px;
 }
 
-.dayHeaderTop {
+.headerTop {
   display: flex;
   align-items: baseline;
   gap: var(--space-5);
@@ -42,36 +45,61 @@
 
 .dayTitle {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-size: 1.65rem;
   line-height: 1.1;
   letter-spacing: var(--tracking-tight);
+  font-weight: var(--weight-semibold);
   color: var(--text-primary);
 }
 
-.daySummary {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-
-.dayStay {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-
-.dayStay strong {
-  font-weight: var(--weight-semibold);
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
+.meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta svg {
+  color: var(--text-primary);
+}
+
+.metaRule {
+  color: var(--slate-300);
+  font-weight: var(--weight-medium);
+}
+
+.allDay {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.allDayLabel {
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
 /* ------------------------------------------------------------------------- */
-/* Conflict banner                                                           */
+/* Conflict                                                                  */
 /* ------------------------------------------------------------------------- */
 
 .conflictBanner {
   display: flex;
   gap: var(--space-5);
   padding: var(--space-6);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-2xl);
   background: var(--danger-50);
   border: 1px solid var(--danger-100);
   color: var(--danger-700);
@@ -87,43 +115,52 @@
   line-height: var(--lh-relaxed);
 }
 
+.conflictBannerAdvisory {
+  background: var(--warning-50);
+  border-color: var(--warning-100);
+  color: var(--warning-700);
+}
+
 /* ------------------------------------------------------------------------- */
-/* List                                                                      */
+/* Stack                                                                     */
 /* ------------------------------------------------------------------------- */
 
 .list {
   display: grid;
-  gap: 0;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-/* Travel leg between stops */
+.dayStack {
+  display: grid;
+  gap: 8px;
+}
 
 .leg {
-  display: flex;
+  display: grid;
+  grid-template-columns: 28px 1fr;
   align-items: center;
-  gap: var(--space-5);
-  padding: var(--space-3) 0 var(--space-3) 10px;
-  min-height: 30px;
+  gap: var(--space-4);
+  min-height: 22px;
+  padding: 4px 18px 4px 14px;
 }
 
-/* A dotted rule continues the spine between cards. */
-.legLine {
-  flex: none;
-  width: 0;
-  align-self: stretch;
-  border-left: 1px dashed var(--slate-300);
-  margin-left: 0;
+.spine {
+  justify-self: center;
+  width: 2px;
+  height: 100%;
+  min-height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--slate-300);
 }
 
 .legLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: var(--weight-medium);
   color: var(--text-tertiary);
   letter-spacing: var(--tracking-tight);
-  white-space: nowrap;
 }
 
 .legLabelQuiet {
@@ -131,228 +168,352 @@
   font-style: italic;
 }
 
-.legDistance {
-  color: var(--text-quaternary);
-  font-variant-numeric: tabular-nums;
-}
+/* ------------------------------------------------------------------------- */
+/* Card — phone journal object                                               */
+/* ------------------------------------------------------------------------- */
 
-/* Stop card */
-
-.stop {
+.card {
+  --card-pad-y: 18px;
+  --kicker-h: 24px;
+  --glyph: 28px;
+  --rail-gap: 4px;
   position: relative;
-  display: flex;
-  gap: var(--space-5);
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface-raised);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-xs);
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  padding: var(--card-pad-y) 18px 16px 14px;
+  border-radius: 8px;
   cursor: pointer;
+  overflow: hidden;
   min-width: 0;
   transition:
-    border-color var(--dur-micro) var(--ease-out),
     box-shadow var(--dur-micro) var(--ease-out),
-    background-color var(--dur-micro) var(--ease-out);
+    transform var(--dur-micro) var(--ease-out);
 }
 
-.stop:hover,
-.stopHovered {
-  border-color: var(--border-strong);
+.hasUnread {
+  overflow: visible;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--purple-500);
+  outline-offset: 3px;
+}
+
+.paper {
+  background: var(--slate-0);
+  color: var(--slate-900);
   box-shadow: var(--shadow-sm);
 }
 
-.stopSelected {
-  border-color: var(--purple-500);
+.cardHovered.paper {
+  box-shadow: var(--shadow-md);
+}
+
+.cardSelected {
   box-shadow:
-    0 0 0 1px var(--purple-500),
+    0 0 0 2px var(--purple-500),
     var(--shadow-md);
 }
 
-.stopConflicted {
-  background: var(--danger-50);
-  border-color: var(--danger-100);
+.paper.cardConflicted {
+  box-shadow:
+    0 0 0 1px var(--danger-100),
+    var(--shadow-sm);
 }
 
-/* The letter is the shared identity with the map marker. */
-.stopLetter {
+.glyph {
+  position: relative;
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
   display: grid;
   place-items: center;
-  flex: none;
-  width: 21px;
-  height: 21px;
-  margin-top: 1px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-full);
-  background: var(--cat-color);
-  color: var(--slate-0);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: var(--weight-bold);
   line-height: 1;
+  color: var(--slate-0);
+  background: var(--cat-color);
 }
 
-.stopBody {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-  flex: 1;
+.rail,
+.railAbove {
+  position: absolute;
+  left: 27px;
+  width: 1.5px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  opacity: 0.22;
+  pointer-events: none;
 }
 
-.stopTop {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
+.rail {
+  top: calc(var(--card-pad-y) + var(--kicker-h) + var(--glyph) + var(--rail-gap));
+  bottom: 16px;
 }
 
-.stopIcon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  color: var(--cat-color);
+.railAbove {
+  top: calc(var(--card-pad-y) + var(--rail-gap));
+  height: calc(var(--kicker-h) - var(--rail-gap) - 4px);
 }
 
-.stopTitle {
-  font-size: var(--text-md);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
-  line-height: var(--lh-snug);
-  min-width: 0;
-  /* Long venue names wrap rather than clip in the list view. */
-  overflow-wrap: break-word;
-}
-
-.stopWarn {
-  flex: none;
-  color: var(--danger-600);
-}
-
-.stopMore {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-left: auto;
-  border-radius: var(--radius-sm);
-  color: var(--text-quaternary);
-  cursor: pointer;
-  opacity: 0;
-  transition:
-    opacity var(--dur-micro) var(--ease-out),
-    background-color var(--dur-micro) var(--ease-out),
-    color var(--dur-micro) var(--ease-out);
-}
-
-.stop:hover .stopMore,
-.stopSelected .stopMore,
-.stopMore:focus-visible {
+.railFromGap {
+  top: calc(var(--card-pad-y) + var(--rail-gap));
+  height: calc(var(--kicker-h) - var(--rail-gap) - 4px);
+  background: none;
+  border-left: 1.5px dashed var(--slate-300);
+  width: 0;
+  border-radius: 0;
   opacity: 1;
 }
 
-.stopMore:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+.paper .railFromGap {
+  background: none;
 }
 
-.stopSubtitle {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  line-height: var(--lh-normal);
+.paper .rail,
+.paper .railAbove {
+  background: var(--slate-200);
+  opacity: 1;
 }
 
-.stopPlace {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  font-size: var(--text-2xs);
-  color: var(--text-quaternary);
-  line-height: var(--lh-normal);
+.body {
+  display: grid;
+  grid-column: 2;
+  grid-row: 2;
   min-width: 0;
+  gap: 0;
 }
 
-.stopPlace svg {
-  flex: none;
-  margin-top: 2px;
+.kicker {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 20px;
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.62;
+  margin-bottom: 4px;
 }
 
-.stopPlace span {
-  min-width: 0;
+.title {
+  font-size: 1.35rem;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.15;
   overflow-wrap: break-word;
 }
 
-.stopMeta {
+.place {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  opacity: 0.78;
+}
+
+.timeRange {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
-  flex-wrap: wrap;
-  padding-top: var(--space-2);
+  gap: 4px;
+  width: 240px;
+  max-width: 100%;
+  margin-top: 16px;
 }
 
-.stopTime {
-  font-size: var(--text-xs);
+.timeSingle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 240px;
+  max-width: 100%;
+  margin-top: 16px;
+}
+
+.timeCaption {
+  font-size: 11px;
   font-weight: var(--weight-medium);
-  color: var(--text-primary);
-  white-space: nowrap;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.5;
 }
 
-.stopDuration,
-.stopCost {
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
+.pill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.6rem;
+  padding: 7px 12px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
   white-space: nowrap;
+  background: var(--slate-100);
+  color: var(--slate-600);
 }
 
-.stopWho {
+.bar {
+  position: relative;
+  flex: 1;
+  min-width: 24px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--slate-200);
+}
+
+.barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--purple-500);
+  transition: width 400ms var(--ease-out);
+}
+
+.timeLive .pill:first-child {
+  background: var(--purple-500);
+  color: var(--slate-0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barFill {
+    transition: none;
+  }
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.metaRow .timeRange,
+.metaRow .timeSingle {
+  margin-top: 0;
+}
+
+.who {
+  flex: none;
   margin-left: auto;
 }
 
-.stopNote {
+.comments {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.commentsCopy {
   font-size: var(--text-xs);
   line-height: var(--lh-relaxed);
-  color: var(--text-secondary);
-  padding: var(--space-4) var(--space-5);
-  margin-top: var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface-sunken);
-  border-left: 2px solid var(--slate-300);
+  opacity: 0.8;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Gap card                                                                  */
-/* ------------------------------------------------------------------------- */
-
-.gapCard {
-  display: grid;
-  gap: var(--space-6);
-  padding: var(--space-7);
-  border-radius: var(--radius-lg);
-  background: var(--purple-50);
-  border: 1px solid var(--purple-100);
-}
-
-.gapCopy {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.gapTitle {
-  font-size: var(--text-md);
+.commentsWho {
   font-weight: var(--weight-semibold);
-  color: var(--purple-900);
+  letter-spacing: var(--tracking-tight);
+  margin-right: 6px;
+}
+
+.commentsMore {
+  justify-self: start;
+  padding: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: inherit;
+  opacity: 0.62;
+  cursor: pointer;
+}
+
+.commentsMore:hover,
+.commentsMore:focus-visible {
+  opacity: 1;
+}
+
+.commentsMore:focus-visible {
+  outline: 2px solid var(--purple-500);
+  outline-offset: 2px;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 12px 10px 14px;
+  border-radius: var(--radius-lg);
+  text-align: left;
+  color: inherit;
+  background: rgb(12 16 24 / 0.35);
+  cursor: default;
+}
+
+.alertIcon {
+  flex: none;
+  opacity: 0.7;
+}
+
+.alertCopy {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-tight);
 }
 
-.gapBody {
-  font-size: var(--text-xs);
-  line-height: var(--lh-relaxed);
-  color: var(--purple-800);
-  opacity: 0.86;
+.alertCta {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  color: inherit;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.gapActions {
-  display: flex;
-  gap: var(--space-4);
-  flex-wrap: wrap;
+.alertCta:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.alertCta:focus-visible {
+  outline: 2px solid var(--purple-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.paper .alert {
+  background: var(--danger-50);
+  color: var(--danger-700);
+}
+
+.paper .alertWarn {
+  background: var(--warning-50);
+  color: var(--warning-700);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -364,7 +525,6 @@
   gap: var(--space-4);
   justify-items: start;
   padding: var(--space-12) 0;
-  max-width: 34rem;
 }
 
 .emptyMark {
@@ -376,7 +536,11 @@
   background: var(--bg-surface-sunken);
   border: 1px solid var(--border-subtle);
   color: var(--text-quaternary);
-  margin-bottom: var(--space-2);
+}
+
+.emptyBird {
+  width: 96px;
+  height: 96px;
 }
 
 .emptyTitle {
@@ -401,54 +565,60 @@
 
 @media (max-width: 900px) {
   .root {
-    padding: var(--space-7) var(--space-6) var(--space-16);
-    gap: var(--space-7);
+    padding: var(--space-7) 0 var(--space-16);
+    background: var(--planner-chrome);
+    overflow-x: hidden;
+  }
+
+  .header,
+  .allDay,
+  .conflictBanner,
+  .empty {
+    padding-inline: var(--space-5);
+  }
+
+  .card {
+    --card-pad-y: 12px;
+    border-radius: 0;
+    padding: var(--card-pad-y) 18px 12px 14px;
+  }
+
+  .hasUnread {
+    overflow: hidden;
+  }
+
+  .unreadMark {
+    top: 8px;
+    right: 8px;
+  }
+
+  .paper,
+  .cardHovered.paper,
+  .paper.cardConflicted {
+    box-shadow: none;
+  }
+
+  .cardSelected {
+    box-shadow: 0 0 0 2px var(--purple-500);
+  }
+
+  .card:focus-visible {
+    outline-offset: 0;
   }
 
   .dayTitle {
-    font-size: var(--text-xl);
+    font-size: 1.45rem;
   }
 
-  .stopMore {
-    opacity: 1;
-  }
-}
-
-@media (max-width: 380px) {
-  .root {
-    padding: var(--space-6) var(--space-5) var(--space-16);
+  .title {
+    font-size: var(--text-lg);
+    line-height: 1.25;
   }
 
-  .stop {
-    padding: var(--space-5);
-    gap: var(--space-4);
+  .timeRange,
+  .timeSingle {
+    width: auto;
+    min-width: 0;
+    flex: 1;
   }
-
-  .stopMeta {
-    gap: var(--space-4);
-  }
-
-  .stopWho {
-    margin-left: 0;
-  }
-}
-
-/*
- * Warning-level issues stay on paper; only real errors get the danger wash.
- * These use the warning ramp rather than the orange ramp: orange means origin
- * and departure in this palette, and one hue cannot mean two things.
- */
-.stopWarned {
-  border-color: var(--warning-100);
-}
-
-.stopWarnAmber {
-  color: var(--warning-600);
-}
-
-/* Warnings-only: same shape, calmer colour. */
-.conflictBannerAdvisory {
-  background: var(--warning-50);
-  border-color: var(--warning-100);
-  color: var(--warning-700);
 }

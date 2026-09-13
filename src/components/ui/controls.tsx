@@ -20,6 +20,8 @@ export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
   icon?: ReactNode;
+  /** Optional count, shown as a badge on the segment. */
+  count?: number;
 }
 
 export interface SegmentedProps<T extends string> {
@@ -33,9 +35,8 @@ export interface SegmentedProps<T extends string> {
 }
 
 /**
- * A mutually exclusive switch. The active thumb is a real moving element
- * rather than a restyled button, so switching reads as one thing sliding
- * instead of two things blinking.
+ * A mutually exclusive switch. Same language as the planner content
+ * switcher: outlined pill, selected fill, hairline dividers.
  */
 export function Segmented<T extends string>({
   options,
@@ -45,22 +46,12 @@ export function Segmented<T extends string>({
   label,
   className,
 }: SegmentedProps<T>) {
-  const activeIndex = Math.max(
-    0,
-    options.findIndex((o) => o.value === value),
-  );
-
   return (
     <div
       role="radiogroup"
       aria-label={label}
       className={cn(styles.segmented, styles[`seg_${size}`], className)}
-      style={{
-        ["--seg-count" as string]: options.length,
-        ["--seg-index" as string]: activeIndex,
-      }}
     >
-      <span className={styles.thumb} aria-hidden />
       {options.map((option) => (
         <button
           key={option.value}
@@ -79,6 +70,11 @@ export function Segmented<T extends string>({
             </span>
           ) : null}
           {option.label}
+          {option.count != null ? (
+            <span className={cn(styles.segCount, "tabular")}>
+              {option.count}
+            </span>
+          ) : null}
         </button>
       ))}
     </div>
@@ -144,21 +140,43 @@ export interface InputProps
   /** Rendered inside the field on the right, e.g. a clear button. */
   slotRight?: ReactNode;
   size?: "sm" | "md";
+  /** In-field caption, same outlined treatment as Select. */
+  fieldLabel?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { invalid, iconLeft, slotRight, size = "md", className, ...rest },
+  {
+    invalid,
+    iconLeft,
+    slotRight,
+    size = "md",
+    fieldLabel,
+    className,
+    id,
+    disabled,
+    ...rest
+  },
   ref,
 ) {
+  const uid = useId();
+  const inputId = id ?? uid;
+  const outlined = Boolean(fieldLabel);
+
   return (
     <div
       className={cn(
         styles.inputWrap,
-        styles[`input_${size}`],
+        outlined ? styles.inputOutlined : styles[`input_${size}`],
         invalid && styles.inputInvalid,
+        disabled && styles.inputDisabled,
         className,
       )}
     >
+      {fieldLabel ? (
+        <label htmlFor={inputId} className={styles.inputFieldLabel}>
+          {fieldLabel}
+        </label>
+      ) : null}
       {iconLeft ? (
         <span className={styles.inputIcon} aria-hidden>
           {iconLeft}
@@ -166,9 +184,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       ) : null}
       <input
         ref={ref}
+        id={inputId}
+        disabled={disabled}
         aria-invalid={invalid || undefined}
         className={styles.input}
         {...rest}
+        placeholder={outlined ? " " : rest.placeholder}
       />
       {slotRight ? <span className={styles.inputSlot}>{slotRight}</span> : null}
     </div>
@@ -261,6 +282,9 @@ export interface StepperProps {
   /** Formats the displayed value. */
   format?: (value: number) => string;
   label: string;
+  /** In-field caption — matches outlined Select height. */
+  fieldLabel?: string;
+  className?: string;
 }
 
 export function Stepper({
@@ -271,9 +295,13 @@ export function Stepper({
   step = 1,
   format,
   label,
+  fieldLabel,
+  className,
 }: StepperProps) {
-  return (
-    <div className={styles.stepper} role="group" aria-label={label}>
+  const outlined = Boolean(fieldLabel);
+
+  const controls = (
+    <>
       <button
         type="button"
         className={styles.stepperButton}
@@ -295,6 +323,26 @@ export function Stepper({
       >
         +
       </button>
+    </>
+  );
+
+  return (
+    <div
+      className={cn(
+        outlined ? styles.stepperField : styles.stepper,
+        className,
+      )}
+      role="group"
+      aria-label={label}
+    >
+      {outlined ? (
+        <span className={styles.stepperFieldLabel}>{fieldLabel}</span>
+      ) : null}
+      {outlined ? (
+        <div className={styles.stepperFieldRow}>{controls}</div>
+      ) : (
+        controls
+      )}
     </div>
   );
 }

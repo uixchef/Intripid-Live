@@ -1,21 +1,25 @@
 .travels {
   display: grid;
-  gap: var(--space-6);
+  gap: 0;
   min-width: 0;
+  overflow: hidden;
 }
 
 .head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-6);
   min-width: 0;
+  padding: var(--space-12) var(--space-12) var(--space-6);
 }
 
-.headText {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .title {
@@ -25,30 +29,17 @@
   letter-spacing: var(--tracking-tight);
 }
 
-.sub {
-  font-size: var(--text-2xs);
-  color: var(--text-quaternary);
-}
-
 /* ------------------------------------------------------------------------- */
-/* Tabs                                                                     */
-/*                                                                           */
-/* Underlined, sitting on a hairline that runs the full width — the same     */
-/* device the planner's rail uses, so a tab means the same thing in both     */
-/* surfaces.                                                                 */
+/* Tabs — Figma 893:3619, brand purple in place of Highrise blue              */
 /* ------------------------------------------------------------------------- */
 
 .tabs {
   display: flex;
   align-items: stretch;
-  gap: 0;
-  border-bottom: 1px solid var(--border-subtle);
+  gap: 8px;
   min-width: 0;
-  /*
-   * The one place the dashboard may scroll sideways, and only on a phone
-   * where four labelled tabs with counts genuinely do not fit. The page
-   * itself never does.
-   */
+  padding: 0 var(--space-12);
+  border-bottom: 1px solid var(--slate-200);
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
@@ -61,15 +52,18 @@
 .tab {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
+  justify-content: center;
+  gap: 4px;
   flex: none;
-  padding: var(--space-4) var(--space-5) calc(var(--space-4) + 1px);
+  height: 40px;
+  padding: 4px 8px;
   margin-bottom: -1px;
   border-bottom: 2px solid transparent;
+  border-radius: 4px 4px 0 0;
   color: var(--text-tertiary);
-  font-size: var(--text-2xs);
+  font-size: var(--text-base);
   font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-tight);
+  line-height: var(--text-sm-lh);
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -78,57 +72,159 @@
 }
 
 .tab:hover {
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .tabOn {
-  color: var(--purple-800);
+  color: var(--purple-600);
   font-weight: var(--weight-semibold);
-  border-bottom-color: var(--purple-600);
+  border-bottom-color: var(--purple-400);
 }
 
 .tabCount {
-  display: grid;
-  place-items: center;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-height: 18px;
+  max-height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
   background: var(--slate-100);
   color: var(--text-tertiary);
-  font-size: 9px;
-  font-weight: var(--weight-bold);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  line-height: 16px;
 }
 
 .tabOn .tabCount {
   background: var(--purple-100);
-  color: var(--purple-700);
+  color: var(--purple-600);
 }
 
 /* ------------------------------------------------------------------------- */
-/* Grid                                                                     */
+/* List                                                                     */
 /* ------------------------------------------------------------------------- */
 
-/*
- * Two up at desktop. Three would give each card about 300px, which is where
- * the route row's two city names start truncating — and the route is the
- * whole point of the card.
- */
-.grid {
+.list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  min-width: 0;
+  padding: var(--space-12);
+}
+
+.group {
+  min-width: 0;
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-5) 0 var(--space-2);
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+.groupLabel .tabCount {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.stack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-6);
   min-width: 0;
 }
 
-.gridItem {
+/* ------------------------------------------------------------------------- */
+/* Logged visits — quieter than a trip card                                  */
+/* ------------------------------------------------------------------------- */
+
+.logged {
+  display: grid;
+  gap: 8px;
   min-width: 0;
-  display: flex;
 }
 
-.gridItem > * {
-  flex: 1;
+.loggedHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.loggedCopy {
+  display: grid;
+  gap: 2px;
   min-width: 0;
+}
+
+.loggedTitle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+.loggedTitle .tabCount {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.loggedLede {
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  color: var(--text-quaternary);
+}
+
+.logVisit {
+  flex: none;
+  color: var(--purple-700);
+  font-weight: var(--weight-semibold);
+}
+
+.logVisit:hover:not(:disabled) {
+  color: var(--purple-800);
+}
+
+.loggedEmpty {
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 10px 4px 4px;
+  border-radius: var(--radius-full);
+  background: var(--slate-50);
+  border: 1px solid var(--border-hairline);
+}
+
+.chipName {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -138,32 +234,45 @@
 .empty {
   display: grid;
   gap: var(--space-4);
-  justify-items: start;
-  padding: var(--space-10) var(--space-8);
-  background: var(--bg-surface);
-  border: 1px dashed var(--border-default);
-  border-radius: var(--radius-lg);
+  justify-items: center;
+  text-align: center;
+  padding: var(--space-12);
+}
+
+.emptyOngoing {
+  justify-items: center;
+  padding: 40px 24px 48px;
+  text-align: center;
+}
+
+.emptyBird {
+  margin-bottom: 4px;
 }
 
 .emptyTitle {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   letter-spacing: var(--tracking-tight);
 }
 
 .emptyBody {
   font-size: var(--text-2xs);
-  line-height: var(--lh-normal);
-  color: var(--text-quaternary);
-  max-width: 52ch;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+  max-width: 42ch;
+}
+
+.emptyOngoing .emptyBody {
+  color: var(--text-secondary);
 }
 
 .emptyActions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-5);
-  margin-top: var(--space-3);
+  margin-top: 8px;
   flex-wrap: wrap;
 }
 
@@ -192,36 +301,36 @@
 /* ------------------------------------------------------------------------- */
 
 @media (max-width: 1180px) {
-  .grid {
-    gap: var(--space-5);
+  .list {
+    padding: var(--space-12);
+  }
+
+  .stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 900px) {
-  /*
-   * One card per row on a phone. Two would be 175px each — the exact "tiny
-   * multi-column travel card" the brief rules out, and the route row would be
-   * unreadable at that width.
-   */
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
   .head {
     align-items: center;
+    padding: var(--space-8) var(--space-8) var(--space-5);
   }
 
-  .tab {
-    padding: var(--space-4) var(--space-4) calc(var(--space-4) + 1px);
+  .tabs {
+    padding: 0 var(--space-8);
+  }
+
+  .list {
+    padding: var(--space-8);
   }
 
   .empty {
-    padding: var(--space-8) var(--space-6);
+    padding: var(--space-8);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .tab {
-    transition: none;
+@media (max-width: 640px) {
+  .stack {
+    grid-template-columns: 1fr;
   }
 }

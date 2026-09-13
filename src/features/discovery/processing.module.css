@@ -103,11 +103,12 @@
 }
 
 .lineText {
+  font-family: var(--font-sans);
   font-size: var(--text-base);
   font-weight: var(--weight-medium);
   color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
-  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--lh-normal);
 }
 
 .lineDetail {

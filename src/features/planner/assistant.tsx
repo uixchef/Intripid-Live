@@ -1,30 +1,35 @@
 "use client";
 
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Check, Sparkles, X } from "lucide-react";
+import { Check, Send, X } from "lucide-react";
 
+import { AiMark } from "@/components/brand/ai-mark";
 import { Button, IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  openingAskAi,
+  replyToAskAi,
+  type AskAiMessage,
+  type AskAiOption,
+} from "@/lib/trip/ai-chat";
 import type { AssistantOffer } from "@/lib/trip/assistant";
 import type { AssistantPlan } from "@/lib/types";
 
 import styles from "./assistant.module.css";
 
 /**
- * The assistant's review surface.
+ * Ask AI — the conversation is the product.
  *
- * Product stance: AI as a capability, not a chatbot. It is never a text box
- * waiting for a prompt — it reads the day, finds a specific problem, and
- * proposes named changes with its reasoning shown as steps.
- *
- * It renders in the right column rather than a centred dialog so the calendar
- * stays visible: hovering a proposed change highlights the card it affects, so
- * you can see what is about to move before agreeing to it. Nothing is applied
- * until accepted, and changes can be taken one at a time.
- *
- * No gradient chrome. The historical gradient "AI" button is exactly the dated
- * tell to avoid — the semantic channel survives as flat purple, the same
- * colour that carries every other system decision in the product.
+ * Offers and day facts are folded into the first turn, not a competing
+ * dashboard. The traveller describes or picks a prompt; a proposal still
+ * lands as a reviewable plan. Not a blank chatbot, not a stats panel.
  */
 
 export interface AssistantOffersProps {
@@ -42,121 +47,178 @@ export interface AssistantOffersProps {
   };
 }
 
-/**
- * What the advisor is looking at.
- *
- * Offers on their own are three buttons in a large empty panel, and they ask
- * you to trust a judgement whose basis you cannot see. These are the numbers
- * the offers were derived from — the same reading, stated plainly — which
- * both fills the panel with something useful and makes the suggestions
- * checkable rather than oracular.
- */
-function DayReading({
-  reading,
-}: {
-  reading: NonNullable<AssistantOffersProps["reading"]>;
-}) {
-  const rows: { label: string; value: string; tone?: "bad" | "warn" }[] = [
-    { label: "Stops", value: String(reading.stops) },
-    {
-      label: "Clashes",
-      value: String(reading.errorCount),
-      tone: reading.errorCount > 0 ? "bad" : undefined,
-    },
-    {
-      label: "Tight connections",
-      value: String(reading.warningCount),
-      tone: reading.warningCount > 0 ? "warn" : undefined,
-    },
-    { label: "Unscheduled", value: durationText(reading.freeMinutes) },
-    { label: "Travel time", value: durationText(reading.travelMinutes) },
-    { label: "Estimated cost", value: `$${reading.costUsd.toLocaleString()}` },
-  ];
-
-  return (
-    <div className={styles.reading}>
-      <p className={styles.readingLabel}>Reading {reading.label}</p>
-      <dl className={styles.readingGrid}>
-        {rows.map((row) => (
-          <div key={row.label} className={styles.readingRow}>
-            <dt>{row.label}</dt>
-            <dd
-              className={cn(
-                "tabular",
-                row.tone === "bad" && styles.readingBad,
-                row.tone === "warn" && styles.readingWarn,
-              )}
-            >
-              {row.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-function durationText(minutes: number): string {
-  if (minutes <= 0) return "none";
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
-
-/** The affordances, shown only when there is something specific to offer. */
 export function AssistantOffers({
   offers,
   onRequest,
   reading,
 }: AssistantOffersProps) {
-  return (
-    <div className={styles.offersWrap}>
-      {offers.length === 0 ? (
-        <div className={styles.quiet}>
-          <span className={styles.quietIcon} aria-hidden>
-            <Check size={13} strokeWidth={2.4} />
-          </span>
-          <div>
-            <p className={styles.quietTitle}>This day holds up</p>
-            <p className={styles.quietBody}>
-              No clashes, no impossible hops, no dead afternoons. Nothing worth
-              changing.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <ul className={styles.offers}>
-      {offers.map((offer) => (
-        <li key={offer.intent}>
-          <button
-            type="button"
-            className={cn(
-              styles.offer,
-              offer.severity === "attention" && styles.offerAttention,
-            )}
-            onClick={() => onRequest(offer.intent)}
-          >
-            <span className={styles.offerIcon} aria-hidden>
-              <Sparkles size={12} strokeWidth={2.2} />
-            </span>
-            <span className={styles.offerBody}>
-              <span className={styles.offerLabel}>{offer.label}</span>
-              <span className={styles.offerDetail}>{offer.detail}</span>
-            </span>
-            <ArrowRight
-              size={13}
-              strokeWidth={2.2}
-              className={styles.offerArrow}
-            />
-          </button>
-        </li>
-          ))}
-        </ul>
-      )}
+  const dayKey = reading?.label ?? "day";
+  const reduceMotion = useReducedMotion();
+  const [messages, setMessages] = useState<AskAiMessage[]>(() =>
+    reading ? [openingAskAi(reading, offers)] : [],
+  );
+  const [draft, setDraft] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const threadRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const thinkTimer = useRef(0);
 
-      {reading ? <DayReading reading={reading} /> : null}
+  useEffect(() => {
+    setMessages(reading ? [openingAskAi(reading, offers)] : []);
+    setDraft("");
+    setThinking(false);
+  }, [dayKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [dayKey]);
+
+  useEffect(() => {
+    const node = threadRef.current;
+    if (!node) return;
+    node.scrollTop = node.scrollHeight;
+  }, [messages, thinking]);
+
+  useEffect(
+    () => () => window.clearTimeout(thinkTimer.current),
+    [],
+  );
+
+  function resizeInput() {
+    const node = inputRef.current;
+    if (!node) return;
+    node.style.height = "auto";
+    node.style.height = `${Math.min(node.scrollHeight, 132)}px`;
+  }
+
+  function pushYou(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || thinking) return;
+    const yours: AskAiMessage = {
+      id: `you-${Date.now()}`,
+      from: "you",
+      text: trimmed,
+    };
+    setDraft("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
+    setMessages((current) => [...current, yours]);
+    setThinking(true);
+    thinkTimer.current = window.setTimeout(
+      () => {
+        setMessages((current) => {
+          const reply = replyToAskAi(trimmed, offers, current);
+          return [...current, reply];
+        });
+        setThinking(false);
+      },
+      reduceMotion ? 0 : 720,
+    );
+  }
+
+  function pickOption(option: AskAiOption) {
+    if (thinking) return;
+    if (option.intent) {
+      onRequest(option.intent);
+      return;
+    }
+    if (option.prompt) pushYou(option.prompt);
+  }
+
+  const canSend = draft.trim().length > 0 && !thinking;
+
+  return (
+    <div className={styles.canvas}>
+      <div className={styles.thread} ref={threadRef} role="log" aria-live="polite">
+        {messages.map((message) => (
+          <article
+            key={message.id}
+            className={cn(
+              styles.turn,
+              message.from === "you" ? styles.turnYou : styles.turnAi,
+            )}
+          >
+            {message.from === "ai" ? (
+              <span className={styles.turnMark} aria-hidden>
+                <AiMark size={16} />
+              </span>
+            ) : null}
+            <div className={styles.turnBody}>
+              {message.text.split("\n\n").map((para) => (
+                <p key={para}>{para}</p>
+              ))}
+              {message.options && message.options.length > 0 ? (
+                <div className={styles.prompts}>
+                  {message.options.map((option) => (
+                    <button
+                      key={`${message.id}-${option.id}`}
+                      type="button"
+                      className={styles.prompt}
+                      onClick={() => pickOption(option)}
+                    >
+                      <span className={styles.promptLabel}>{option.label}</span>
+                      {option.detail ? (
+                        <span className={styles.promptDetail}>{option.detail}</span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </article>
+        ))}
+        {thinking ? (
+          <div className={cn(styles.turn, styles.turnAi)} aria-label="Thinking">
+            <span className={styles.turnMark} aria-hidden>
+              <AiMark size={16} />
+            </span>
+            <div className={styles.typing} aria-hidden>
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <form
+        className={styles.compose}
+        onSubmit={(event: FormEvent) => {
+          event.preventDefault();
+          pushYou(draft);
+        }}
+      >
+        <div className={styles.composer}>
+          <textarea
+            ref={inputRef}
+            className={styles.input}
+            rows={1}
+            value={draft}
+            placeholder="Ask anything about this day…"
+            aria-label="Message Ask AI"
+            disabled={thinking}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              resizeInput();
+            }}
+            onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                pushYou(draft);
+              }
+            }}
+          />
+          <IconButton
+            type="submit"
+            label="Send"
+            size="sm"
+            variant="primary"
+            disabled={!canSend}
+            className={canSend ? styles.send : undefined}
+          >
+            <Send size={15} strokeWidth={2.2} />
+          </IconButton>
+        </div>
+      </form>
     </div>
   );
 }
@@ -192,8 +254,8 @@ export function AssistantPlanPanel({
       <header className={styles.panelHead}>
         <div className={styles.panelHeadTop}>
           <span className={styles.panelBadge}>
-            <Sparkles size={11} strokeWidth={2.4} />
-            Assistant
+            <AiMark size={12} />
+            Proposal
           </span>
           <IconButton
             label="Dismiss suggestion"
@@ -262,7 +324,12 @@ export function AssistantPlanPanel({
           {allApplied ? "Close" : "Not now"}
         </Button>
         {!allApplied ? (
-          <Button variant="primary" size="sm" onClick={onApplyAll}>
+          <Button
+            variant="ai"
+            size="sm"
+            iconLeft={<AiMark size={13} />}
+            onClick={onApplyAll}
+          >
             Apply {plan.changes.length > 1 ? "all" : "change"}
           </Button>
         ) : null}

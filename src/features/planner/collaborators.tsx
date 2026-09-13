@@ -1,16 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Plus, UserPlus } from "lucide-react";
+import {
+  CalendarDays,
+  Mail,
+  MoreHorizontal,
+  Plus,
+  UserMinus,
+  UserPlus,
+} from "lucide-react";
 
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/controls";
+import { Select } from "@/components/ui/select";
 import { Modal } from "@/components/ui/overlay";
 import { Tag } from "@/components/ui/chip";
-import { ROLE_LABELS, ROLE_NOTES } from "@/lib/collaboration";
+import { ROLE_LABELS, ROLE_NOTES, ASSIGNABLE_ROLES } from "@/lib/collaboration";
 import { cn } from "@/lib/utils";
-import type { Trip } from "@/lib/types";
+import type { Traveller, Trip } from "@/lib/types";
 
 import styles from "./collaborators.module.css";
 
@@ -92,7 +100,12 @@ export interface TravellersPanelProps {
   onInvite: () => void;
   onInviteConnection: (label: string) => void;
   onFocusItem: (itemId: string) => void;
+  onShowPlan: (travellerId: string) => void;
+  onChangeRole: (travellerId: string, role: Traveller["role"]) => void;
+  onRemove: (travellerId: string) => void;
 }
+
+const EDITABLE_ROLES: Traveller["role"][] = ASSIGNABLE_ROLES;
 
 /**
  * Who is on the trip, what they are looking at, and who has not replied yet.
@@ -103,8 +116,12 @@ export function TravellersPanel({
   onInvite,
   onInviteConnection,
   onFocusItem,
+  onShowPlan,
+  onChangeRole,
+  onRemove,
 }: TravellersPanelProps) {
   const unInvited = CONNECTIONS.filter((c) => !invited.includes(c.label));
+  const [menuFor, setMenuFor] = useState<string | null>(null);
 
   return (
     <div className={styles.panel}>
@@ -113,6 +130,8 @@ export function TravellersPanel({
           const viewing = traveller.viewingItemId
             ? trip.items.find((i) => i.id === traveller.viewingItemId)
             : null;
+          const canEdit = traveller.role !== "owner";
+          const menuOpen = menuFor === traveller.id;
 
           return (
             <li key={traveller.id} className={styles.person}>
@@ -120,15 +139,21 @@ export function TravellersPanel({
               <div className={styles.personBody}>
                 <div className={styles.personTop}>
                   <span className={styles.personName}>{traveller.name}</span>
-                  <Tag tone={traveller.role === "advisor" ? "accent" : "neutral"}>
-                    {ROLE_LABELS[traveller.role]}
-                  </Tag>
+                  {canEdit ? (
+                    <Select
+                      size="chip"
+                      label={`Role for ${traveller.name}`}
+                      value={traveller.role}
+                      onChange={(role) => onChangeRole(traveller.id, role)}
+                      options={EDITABLE_ROLES.map((role) => ({
+                        value: role,
+                        label: ROLE_LABELS[role],
+                      }))}
+                    />
+                  ) : (
+                    <Tag tone="neutral">{ROLE_LABELS[traveller.role]}</Tag>
+                  )}
                 </div>
-                {/*
-                 * "Looking at X" is the lightest possible presence signal and
-                 * the one that actually changes behaviour — it stops two
-                 * people editing the same dinner.
-                 */}
                 {traveller.online && viewing ? (
                   <button
                     type="button"
@@ -142,6 +167,58 @@ export function TravellersPanel({
                     {traveller.online ? "Online now" : ROLE_NOTES[traveller.role]}
                   </span>
                 )}
+              </div>
+
+              <div className={styles.personActions}>
+                <IconButton
+                  label={`Show ${traveller.name.split(" ")[0]}'s plan`}
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => onShowPlan(traveller.id)}
+                >
+                  <CalendarDays size={13} strokeWidth={2.1} />
+                </IconButton>
+                {canEdit ? (
+                  <div className={styles.moreWrap}>
+                    <IconButton
+                      label={`More actions for ${traveller.name}`}
+                      size="xs"
+                      variant="ghost"
+                      onClick={() =>
+                        setMenuFor(menuOpen ? null : traveller.id)
+                      }
+                    >
+                      <MoreHorizontal size={14} strokeWidth={2} />
+                    </IconButton>
+                    {menuOpen ? (
+                      <div className={styles.moreMenu} role="menu">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            onShowPlan(traveller.id);
+                            setMenuFor(null);
+                          }}
+                        >
+                          <CalendarDays size={12} strokeWidth={2.1} />
+                          Show their plan
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className={styles.moreDanger}
+                          onClick={() => {
+                            onRemove(traveller.id);
+                            setMenuFor(null);
+                          }}
+                        >
+                          <UserMinus size={12} strokeWidth={2.1} />
+                          Remove from trip
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </li>
           );

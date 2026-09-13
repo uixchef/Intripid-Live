@@ -1,10 +1,10 @@
 .trigger {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-4);
-  height: 32px;
-  padding: 0 var(--space-5) 0 var(--space-3);
-  border-radius: var(--radius-full);
+  gap: var(--space-3);
+  height: 40px;
+  padding: 0 10px 0 4px;
+  border-radius: 20px;
   border: 1px solid transparent;
   cursor: pointer;
   transition:
@@ -13,24 +13,17 @@
 }
 
 .trigger:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-subtle);
+  background: rgba(32, 33, 36, 0.08);
 }
 
-/* Pressed-in while the rail's travellers section is open. */
 .triggerOn {
-  background: var(--purple-50);
-  border-color: var(--purple-200);
-}
-
-.triggerOn .triggerMeta {
-  color: var(--purple-700);
+  background: rgba(32, 33, 36, 0.1);
 }
 
 .triggerMeta {
-  font-size: var(--text-2xs);
+  font-size: 12px;
   font-weight: var(--weight-medium);
-  color: var(--text-tertiary);
+  color: var(--teal-700);
   letter-spacing: var(--tracking-tight);
   white-space: nowrap;
 }
@@ -128,6 +121,74 @@
   text-decoration: underline;
 }
 
+.personActions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 1px;
+  opacity: 0.55;
+  transition: opacity var(--dur-micro) var(--ease-out);
+}
+
+.person:hover .personActions,
+.person:focus-within .personActions {
+  opacity: 1;
+}
+
+.moreWrap {
+  position: relative;
+}
+
+.moreMenu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  z-index: 6;
+  min-width: 168px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--slate-0);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+}
+
+.moreMenu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.moreMenu button:hover,
+.moreMenu button:focus-visible {
+  background: #f9fafb;
+  outline: none;
+}
+
+.moreMenu button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--purple-200);
+}
+
+.moreMenu button:active {
+  background: #f2f4f7;
+}
+
+.moreDanger {
+  color: #b42318 !important;
+}
+
+.moreDanger:hover,
+.moreDanger:focus-visible {
+  background: #fef3f2 !important;
+}
+
 .panelFoot {
   padding: var(--space-3) var(--space-5) var(--space-5);
 }
@@ -139,7 +200,6 @@
 .invite {
   display: grid;
   gap: var(--space-8);
-  padding: var(--space-10);
 }
 
 .inviteHead {
@@ -181,10 +241,6 @@
 }
 
 @media (max-width: 460px) {
-  .invite {
-    padding: var(--space-8) var(--space-6);
-  }
-
   .inviteActions {
     justify-content: stretch;
   }

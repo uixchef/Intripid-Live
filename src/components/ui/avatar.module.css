@@ -3,6 +3,7 @@
   display: inline-grid;
   place-items: center;
   flex: none;
+  overflow: visible;
   border-radius: var(--radius-full);
   background: var(--avatar-color, var(--purple-600));
   color: var(--slate-0);
@@ -16,10 +17,26 @@
   user-select: none;
 }
 
+.media {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: inherit;
+  background: inherit;
+}
+
 .initials {
   display: block;
   line-height: 1;
   transform: translateY(0.02em);
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .xs {
@@ -46,6 +63,12 @@
   font-size: var(--text-sm);
 }
 
+.xl {
+  width: 56px;
+  height: 56px;
+  font-size: var(--text-sm);
+}
+
 .overflow {
   background: var(--slate-200);
   color: var(--text-secondary);
@@ -55,17 +78,78 @@
 /* Presence                                                                  */
 /* ------------------------------------------------------------------------- */
 
-.presence {
+.presence,
+.advisorMark,
+.liveBadge {
   position: absolute;
   right: -1px;
   bottom: -1px;
+  z-index: 1;
   width: 33%;
   height: 33%;
   min-width: 7px;
   min-height: 7px;
+  pointer-events: none;
+}
+
+.presence {
   border-radius: var(--radius-full);
   background: var(--positive-500);
   box-shadow: 0 0 0 1.5px var(--bg-surface-raised);
+}
+
+.advisorMark {
+  display: grid;
+  color: var(--purple-600);
+}
+
+.advisorTick {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * Online advisor: one hole, two marks. They crossfade in place so presence
+ * does not pop. The pip stays the product green. Slot size matches every
+ * other avatar's online pip.
+ */
+.liveBadge {
+  z-index: 1;
+}
+
+.liveBadge .presence,
+.liveBadge .advisorMark {
+  position: absolute;
+  inset: 0;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  opacity: 0;
+  transform: scale(0.92);
+  transition:
+    opacity var(--dur-surface) var(--ease-out),
+    transform var(--dur-surface) var(--ease-out);
+}
+
+.liveBadge[data-mode="online"] .presence {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.liveBadge[data-mode="advisor"] .advisorMark {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveBadge .presence,
+  .liveBadge .advisorMark {
+    transition: none;
+  }
 }
 
 /* ------------------------------------------------------------------------- */

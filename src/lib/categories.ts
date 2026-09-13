@@ -10,14 +10,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type {
-  BudgetTier,
-  CommuteMode,
-  IncomeBand,
-  Interest,
-  ItemCategory,
-  TripStyle,
-  WeekendShape,
+import {
+  TRIP_STYLES,
+  type BudgetTier,
+  type CommuteMode,
+  type IncomeBand,
+  type Interest,
+  type ItemCategory,
+  type TripStyle,
+  type WeekendShape,
 } from "./types";
 
 /**
@@ -101,6 +102,102 @@ export function categoryMeta(category: ItemCategory): CategoryMeta {
   return CATEGORY_META[category];
 }
 
+/** Editor type tabs — Google Calendar's Event/Task row, for a trip. */
+export type ActivityType =
+  | "lodging"
+  | "transportation"
+  | "dining"
+  | "event"
+  | "attraction"
+  | "excursion";
+
+export const ACTIVITY_TYPES: readonly ActivityType[] = [
+  "lodging",
+  "transportation",
+  "dining",
+  "event",
+  "attraction",
+  "excursion",
+] as const;
+
+export const ACTIVITY_TYPE_META: Record<
+  ActivityType,
+  {
+    label: string;
+    category: ItemCategory;
+    kind: "activity" | "stay" | "commute";
+    titlePlaceholder: string;
+    locationPlaceholder: string;
+    guestsLabel: string;
+    bookingPlaceholder?: string;
+  }
+> = {
+  lodging: {
+    label: "Lodging",
+    category: "stay",
+    kind: "stay",
+    titlePlaceholder: "Add hotel or lodging",
+    locationPlaceholder: "Add hotel",
+    guestsLabel: "Who’s staying",
+    bookingPlaceholder: "Confirmation number",
+  },
+  transportation: {
+    label: "Transportation",
+    category: "transit",
+    kind: "commute",
+    titlePlaceholder: "Add journey",
+    locationPlaceholder: "Add station or pickup",
+    guestsLabel: "Who’s travelling",
+  },
+  dining: {
+    label: "Dining",
+    category: "food",
+    kind: "activity",
+    titlePlaceholder: "Add restaurant",
+    locationPlaceholder: "Add restaurant",
+    guestsLabel: "Who’s going",
+    bookingPlaceholder: "Reservation",
+  },
+  event: {
+    label: "Event",
+    category: "nightlife",
+    kind: "activity",
+    titlePlaceholder: "Add title",
+    locationPlaceholder: "Add location",
+    guestsLabel: "Who’s going",
+    bookingPlaceholder: "Booking or ticket",
+  },
+  attraction: {
+    label: "Attraction",
+    category: "sightseeing",
+    kind: "activity",
+    titlePlaceholder: "Add title",
+    locationPlaceholder: "Add location",
+    guestsLabel: "Who’s going",
+    bookingPlaceholder: "Timed entry or ticket",
+  },
+  excursion: {
+    label: "Excursion",
+    category: "outdoors",
+    kind: "activity",
+    titlePlaceholder: "Add title",
+    locationPlaceholder: "Add meeting point",
+    guestsLabel: "Who’s going",
+  },
+};
+
+export function activityTypeOf(
+  kind: "activity" | "stay" | "commute",
+  category: ItemCategory,
+): ActivityType {
+  if (kind === "stay" || category === "stay") return "lodging";
+  if (kind === "commute" || category === "transit") return "transportation";
+  if (category === "food") return "dining";
+  if (category === "outdoors") return "excursion";
+  if (category === "sightseeing" || category === "culture") return "attraction";
+  return "event";
+}
+
 /** Traveller avatar colour from the identity ramp. */
 export function travellerColor(colorIndex: number): string {
   return `var(--who-${colorIndex % 6})`;
@@ -154,77 +251,106 @@ export const BUDGET_META: Record<
 
 /**
  * Must-have experiences — the FILTER question.
- *
- * Verb-led with an inline definition, which is the phrasing the original
- * product used ("Enjoy Mountains", "Be Peaceful"). It matters: a taxonomy
- * written as things you DO reads as a wishlist, while the same list written
- * as nouns reads as a filter panel.
  */
 export const STYLE_META: Record<TripStyle, { label: string; blurb: string }> = {
-  city: { label: "Live city life", blurb: "Dense, loud, alive at every hour" },
-  culture: {
-    label: "Steep in culture",
-    blurb: "Museums, architecture, music that matters",
-  },
-  food: { label: "Eat properly", blurb: "Plan the days around the meals" },
-  slow: { label: "Be peaceful", blurb: "One neighbourhood, unhurried" },
-  nature: {
-    label: "Get into nature",
-    blurb: "Mountains, forest, open coastline",
-  },
-  beach: { label: "Live island life", blurb: "Salt water and not much else" },
-  adventure: {
-    label: "Do something bracing",
-    blurb: "Get the heart rate up on purpose",
-  },
-  nightlife: {
-    label: "Stay out late",
-    blurb: "The city after everyone else has gone home",
-  },
+  mountains: { label: "Mountains", blurb: "Peaks, trails, high country" },
+  beaches: { label: "Beaches", blurb: "Coast, sand, salt water" },
+  forests: { label: "Forests", blurb: "Woods, canopy, green cover" },
+  deserts: { label: "Deserts", blurb: "Dunes, dry country, open sky" },
+  "lakes-rivers": { label: "Lakes and rivers", blurb: "Fresh water, shores, valleys" },
+  "historical-sites": { label: "Historical sites", blurb: "Places with a past you can walk" },
+  monuments: { label: "Monuments", blurb: "Landmarks built to be seen" },
+  "traditional-villages": { label: "Traditional villages", blurb: "Towns that still run on old rhythms" },
+  "wildlife-safaris": { label: "Wildlife safaris", blurb: "Animals in their own landscape" },
+  "adventure-parks": { label: "Adventure parks", blurb: "Purpose-built thrills" },
+  "extreme-sports": { label: "Extreme sports", blurb: "High-adrenaline days" },
+  "city-life": { label: "Enjoy city life", blurb: "Streets, density, urban energy" },
+  architecture: { label: "Appreciate architecture", blurb: "Buildings worth looking at" },
+  "beach-resort": { label: "Enjoy a beach resort", blurb: "Stay on the water" },
+  "hot-springs": { label: "Be near hot springs", blurb: "Geothermal water close by" },
+  rejuvenate: { label: "Rejuvenate", blurb: "Reset, recover, slow the clock" },
+  peaceful: { label: "Be peaceful", blurb: "Quiet, unhurried, still" },
+  spas: { label: "Enjoy spas", blurb: "Treatments, baths, wellness rooms" },
 };
 
 /** The order experiences are offered in. */
-export const EXPERIENCE_ORDER: readonly TripStyle[] = [
-  "city",
-  "culture",
-  "food",
-  "slow",
-  "nature",
-  "beach",
-  "adventure",
-  "nightlife",
+export const EXPERIENCE_ORDER: readonly TripStyle[] = TRIP_STYLES;
+
+/** Same grouping pattern as activities — chips, not cards. */
+export const EXPERIENCE_GROUPS = [
+  {
+    group: "Nature",
+    styles: ["mountains", "beaches", "forests", "deserts", "lakes-rivers"] as const,
+  },
+  {
+    group: "Culture heritage",
+    styles: [
+      "historical-sites",
+      "monuments",
+      "traditional-villages",
+    ] as const,
+  },
+  {
+    group: "Adventure",
+    styles: ["wildlife-safaris", "adventure-parks", "extreme-sports"] as const,
+  },
+  {
+    group: "Urban and modern",
+    styles: ["city-life", "architecture"] as const,
+  },
+  {
+    group: "Relaxation and wellness",
+    styles: ["beach-resort", "hot-springs", "rejuvenate", "peaceful", "spas"] as const,
+  },
 ] as const;
 
 /**
- * Activities — the RANK question.
- *
- * These never eliminate a city; they order the survivors. Grouped so the list
- * scans, and no emoji in the labels.
+ * Activities — the FILTER question.
  */
 export const INTEREST_META: Record<
   Interest,
   { label: string; group: string }
 > = {
-  museums: { label: "Museums & galleries", group: "Culture" },
-  architecture: { label: "Architecture walks", group: "Culture" },
-  history: { label: "Historic sites", group: "Culture" },
-  "live-music": { label: "Live music", group: "Culture" },
-  "fine-dining": { label: "Fine dining", group: "Food & drink" },
-  "street-food": { label: "Street food", group: "Food & drink" },
-  markets: { label: "Food markets", group: "Food & drink" },
-  coffee: { label: "Coffee places", group: "Food & drink" },
-  nightlife: { label: "Bars & nightlife", group: "Food & drink" },
-  hiking: { label: "Hiking", group: "Outdoors" },
-  water: { label: "Swimming & water", group: "Outdoors" },
-  shopping: { label: "Shopping", group: "City" },
+  swimming: { label: "Swimming", group: "Water activities" },
+  boating: { label: "Boating", group: "Water activities" },
+  fishing: { label: "Fishing", group: "Water activities" },
+  "beach-activities": { label: "Beach activities", group: "Water activities" },
+  "kayaking-canoeing": { label: "Kayaking/canoeing", group: "Water activities" },
+  snorkeling: { label: "Snorkelling", group: "Water activities" },
+  "paddle-boarding": { label: "Paddle boarding", group: "Water activities" },
+  "river-cruises": { label: "River cruises", group: "Water activities" },
+  "waterfall-visits": { label: "Waterfall visits", group: "Water activities" },
+  museums: { label: "Museums & galleries", group: "Cultural activities" },
+  "live-music": { label: "Live music", group: "Cultural activities" },
+  "cooking-classes": { label: "Cooking classes", group: "Cultural activities" },
+  festivals: { label: "Local festivals", group: "Cultural activities" },
+  "food-markets": { label: "Food markets", group: "Leisure activities" },
+  "street-food": { label: "Street food", group: "Leisure activities" },
+  "coffee-places": { label: "Coffee places", group: "Leisure activities" },
+  "fine-dining": { label: "Fine dining", group: "Leisure activities" },
+  "parks-gardens": { label: "Parks & gardens", group: "Leisure activities" },
+  photography: { label: "Photography", group: "Leisure activities" },
+  hiking: { label: "Hiking", group: "Sports and fitness" },
+  cycling: { label: "Cycling", group: "Sports and fitness" },
+  running: { label: "Running", group: "Sports and fitness" },
+  yoga: { label: "Yoga", group: "Sports and fitness" },
+  climbing: { label: "Climbing", group: "Sports and fitness" },
+  "winter-sports": { label: "Winter sports", group: "Sports and fitness" },
+  "walking-tours": { label: "Walking tours", group: "Urban exploration" },
+  "street-art": { label: "Street art", group: "Urban exploration" },
+  neighborhoods: { label: "Neighborhoods", group: "Urban exploration" },
+  "bars-nightlife": { label: "Bars & nightlife", group: "Urban exploration" },
+  "shopping-streets": { label: "Shopping streets", group: "Urban exploration" },
+  viewpoints: { label: "Viewpoints", group: "Urban exploration" },
 };
 
 /** Activity groups in display order. */
 export const ACTIVITY_GROUPS = [
-  "Culture",
-  "Food & drink",
-  "Outdoors",
-  "City",
+  "Water activities",
+  "Cultural activities",
+  "Leisure activities",
+  "Sports and fitness",
+  "Urban exploration",
 ] as const;
 
 /** Income bands for the optional budget normaliser. */

@@ -1,0 +1,320 @@
+.shell {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  --nav-wash: color-mix(in srgb, var(--slate-200) 10%, var(--slate-0));
+  background: var(--nav-wash);
+}
+
+.people {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-height: 0;
+  padding: 10px 0 12px;
+  overflow: hidden;
+  background: transparent;
+  border-right: 1px solid rgba(49, 55, 74, 0.08);
+}
+
+.peopleList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.person {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pill {
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  width: 4px;
+  height: 8px;
+  border-radius: 0 4px 4px 0;
+  background: var(--slate-700);
+  transform: translateY(-50%) scaleY(0);
+  transition:
+    height var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
+}
+
+.person:hover .pill,
+.person:focus-visible .pill {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.personOn .pill {
+  height: 32px;
+  background: var(--who-ring, var(--purple-500));
+  transform: translateY(-50%) scaleY(1);
+}
+
+.face {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: border-radius var(--dur-micro) var(--ease-out);
+}
+
+.personOn .face {
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px var(--who-ring, var(--purple-400));
+}
+
+.invite {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-top: 6px;
+  border: 1px dashed #c4c7cc;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--slate-500);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.invite:hover,
+.invite:focus-visible {
+  background: var(--slate-50);
+  color: var(--slate-800);
+  outline: none;
+}
+
+.roles {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  margin-top: 8px;
+  border: 1px solid var(--slate-200);
+  border-radius: 50%;
+  background: var(--slate-0);
+  color: var(--slate-600);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+}
+
+.roles:hover,
+.roles:focus-visible {
+  background: var(--purple-50);
+  border-color: var(--purple-200);
+  color: var(--purple-700);
+  outline: none;
+}
+
+.rolesSheet {
+  padding: 8px 16px 20px;
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--nav-wash, color-mix(in srgb, var(--slate-200) 10%, var(--slate-0)));
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 12px 8px;
+}
+
+.back {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  flex: none;
+  border-radius: 50%;
+  color: var(--slate-700);
+}
+
+.back:hover,
+.back:active {
+  background: rgba(32, 33, 36, 0.08);
+}
+
+.back:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--purple-200);
+}
+
+.cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex: none;
+  background: var(--slate-100);
+}
+
+.brandCopy {
+  min-width: 0;
+}
+
+.product {
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+.trip {
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.section {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sectionLabel {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  color: var(--slate-800);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item svg {
+  flex: none;
+  color: var(--slate-600);
+}
+
+.item:hover,
+.item:focus-visible {
+  background: rgba(255, 255, 255, 0.72);
+  outline: none;
+}
+
+.itemOn {
+  background: var(--purple-50);
+  color: var(--purple-800);
+}
+
+.itemOn svg {
+  color: var(--purple-700);
+}
+
+.itemOn:hover,
+.itemOn:focus-visible {
+  background: var(--purple-100);
+}
+
+.itemDanger {
+  color: var(--danger-600);
+}
+
+.itemDanger svg {
+  color: var(--danger-600);
+}
+
+.itemDanger:hover,
+.itemDanger:focus-visible {
+  background: var(--danger-50);
+  color: var(--danger-700);
+}
+
+.itemDanger:hover svg,
+.itemDanger:focus-visible svg {
+  color: var(--danger-700);
+}
+
+.itemIcon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.unread {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--purple-500);
+  box-shadow: 0 0 0 2px var(--nav-wash, color-mix(in srgb, var(--slate-200) 10%, var(--slate-0)));
+}
+
+.count {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--purple-100);
+  color: var(--purple-800);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  line-height: 20px;
+  text-align: center;
+}

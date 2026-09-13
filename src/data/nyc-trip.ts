@@ -1,3 +1,4 @@
+import { ACCOUNT_USER } from "@/data/account";
 import type { Idea, ItineraryItem, Traveller, Trip } from "@/lib/types";
 
 /**
@@ -12,7 +13,7 @@ import type { Idea, ItineraryItem, Traveller, Trip } from "@/lib/types";
  *     ideas rail carries three suggestions that explicitly reference it.
  *  2. Friday 17 April carries the one genuine conflict: the Whitney runs to
  *     18:00 and the I Sodi table was booked for 17:45. Both are anchored, so
- *     "resolve overlap" has to make a real choice. The note on the dinner item
+ *     "resolve overlap" has to make a real choice. The comment on the dinner item
  *     admits the mistake in-world. Note that `i-neue-galerie` and
  *     `i-madison-avenue` also share a slot on the Thursday — that pair is the
  *     group splitting up, not a conflict, and their `assignedTo` sets are
@@ -35,11 +36,21 @@ const JONAS = "t-jonas";
 
 const TRAVELLERS = [
   {
+    id: ACCOUNT_USER.id,
+    name: ACCOUNT_USER.name,
+    initials: ACCOUNT_USER.initials,
+    photoUrl: ACCOUNT_USER.photoUrl,
+    colorIndex: ACCOUNT_USER.colorIndex,
+    role: "owner",
+    online: true,
+  },
+  {
     id: MAYA,
     name: "Maya Rasheed",
     initials: "MR",
+    photoUrl: "/avatars/maya-rasheed.jpg",
     colorIndex: 0,
-    role: "owner",
+    role: "co-owner",
     online: true,
   },
   {
@@ -47,7 +58,7 @@ const TRAVELLERS = [
     name: "Danny Okonkwo",
     initials: "DO",
     colorIndex: 1,
-    role: "editor",
+    role: "co-owner",
     online: true,
     viewingItemId: "i-vanguard",
   },
@@ -55,6 +66,7 @@ const TRAVELLERS = [
     id: PRIYA,
     name: "Priya Venkatesan",
     initials: "PV",
+    photoUrl: "/avatars/priya-venkatesan.jpg",
     colorIndex: 2,
     role: "editor",
     online: false,
@@ -63,9 +75,42 @@ const TRAVELLERS = [
     id: JONAS,
     name: "Jonas Lindqvist",
     initials: "JL",
+    photoUrl: "/avatars/jonas-lindqvist.jpg",
     colorIndex: 3,
     role: "advisor",
+    online: true,
+  },
+  {
+    id: "t-elena",
+    name: "Elena Varga",
+    initials: "EV",
+    colorIndex: 4,
+    role: "editor",
+    online: true,
+  },
+  {
+    id: "t-tom",
+    name: "Tom Hughes",
+    initials: "TH",
+    colorIndex: 5,
+    role: "viewer",
     online: false,
+  },
+  {
+    id: "t-aisha",
+    name: "Aisha Rahman",
+    initials: "AR",
+    colorIndex: 0,
+    role: "editor",
+    online: false,
+  },
+  {
+    id: "t-kenji",
+    name: "Kenji Sato",
+    initials: "KS",
+    colorIndex: 1,
+    role: "viewer",
+    online: true,
   },
 ] satisfies Traveller[];
 
@@ -87,10 +132,14 @@ const ITEMS = [
     },
     start: "2026-04-14T09:15:00-04:00",
     end: "2026-04-14T10:15:00-04:00",
-    notes:
-      "There is barely any seating. Get the pain au chocolat, walk it two blocks to Duane Park and eat it on a bench — it is the nicest three minutes in Tribeca.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: MAYA,
+        text: "There is barely any seating. Get the pain au chocolat, walk it two blocks to Duane Park and eat it on a bench — it is the nicest three minutes in Tribeca.",
+      },
+    ],
     createdBy: MAYA,
     costUsd: 18,
   },
@@ -108,8 +157,6 @@ const ITEMS = [
     },
     start: "2026-04-14T10:30:00-04:00",
     end: "2026-04-14T11:45:00-04:00",
-    notes:
-      "Calatrava's ribs only line up into a single arch if you stand dead centre on the lower concourse. From there it is five minutes to Trinity's graveyard and another ten down to the cobbles on Stone Street.",
     flexible: true,
     assignedTo: [],
     createdBy: JONAS,
@@ -148,10 +195,18 @@ const ITEMS = [
     },
     start: "2026-04-14T12:10:00-04:00",
     end: "2026-04-14T13:20:00-04:00",
-    notes:
-      "Order the original egg roll — it arrives as one fat log and bears no relation to the takeout version — plus the shrimp and snow pea leaf dumplings. Cash moves faster than the card machine.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: JONAS,
+        text: "Order the original egg roll — it arrives as one fat log and bears no relation to the takeout version — plus the shrimp and snow pea leaf dumplings. Cash moves faster than the card machine.",
+      },
+      {
+        from: PRIYA,
+        text: "Two of us should claim a table while the others order. The line at the door is the wait; once you sit it is fast.",
+      },
+    ],
     createdBy: JONAS,
     costUsd: 26,
   },
@@ -169,10 +224,14 @@ const ITEMS = [
     },
     start: "2026-04-14T15:00:00-04:00",
     end: "2026-04-18T11:00:00-04:00",
-    notes:
-      "Ask for rooms set back from the atrium. The nine-storey Victorian light well is the whole reason to stay here, but sound goes straight up it. Bags go to the bell desk after Saturday's checkout — the 4 train from 86th back to Fulton is twenty-five minutes if we need them before the airport.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: MAYA,
+        text: "Ask for rooms set back from the atrium. The nine-storey Victorian light well is the whole reason to stay here, but sound goes straight up it. Bags go to the bell desk after Saturday's checkout — the 4 train from 86th back to Fulton is twenty-five minutes if we need them before the airport.",
+      },
+    ],
     createdBy: MAYA,
     costUsd: 545,
     booking: "Confirmation BKM-4471QD · check-in 15:00, check-out 11:00",
@@ -191,8 +250,6 @@ const ITEMS = [
     },
     start: "2026-04-14T15:45:00-04:00",
     end: "2026-04-14T16:55:00-04:00",
-    notes:
-      "The Wavertree, an iron-hulled cargo ship from 1885, is tied up at Pier 16 and free to look at from the boardwalk. Then take the stairs to the Pier 17 roof, which puts the Brooklyn Bridge at eye level — the right first view of this city.",
     flexible: true,
     assignedTo: [],
     createdBy: PRIYA,
@@ -211,10 +268,14 @@ const ITEMS = [
     },
     start: "2026-04-14T17:30:00-04:00",
     end: "2026-04-14T18:45:00-04:00",
-    notes:
-      "The sawdust-floored Taproom downstairs is the right room for one drink before dinner. The Parlor upstairs wants a reservation and a longer evening than we have.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: DANNY,
+        text: "The sawdust-floored Taproom downstairs is the right room for one drink before dinner. The Parlor upstairs wants a reservation and a longer evening than we have.",
+      },
+    ],
     createdBy: DANNY,
     costUsd: 22,
   },
@@ -258,10 +319,22 @@ const ITEMS = [
     },
     start: "2026-04-14T19:30:00-04:00",
     end: "2026-04-14T21:45:00-04:00",
-    notes:
-      "The au poivre burger is bar-only and they make about thirty a night. If anyone lands early, go and claim one before we sit down.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: MAYA,
+        text: "The au poivre burger is bar-only and they make about thirty a night. If anyone lands early, go and claim one before we sit down.",
+      },
+      {
+        from: DANNY,
+        text: "Garden room is quieter. Ask when we check in — they will move us if it is free.",
+      },
+      {
+        from: JONAS,
+        text: "I will take the steak frites. Split a bottle of something Rhône and we are done.",
+      },
+    ],
     createdBy: MAYA,
     costUsd: 105,
     booking: "Resy 19:30 · under Rasheed",
@@ -284,8 +357,6 @@ const ITEMS = [
     },
     start: "2026-04-15T08:30:00-04:00",
     end: "2026-04-15T09:30:00-04:00",
-    notes:
-      "Honey-butter pancakes and the breakfast sandwich with Thai basil. It is a twenty-seat room, so one of us should walk over and put a name down before the rest arrive.",
     flexible: true,
     assignedTo: [],
     createdBy: JONAS,
@@ -304,8 +375,6 @@ const ITEMS = [
     },
     start: "2026-04-15T09:45:00-04:00",
     end: "2026-04-15T10:30:00-04:00",
-    notes:
-      "Go up the Centre Street ramp rather than the City Hall stairs — it is gentler and it skips the worst of the crowd. The bikes were moved down to the roadway in 2021, so the boardwalk is all pedestrians now.",
     flexible: false,
     assignedTo: [],
     createdBy: MAYA,
@@ -331,8 +400,32 @@ const ITEMS = [
     },
     start: "2026-04-15T10:30:00-04:00",
     end: "2026-04-15T12:15:00-04:00",
-    notes:
-      "The Manhattan Bridge framed between the warehouses is on Washington between Water and Front. Get there before eleven or you will spend the visit photographing other people photographing it.",
+    comments: [
+      {
+        from: PRIYA,
+        text: "Bridge shot is Washington between Water and Front. Before eleven or it's just other people's cameras.",
+      },
+      {
+        from: DANNY,
+        text: "Carousel is $2.50. I'll get tickets while you take the photo.",
+      },
+      {
+        from: MAYA,
+        text: "If that corner is packed we cut through to Time Out from Front Street.",
+      },
+      {
+        from: JONAS,
+        text: "Cobbles are slick if it rained overnight — skip the leather soles.",
+      },
+      {
+        from: PRIYA,
+        text: "Coffee after is at Devoción on the way to Time Out, not the cart under the bridge.",
+      },
+      {
+        from: MAYA,
+        text: "Jane's Carousel faces the bridge — better photo than the street if the corner is a scrum.",
+      },
+    ],
     flexible: true,
     assignedTo: [],
     createdBy: PRIYA,
@@ -351,10 +444,14 @@ const ITEMS = [
     },
     start: "2026-04-15T12:30:00-04:00",
     end: "2026-04-15T13:45:00-04:00",
-    notes:
-      "Order on the ground floor, then carry everything up to the fifth-floor deck. Tacos from Fonda and a bowl from Mr. Taka, split four ways, and the bridge sitting right there.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: DANNY,
+        text: "Order on the ground floor, then carry everything up to the fifth-floor deck. Tacos from Fonda and a bowl from Mr. Taka, split four ways, and the bridge sitting right there.",
+      },
+    ],
     createdBy: DANNY,
     costUsd: 28,
   },
@@ -372,8 +469,6 @@ const ITEMS = [
     },
     start: "2026-04-15T18:30:00-04:00",
     end: "2026-04-15T18:50:00-04:00",
-    notes:
-      "DUMBO and Canal Street are barely a mile apart across the river. The F does it in eight minutes and nobody ever believes it.",
     flexible: false,
     assignedTo: [],
     createdBy: JONAS,
@@ -400,10 +495,18 @@ const ITEMS = [
     },
     start: "2026-04-15T19:15:00-04:00",
     end: "2026-04-15T21:00:00-04:00",
-    notes:
-      "Tinned mussels to start, the razor clams, and the squid-ink rice if it is on. Narrow room — the counter is genuinely better than the tables at the back.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: DANNY,
+        text: "Tinned mussels to start, the razor clams, and the squid-ink rice if it is on. Narrow room — the counter is genuinely better than the tables at the back.",
+      },
+      {
+        from: MAYA,
+        text: "Counter only holds four. We should be at the door at 19:10, not 19:15.",
+      },
+    ],
     createdBy: DANNY,
     costUsd: 78,
     booking: "Resy 19:15 · under Okonkwo",
@@ -422,10 +525,14 @@ const ITEMS = [
     },
     start: "2026-04-15T21:15:00-04:00",
     end: "2026-04-15T22:45:00-04:00",
-    notes:
-      "No sign and no menu. It is the old Milk & Honey door at 134 Eldridge — knock, tell them roughly what you feel like, and let them build it.",
     flexible: true,
     assignedTo: [MAYA, DANNY],
+    comments: [
+      {
+        from: MAYA,
+        text: "No sign and no menu. It is the old Milk & Honey door at 134 Eldridge — knock, tell them roughly what you feel like, and let them build it.",
+      },
+    ],
     createdBy: MAYA,
     costUsd: 32,
   },
@@ -447,8 +554,6 @@ const ITEMS = [
     },
     start: "2026-04-16T08:00:00-04:00",
     end: "2026-04-16T08:40:00-04:00",
-    notes:
-      "Everything bagel, scallion cream cheese, extra lox. Take them to go and eat on the 4 train — we want to be at the Met when the doors open.",
     flexible: true,
     assignedTo: [],
     createdBy: PRIYA,
@@ -468,8 +573,6 @@ const ITEMS = [
     },
     start: "2026-04-16T08:55:00-04:00",
     end: "2026-04-16T09:30:00-04:00",
-    notes:
-      "The 4 skips everything between Brooklyn Bridge and 14th Street. Thirty-two minutes door to door, which is faster than any cab at nine in the morning.",
     flexible: false,
     assignedTo: [],
     createdBy: PRIYA,
@@ -496,10 +599,22 @@ const ITEMS = [
     },
     start: "2026-04-16T10:00:00-04:00",
     end: "2026-04-16T13:00:00-04:00",
-    notes:
-      "Timed entry — the queue at the 81st Street entrance moves faster than the Fifth Avenue steps. Do the Astor Chinese garden court and the Engelhard Court before the school groups land, then Greek and Roman on the way out.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: MAYA,
+        text: "Timed entry — the queue at the 81st Street entrance moves faster than the Fifth Avenue steps. Do the Astor Chinese garden court and the Engelhard Court before the school groups land, then Greek and Roman on the way out.",
+      },
+      {
+        from: PRIYA,
+        text: "Coat check is on the ground floor to the right. Do not carry bags through Egyptian.",
+      },
+      {
+        from: JONAS,
+        text: "If we split: I will do European sculpture. Text when you are in the cafeteria.",
+      },
+    ],
     createdBy: MAYA,
     costUsd: 30,
     booking: "Timed entry 10:00 · order MET-88240",
@@ -518,10 +633,14 @@ const ITEMS = [
     },
     start: "2026-04-16T13:20:00-04:00",
     end: "2026-04-16T14:25:00-04:00",
-    notes:
-      "A six-table Milanese bar that has been on this block since 1985. Prosciutto and butter on their own bread, a cappuccino, and no attempt at a long lunch.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: JONAS,
+        text: "A six-table Milanese bar that has been on this block since 1985. Prosciutto and butter on their own bread, a cappuccino, and no attempt at a long lunch.",
+      },
+    ],
     createdBy: JONAS,
     costUsd: 32,
   },
@@ -530,7 +649,7 @@ const ITEMS = [
     kind: "activity",
     category: "culture",
     title: "Klimt at the Neue Galerie",
-    subtitle: "Maya and Jonas · 86th and Fifth",
+    subtitle: "Maya · 86th and Fifth",
     place: {
       name: "Neue Galerie New York",
       address: "1048 Fifth Avenue, New York, NY 10028",
@@ -539,10 +658,18 @@ const ITEMS = [
     },
     start: "2026-04-16T14:45:00-04:00",
     end: "2026-04-16T16:15:00-04:00",
-    notes:
-      "Adele Bloch-Bauer I is on the second floor with a bench set directly in front of her, which tells you how long people stay. Bags have to be checked and the no-photography rule is not a negotiation here.",
     flexible: false,
-    assignedTo: [MAYA, JONAS],
+    assignedTo: [MAYA],
+    comments: [
+      {
+        from: MAYA,
+        text: "Adele Bloch-Bauer I is on the second floor with a bench set directly in front of her, which tells you how long people stay. Bags have to be checked and the no-photography rule is not a negotiation here.",
+      },
+      {
+        from: PRIYA,
+        text: "Café Sabarsky downstairs if the others finish Madison early. Schnitzel, not cake.",
+      },
+    ],
     createdBy: MAYA,
     costUsd: 28,
     booking: "Timed entry 14:45 · two adults",
@@ -561,8 +688,6 @@ const ITEMS = [
     },
     start: "2026-04-16T14:45:00-04:00",
     end: "2026-04-16T16:15:00-04:00",
-    notes:
-      "Eight blocks of very calm money. The Ralph Lauren mansion at 72nd is a Gilded Age house you can walk into for free, and the staircase alone justifies the detour.",
     flexible: true,
     assignedTo: [DANNY, PRIYA],
     createdBy: DANNY,
@@ -582,10 +707,14 @@ const ITEMS = [
     },
     start: "2026-04-16T16:45:00-04:00",
     end: "2026-04-16T17:45:00-04:00",
-    notes:
-      "Ludwig Bemelmans painted these murals in 1947 in exchange for a year's lodging, which is the best deal anyone has struck in this city. The piano starts at 17:30 and a cover charge starts with it — stay for it anyway.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: JONAS,
+        text: "Ludwig Bemelmans painted these murals in 1947 in exchange for a year's lodging, which is the best deal anyone has struck in this city. The piano starts at 17:30 and a cover charge starts with it — stay for it anyway.",
+      },
+    ],
     createdBy: JONAS,
     costUsd: 36,
   },
@@ -598,8 +727,6 @@ const ITEMS = [
     place: null,
     start: "2026-04-16T18:00:00-04:00",
     end: "2026-04-16T18:25:00-04:00",
-    notes:
-      "Ask for Park down to 57th and then west. Fifth Avenue at six o'clock is a car park with a view.",
     flexible: false,
     assignedTo: [],
     createdBy: MAYA,
@@ -626,10 +753,50 @@ const ITEMS = [
     },
     start: "2026-04-16T18:45:00-04:00",
     end: "2026-04-16T21:30:00-04:00",
-    notes:
-      "The one big night, and the reason the rest of the week eats tacos. Ripert's tasting runs about two and a half hours. Jackets are not required and every man in the room wears one.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: MAYA,
+        text: "The one big night, and the reason the rest of the week eats tacos. Ripert's tasting runs about two and a half hours. Jackets are not required and every man in the room wears one.",
+      },
+      {
+        from: DANNY,
+        text: "I packed a jacket. Jonas, do the same — the room is quieter if we match it.",
+      },
+      {
+        from: PRIYA,
+        text: "I flagged the shellfish allergy on the reservation. Confirm at the table anyway.",
+      },
+      {
+        from: JONAS,
+        text: "Wine pairing is extra and worth it once. If we skip, ask sommelier for one white by the glass with the first two courses.",
+      },
+      {
+        from: MAYA,
+        text: "Deposit is on the confirmation. Cancel by noon the day of or we lose it.",
+      },
+      {
+        from: DANNY,
+        text: "Sit two and two, not a long four. Easier to talk and they plate for that.",
+      },
+      {
+        from: PRIYA,
+        text: "Skip bread if we want dessert. The chocolate is the last course that actually matters.",
+      },
+      {
+        from: JONAS,
+        text: "Taxi after is easier than subway in a jacket. Stand on 51st, not Seventh.",
+      },
+      {
+        from: MAYA,
+        text: "Do not be late. They will hold ten minutes and then the table is gone.",
+      },
+      {
+        from: DANNY,
+        text: "No photos of the plate. One of the menu at the end if anyone wants the souvenir.",
+      },
+    ],
     createdBy: MAYA,
     costUsd: 245,
     booking: "Confirmation 7QJ4M2 · deposit taken, cancel by 16 Apr 12:00",
@@ -652,10 +819,14 @@ const ITEMS = [
     },
     start: "2026-04-17T08:45:00-04:00",
     end: "2026-04-17T10:00:00-04:00",
-    notes:
-      "The tower is built for four and priced like it. Take the sable over the lox — it is smokier, and they slice it off the side in front of you.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: PRIYA,
+        text: "The tower is built for four and priced like it. Take the sable over the lox — it is smokier, and they slice it off the side in front of you.",
+      },
+    ],
     createdBy: PRIYA,
     costUsd: 46,
   },
@@ -699,10 +870,18 @@ const ITEMS = [
     },
     start: "2026-04-17T10:45:00-04:00",
     end: "2026-04-17T13:15:00-04:00",
-    notes:
-      "Start on five and work down; the crowd does the exact opposite. Water Lilies and the Rothkos are up there. The Sculpture Garden is the quietest bench in Midtown and everybody walks past it.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: MAYA,
+        text: "Start on five and work down; the crowd does the exact opposite. Water Lilies and the Rothkos are up there. The Sculpture Garden is the quietest bench in Midtown and everybody walks past it.",
+      },
+      {
+        from: JONAS,
+        text: "Design galleries on three if anyone wants a shorter loop. I will meet you in the garden at 12:45.",
+      },
+    ],
     createdBy: MAYA,
     costUsd: 30,
     booking: "Timed entry 10:45 · order MOMA-6613",
@@ -721,8 +900,6 @@ const ITEMS = [
     },
     start: "2026-04-17T13:30:00-04:00",
     end: "2026-04-17T14:15:00-04:00",
-    notes:
-      "Adobada on corn, the salsa verde, and a horchata. It is four minutes from MoMA's door and it balances last night's bill nicely.",
     flexible: true,
     assignedTo: [],
     createdBy: DANNY,
@@ -768,10 +945,14 @@ const ITEMS = [
     },
     start: "2026-04-17T15:30:00-04:00",
     end: "2026-04-17T18:00:00-04:00",
-    notes:
-      "Renzo Piano stacked the galleries and hung the staircases on the outside, so you get the Hudson between every floor. Start on eight and take the outdoor stairs all the way down.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: PRIYA,
+        text: "Renzo Piano stacked the galleries and hung the staircases on the outside, so you get the Hudson between every floor. Start on eight and take the outdoor stairs all the way down.",
+      },
+    ],
     createdBy: PRIYA,
     costUsd: 30,
     booking: "Timed entry 15:30 · four adults",
@@ -790,10 +971,34 @@ const ITEMS = [
     },
     start: "2026-04-17T17:45:00-04:00",
     end: "2026-04-17T19:30:00-04:00",
-    notes:
-      "Booked at 17:45 before we pinned down the Whitney, and the Whitney runs to six — one of the two has to move. Worth keeping the table: the carciofi alla giudia and the lasagne of thirty paper-thin sheets are why this room is impossible to get into.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: PRIYA,
+        text: "Booked at 17:45 before we pinned down the Whitney, and the Whitney runs to six — one of the two has to move. Worth keeping the table: the carciofi alla giudia and the lasagne of thirty paper-thin sheets are why this room is impossible to get into.",
+      },
+      {
+        from: MAYA,
+        text: "I can duck out of the Whitney at 17:15 and hold the table. The rest follow.",
+      },
+      {
+        from: DANNY,
+        text: "If we keep the 17:45, skip the last Whitney floor. The outdoor stairs are the point anyway.",
+      },
+      {
+        from: JONAS,
+        text: "Lasagne for the table, then secondi to share. Do not each order pasta.",
+      },
+      {
+        from: PRIYA,
+        text: "Resy is under Venkatesan. They will not hold past ten minutes on a Friday.",
+      },
+      {
+        from: MAYA,
+        text: "Walk from Gansevoort is twelve minutes. Do not cab unless it is raining.",
+      },
+    ],
     createdBy: PRIYA,
     costUsd: 95,
     booking: "Resy 17:45 · under Venkatesan",
@@ -812,10 +1017,22 @@ const ITEMS = [
     },
     start: "2026-04-17T20:00:00-04:00",
     end: "2026-04-17T22:00:00-04:00",
-    notes:
-      "Cash at the door is faster, there is a one-drink minimum, and the room really does not tolerate talking. Sit stage-left where the wedge narrows — the sound is better and the piano is close enough to hear the pedals.",
     flexible: false,
     assignedTo: [],
+    comments: [
+      {
+        from: DANNY,
+        text: "Cash at the door is faster, there is a one-drink minimum, and the room really does not tolerate talking. Sit stage-left where the wedge narrows — the sound is better and the piano is close enough to hear the pedals.",
+      },
+      {
+        from: MAYA,
+        text: "First set is 20:00 sharp. Doors around 19:30. Eat light at I Sodi if we are walking over.",
+      },
+      {
+        from: JONAS,
+        text: "I will take the round after the set. One drink minimum is per person, not per table.",
+      },
+    ],
     createdBy: DANNY,
     costUsd: 45,
     booking: "20:00 set · four at the door under Okonkwo",
@@ -838,8 +1055,6 @@ const ITEMS = [
     },
     start: "2026-04-18T08:20:00-04:00",
     end: "2026-04-18T08:55:00-04:00",
-    notes:
-      "Bags to the bell desk before we go. Checkout is eleven and we will not be back downtown before two.",
     flexible: false,
     assignedTo: [],
     createdBy: MAYA,
@@ -866,8 +1081,6 @@ const ITEMS = [
     },
     start: "2026-04-18T09:00:00-04:00",
     end: "2026-04-18T10:10:00-04:00",
-    notes:
-      "The line at nine-thirty on a Saturday is twenty minutes. At nine it is nothing. Order a jar of the strawberry-rhubarb preserve to take home.",
     flexible: true,
     assignedTo: [],
     createdBy: MAYA,
@@ -887,10 +1100,18 @@ const ITEMS = [
     },
     start: "2026-04-18T10:20:00-04:00",
     end: "2026-04-18T12:10:00-04:00",
-    notes:
-      "In at Merchants' Gate on Columbus Circle, up the Mall under the American elms, then down the stairs at Bethesda. Look up inside the arcade — the ceiling is fifteen thousand Minton tiles and almost nobody raises their head.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: JONAS,
+        text: "In at Merchants' Gate on Columbus Circle, up the Mall under the American elms, then down the stairs at Bethesda. Look up inside the arcade — the ceiling is fifteen thousand Minton tiles and almost nobody raises their head.",
+      },
+      {
+        from: PRIYA,
+        text: "If it is cold we cut the Ramble and go straight to 81st. The tiles still happen.",
+      },
+    ],
     createdBy: JONAS,
   },
   {
@@ -927,10 +1148,14 @@ const ITEMS = [
     },
     start: "2026-04-18T12:45:00-04:00",
     end: "2026-04-18T13:55:00-04:00",
-    notes:
-      "Cash only, no reservations, and the Saturday line is the price of admission. Sturgeon scrambled with onions, a plate of sable for the table, and a formica top under ninety-year-old wallpaper.",
     flexible: true,
     assignedTo: [],
+    comments: [
+      {
+        from: JONAS,
+        text: "Cash only, no reservations, and the Saturday line is the price of admission. Sturgeon scrambled with onions, a plate of sable for the table, and a formica top under ninety-year-old wallpaper.",
+      },
+    ],
     createdBy: JONAS,
     costUsd: 38,
   },
@@ -939,7 +1164,7 @@ const ITEMS = [
     kind: "activity",
     category: "shopping",
     title: "Last stop: Zabar's",
-    subtitle: "Priya and Jonas · coffee, babka, one whitefish",
+    subtitle: "Priya · coffee, babka, one whitefish",
     place: {
       name: "Zabar's",
       address: "2245 Broadway, New York, NY 10024",
@@ -948,10 +1173,8 @@ const ITEMS = [
     },
     start: "2026-04-18T14:10:00-04:00",
     end: "2026-04-18T14:55:00-04:00",
-    notes:
-      "Upstairs is a housewares museum you can buy from; downstairs is the actual reason. The chocolate babka travels beautifully. The whitefish salad does not.",
     flexible: true,
-    assignedTo: [PRIYA, JONAS],
+    assignedTo: [PRIYA],
     createdBy: PRIYA,
     costUsd: 28,
   },
@@ -1139,10 +1362,11 @@ export const NYC_TRIP: Trip = {
   travellers: TRAVELLERS,
   items: ITEMS,
   ideas: IDEAS,
+  coverImage: "/destinations/nyc.jpg",
   fromDiscovery: {
     budget: "premium",
-    styles: ["city", "culture", "food"],
-    interests: ["museums", "fine-dining", "architecture", "live-music"],
+    styles: ["city-life", "architecture"],
+    interests: [],
     score: 92,
   },
 };

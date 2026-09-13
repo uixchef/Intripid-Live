@@ -1,46 +1,37 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ChevronDown,
-  Expand,
-  Footprints,
   MapPin,
-  Shrink,
+  MessageCircle,
+  Search,
   Sparkles,
+  StickyNote,
+  UserRoundCog,
+  X,
 } from "lucide-react";
 
-import { AvatarStack } from "@/components/ui/avatar";
+import { AiMark } from "@/components/brand/ai-mark";
+import { MobileBack } from "@/components/nav/mobile-back";
+import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { IconButton } from "@/components/ui/button";
+import { Popover } from "@/components/ui/overlay";
 import { cn } from "@/lib/utils";
-import { dayLabel } from "@/lib/trip/time";
-import type { Trip } from "@/lib/types";
+import { travellerColor } from "@/lib/categories";
+import { ROLE_LABELS, canManageRoles, dockVisibleTravellers, partyTravellers } from "@/lib/collaboration";
+import type { ItineraryItem, Traveller, Trip } from "@/lib/types";
 
+import { PersonMenu } from "./person-menu";
 import styles from "./rail.module.css";
 
 /**
- * The context and utility rail.
+ * The dock-driven side panel.
  *
- * WHY IT EXISTS. The original product put the trip's participants and
- * utilities in a permanent vertical area beside the schedule, and losing it
- * was the biggest architectural regression in the earlier pass: the map became
- * a decorative panel, the assistant became a modal, and four travellers became
- * a stack of avatars in a top bar. The rail brings back a single place where
- * "what am I looking at, who is it with, and what can I do about it" lives.
- *
- * SHAPE. Three stacked sections, in order of how often you look at them:
- *
- *   MAP        fixed, always present — geography for the day you are planning
- *   CONTEXT    flexible — the selected activity, the ideas shelf, or the
- *              advisor's proposal, whichever is live
- *   TRAVELLERS collapsed to one line until you open it
- *
- * PROGRESSIVE DISCLOSURE. The context section switches itself: selecting a
- * card shows the activity, a proposal shows the advisor. Nothing is hidden
- * behind a control the user has to discover, and nothing is shown at full
- * height when it has nothing to say. The rail never holds more than one
- * expanded section beyond the map.
+ * The calendar is the default workspace. The 48px dock is always there;
+ * avatars live at the top, tools at the bottom. The panel only mounts for the
+ * tool you picked. Invite by email still opens the invite modal.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -48,60 +39,195 @@ import styles from "./rail.module.css";
 /* -------------------------------------------------------------------------- */
 
 export interface RailMapProps {
-  activeDay: string;
-  stopCount: number;
-  walkMinutes: number;
-  expanded: boolean;
-  onToggleExpanded: () => void;
+  items: ItineraryItem[];
+  onPickItem: (id: string) => void;
+  onClose?: () => void;
+  dismiss?: "close" | "back";
+  backFrom?: string;
   children: ReactNode;
 }
 
 export function RailMap({
-  activeDay,
-  stopCount,
-  walkMinutes,
-  expanded,
-  onToggleExpanded,
+  items,
+  onPickItem,
+  onClose,
+  dismiss = "close",
+  backFrom,
   children,
 }: RailMapProps) {
+  const [query, setQuery] = useState("");
+  const hits = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (q.length < 1) return [];
+    return items
+      .filter(
+        (item) =>
+          item.kind !== "commute" &&
+          (item.title.toLowerCase().includes(q) ||
+            item.place?.name.toLowerCase().includes(q) ||
+            item.place?.address.toLowerCase().includes(q)),
+      )
+      .slice(0, 5);
+  }, [items, query]);
+
+  const back = dismiss === "back";
+
   return (
     <section
-      className={cn(styles.mapSection, expanded && styles.mapSectionTall)}
+      className={cn(
+        styles.mapSection,
+        styles.mapSectionFill,
+        back && styles.mapSectionFlush,
+      )}
       aria-label="Map"
     >
-      {/*
-       * The map needs to say which day it is drawing. Without this line the
-       * route silently changes under you when you switch days, which reads as
-       * a bug rather than as the map following you.
-       */}
-      <header className={styles.mapHead}>
-        <span className={styles.mapDay}>{dayLabel(activeDay)}</span>
-        <span className={styles.mapStats}>
-          <span className={styles.mapStat}>
-            <MapPin size={10} strokeWidth={2.4} />
-            <span className="tabular">{stopCount}</span>
-          </span>
-          {walkMinutes > 0 ? (
-            <span className={styles.mapStat}>
-              <Footprints size={10} strokeWidth={2.4} />
-              <span className="tabular">{walkMinutes}m</span>
-            </span>
+      {!back ? (
+        <header className={styles.mapHead}>
+          <div className={styles.mapHeadCopy}>
+            <span className={styles.mapDay}>Map</span>
+          </div>
+          {onClose ? (
+            <IconButton label="Close map" size="xs" variant="ghost" onClick={onClose}>
+              <X size={14} strokeWidth={2} />
+            </IconButton>
           ) : null}
-        </span>
-        <IconButton
-          label={expanded ? "Shrink map" : "Expand map"}
-          size="xs"
-          variant="ghost"
-          onClick={onToggleExpanded}
+        </header>
+      ) : null}
+      <div className={styles.mapBody}>
+        <div className={styles.mapSearchRow}>
+          {back && onClose ? (
+            <MobileBack
+              from={backFrom}
+              onClick={onClose}
+              className={styles.mapSearchBack}
+            />
+          ) : null}
+          <div className={styles.mapSearch}>
+          <Search size={15} strokeWidth={2} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search places on this trip"
+            aria-label="Search places on this trip"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && hits[0]) {
+                onPickItem(hits[0].id);
+                setQuery("");
+              }
+              if (event.key === "Escape") setQuery("");
+            }}
+          />
+          {query ? (
+            <button
+              type="button"
+              className={styles.mapSearchClear}
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+            >
+              <X size={12} strokeWidth={2.2} />
+            </button>
+          ) : null}
+          {hits.length > 0 ? (
+            <ul className={styles.mapHits} role="listbox">
+              {hits.map((hit) => (
+                <li key={hit.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onPickItem(hit.id);
+                      setQuery("");
+                    }}
+                  >
+                    {hit.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Generic tool panel                                                        */
+/* -------------------------------------------------------------------------- */
+
+export function RailPanel({
+  title,
+  subtitle,
+  count,
+  onClose,
+  dismiss = "close",
+  backFrom,
+  fill = false,
+  tone = "default",
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  /** Numeric badge beside the heading. */
+  count?: number;
+  onClose: () => void;
+  dismiss?: "close" | "back";
+  /** Compact back: the screen this panel returns to. */
+  backFrom?: string;
+  fill?: boolean;
+  tone?: "default" | "ai";
+  children: ReactNode;
+}) {
+  const ai = tone === "ai";
+  const back = dismiss === "back";
+  const heading = (
+    <>
+      <span className={ai ? styles.panelAiName : styles.mapDay}>{title}</span>
+      {count != null ? (
+        <span
+          className={cn(styles.headCount, "tabular")}
+          aria-label={`${count} on this trip`}
         >
-          {expanded ? (
-            <Shrink size={12} strokeWidth={2.1} />
-          ) : (
-            <Expand size={12} strokeWidth={2.1} />
-          )}
-        </IconButton>
+          {count}
+        </span>
+      ) : null}
+    </>
+  );
+  return (
+    <section
+      className={cn(styles.panel, ai && styles.panelAi)}
+      aria-label={title}
+    >
+      <header className={cn(styles.mapHead, ai && styles.panelAiHead, back && styles.mapHeadBack)}>
+        {back ? (
+          <MobileBack
+            from={backFrom}
+            onClick={onClose}
+            className={styles.backBtn}
+          />
+        ) : null}
+        {ai ? (
+          <div className={styles.panelAiTitle}>
+            <AiMark size={20} />
+            <div className={styles.mapHeadCopy}>
+              <div className={styles.mapHeadTitle}>{heading}</div>
+              {subtitle ? <span className={styles.mapSub}>{subtitle}</span> : null}
+            </div>
+          </div>
+        ) : (
+          <div className={styles.mapHeadCopy}>
+            <div className={styles.mapHeadTitle}>{heading}</div>
+            {subtitle ? <span className={styles.mapSub}>{subtitle}</span> : null}
+          </div>
+        )}
+        {back ? null : (
+          <IconButton label="Close panel" size="xs" variant="ghost" onClick={onClose}>
+            <X size={14} strokeWidth={2} />
+          </IconButton>
+        )}
       </header>
-      <div className={styles.mapBody}>{children}</div>
+      <div className={cn(styles.panelBody, fill && styles.panelBodyFill)}>{children}</div>
     </section>
   );
 }
@@ -122,8 +248,8 @@ export interface RailContextProps {
 }
 
 const TAB_LABELS: Record<RailTab, string> = {
-  activity: "Activity",
-  ideas: "Ideas",
+  activity: "Details",
+  ideas: "Saved",
   advisor: "Advisor",
 };
 
@@ -208,6 +334,7 @@ export function RailPeople({
   onToggle,
   children,
 }: RailPeopleProps) {
+  const partyCount = partyTravellers(trip.travellers).length;
   const online = trip.travellers.filter((t) => t.online).length;
 
   return (
@@ -229,7 +356,7 @@ export function RailPeople({
         />
         <span className={styles.peopleMeta}>
           <span className={styles.peopleCount}>
-            {trip.travellers.length} travelling
+            {partyCount} travelling
           </span>
           <span className={styles.peopleDot} aria-hidden>
             ·
@@ -271,5 +398,254 @@ export function RailPeople({
         ) : null}
       </AnimatePresence>
     </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Side actions — Google Calendar's trailing icon dock                       */
+/* -------------------------------------------------------------------------- */
+
+export type RailDockAction =
+  | "advisor"
+  | "ideas"
+  | "people"
+  | "map"
+  | "chat"
+  | "roles";
+
+export function RailDock({
+  travellers,
+  meId,
+  sharedView,
+  overlayIds,
+  active,
+  onAction,
+  onMyCalendar,
+  onSharedView,
+  onChangeRole,
+  onRemove,
+}: {
+  travellers: Traveller[];
+  meId: string | null;
+  sharedView: boolean;
+  overlayIds: string[];
+  active: RailDockAction | null;
+  onAction: (action: RailDockAction) => void;
+  onMyCalendar: () => void;
+  onSharedView: (travellerId: string) => void;
+  onChangeRole: (travellerId: string, role: Traveller["role"]) => void;
+  onRemove: (travellerId: string) => void;
+}) {
+  const me = meId ? travellers.find((person) => person.id === meId) ?? null : null;
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
+  const openPerson = travellers.find((person) => person.id === menuFor) ?? null;
+  const pinIds = [
+    ...(sharedView ? overlayIds : []),
+    ...(menuFor ? [menuFor] : []),
+  ];
+  const { shown, hidden } = dockVisibleTravellers(travellers, pinIds, 4, meId);
+
+  function toggleMenu(id: string, node: HTMLElement) {
+    setMoreOpen(false);
+    if (menuFor === id) {
+      setMenuFor(null);
+      setAnchor(null);
+      return;
+    }
+    setMenuFor(id);
+    setAnchor(node);
+  }
+
+  return (
+    <nav className={styles.dock} aria-label="Planner tools">
+      <div className={styles.dockPeople}>
+        {shown.map((person) => {
+          const picked = sharedView && overlayIds.includes(person.id);
+          const isYou = person.id === meId;
+          return (
+          <button
+            key={person.id}
+            type="button"
+            className={cn(
+              styles.dockAvatar,
+              picked && styles.dockAvatarPicked,
+            )}
+            style={{ ["--who-ring" as string]: travellerColor(person.colorIndex) }}
+            aria-pressed={picked}
+            aria-label={`${isYou ? "You, " : ""}${person.name}, ${ROLE_LABELS[person.role]}${
+              person.role === "advisor" && person.online ? ", online" : ""
+            }${picked ? ", in shared view" : ""}`}
+            title={
+              isYou
+                ? `You · ${person.name}`
+                : person.role === "advisor"
+                  ? `${person.name} · travel advisor${person.online ? " · online" : ""}`
+                  : person.name
+            }
+            onClick={() => {
+              setMoreOpen(false);
+              onSharedView(person.id);
+            }}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              toggleMenu(person.id, event.currentTarget);
+            }}
+          >
+            <span className={styles.dockPill} aria-hidden />
+            <Avatar traveller={person} size="md" showPresence className={styles.dockFace} />
+          </button>
+          );
+        })}
+        {hidden.length > 0 ? (
+          <button
+            type="button"
+            className={cn(styles.dockMore, moreOpen && styles.dockMoreOn)}
+            aria-label={`${hidden.length} more people on this trip`}
+            aria-haspopup="menu"
+            aria-expanded={moreOpen}
+            title={`${hidden.length} more`}
+            onClick={(event) => {
+              setMenuFor(null);
+              setAnchor(null);
+              setMoreAnchor(event.currentTarget);
+              setMoreOpen((open) => !open);
+            }}
+          >
+            +{hidden.length}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className={cn(styles.dockRoles, active === "roles" && styles.dockRolesOn)}
+          aria-label="Manage roles"
+          aria-pressed={active === "roles"}
+          title="Roles"
+          onClick={() => {
+            setMenuFor(null);
+            setAnchor(null);
+            setMoreOpen(false);
+            onAction("roles");
+          }}
+        >
+          <UserRoundCog size={16} strokeWidth={2.2} />
+        </button>
+      </div>
+
+      <Popover
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        anchor={moreAnchor}
+        placement="left"
+        align="start"
+        offset={10}
+        width={240}
+        label="People on this trip"
+        className={styles.dockMorePopover}
+      >
+        <div className={styles.dockMoreList} role="menu">
+          {hidden.map((person) => {
+            const picked = sharedView && overlayIds.includes(person.id);
+            const isYou = person.id === meId;
+            return (
+              <button
+                key={person.id}
+                type="button"
+                role="menuitem"
+                className={cn(styles.dockMoreItem, picked && styles.dockMoreItemPicked)}
+                onClick={() => {
+                  setMoreOpen(false);
+                  onSharedView(person.id);
+                }}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  setMoreOpen(false);
+                  toggleMenu(person.id, moreAnchor ?? event.currentTarget);
+                }}
+              >
+                <Avatar
+                  traveller={person}
+                  size="md"
+                  hideName
+                  showPresence
+                  className={styles.dockFace}
+                />
+                <span className={styles.dockMoreCopy}>
+                  <span className={styles.dockMoreName}>
+                    {isYou ? `You · ${person.name.split(" ")[0]}` : person.name.split(" ")[0]}
+                  </span>
+                  <span className={styles.dockMoreRole}>{ROLE_LABELS[person.role]}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Popover>
+
+      {openPerson ? (
+        <PersonMenu
+          person={openPerson}
+          me={me}
+          manager={me ? canManageRoles(me.role) : true}
+          open
+          anchor={anchor}
+          sharedView={sharedView}
+          onCalendar={overlayIds.includes(openPerson.id)}
+          onClose={() => {
+            setMenuFor(null);
+            setAnchor(null);
+          }}
+          onSharedView={() => onSharedView(openPerson.id)}
+          onMyCalendar={onMyCalendar}
+          onChangeRole={(role) => onChangeRole(openPerson.id, role)}
+          onRemove={() => onRemove(openPerson.id)}
+        />
+      ) : null}
+
+      <div className={styles.dockTools}>
+        <button
+          type="button"
+          className={cn(
+            styles.dockBtn,
+            styles.dockAi,
+            active === "advisor" && styles.dockBtnOn,
+          )}
+          aria-pressed={active === "advisor"}
+          aria-label="Ask AI"
+          onClick={() => onAction("advisor")}
+        >
+          <AiMark size={18} />
+        </button>
+        <button
+          type="button"
+          className={cn(styles.dockBtn, active === "map" && styles.dockBtnOn)}
+          aria-pressed={active === "map"}
+          aria-label="Map"
+          onClick={() => onAction("map")}
+        >
+          <MapPin size={18} strokeWidth={1.9} />
+        </button>
+        <button
+          type="button"
+          className={cn(styles.dockBtn, active === "chat" && styles.dockBtnOn)}
+          aria-pressed={active === "chat"}
+          aria-label="Trip chat"
+          onClick={() => onAction("chat")}
+        >
+          <MessageCircle size={18} strokeWidth={1.9} />
+        </button>
+        <button
+          type="button"
+          className={cn(styles.dockBtn, active === "ideas" && styles.dockBtnOn)}
+          aria-pressed={active === "ideas"}
+          aria-label="Idea board"
+          onClick={() => onAction("ideas")}
+        >
+          <StickyNote size={18} strokeWidth={1.9} />
+        </button>
+      </div>
+    </nav>
   );
 }

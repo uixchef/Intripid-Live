@@ -9,9 +9,15 @@ export const metadata: Metadata = {
     "Answer a few questions and watch destinations rank themselves against what you actually care about.",
 };
 
-export default function DiscoverPage() {
+export default async function DiscoverPage({
+  searchParams,
+}: PageProps<"/discover">) {
+  const query = await searchParams;
+  const startDate = typeof query.from === "string" ? query.from : undefined;
+  const endDate = typeof query.to === "string" ? query.to : undefined;
+
   return (
-    <DiscoveryStoreProvider>
+    <DiscoveryStoreProvider startDate={startDate} endDate={endDate}>
       <DiscoveryExperience />
     </DiscoveryStoreProvider>
   );

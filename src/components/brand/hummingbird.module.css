@@ -4,22 +4,26 @@
   line-height: 0;
 }
 
-.root svg {
-  overflow: visible;
-  transition: transform var(--dur-surface) var(--ease-out);
+.root img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: none;
+  pointer-events: none;
+  user-select: none;
 }
 
 /*
- * The signature hold. A hummingbird sustains a hover; it does not spin. Small
- * amplitude, high frequency, and always accompanied by real progress
- * elsewhere on screen — never used as an indeterminate spinner.
+ * The signature hold. A hummingbird sustains a hover; it does not spin.
  */
-.hovering svg {
+.hovering {
   animation: intripidHover 1.2s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hovering svg {
+  .hovering {
     animation: none;
   }
 }

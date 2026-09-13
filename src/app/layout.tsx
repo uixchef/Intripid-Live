@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Inter } from "next/font/google";
+import { Familjen_Grotesk, Inter } from "next/font/google";
 
 import { site } from "@/config/site";
+import { travelPoleFontVariables } from "@/fonts/travel-pole";
 
 import { Providers } from "./providers";
 
@@ -12,11 +13,10 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const instrumentSerif = Instrument_Serif({
+const familjen = Familjen_Grotesk({
   subsets: ["latin"],
-  weight: "400",
   style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
+  variable: "--font-familjen",
 });
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${instrumentSerif.variable}`}
+      className={`${inter.variable} ${familjen.variable} ${travelPoleFontVariables}`}
     >
       <body>
         <Providers>{children}</Providers>

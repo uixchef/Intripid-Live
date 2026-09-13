@@ -1,0 +1,592 @@
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-8) var(--space-8) var(--space-6);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.headCopy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.period {
+  flex: none;
+  width: auto;
+}
+
+.viewAll {
+  flex: none;
+  padding-inline: 8px;
+  color: var(--purple-700);
+  font-weight: var(--weight-semibold);
+}
+
+.viewAll:hover:not(:disabled) {
+  color: var(--purple-800);
+}
+
+.table {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+}
+
+.cols,
+.row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 64px;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.cols {
+  min-height: 36px;
+  background: var(--slate-50);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}
+
+.colRank,
+.colName,
+.colScore {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.colRank {
+  justify-items: center;
+  font-size: 10px;
+  text-align: center;
+}
+
+.colName {
+  padding-inline: 4px;
+}
+
+.colScore {
+  justify-items: end;
+  padding-right: 6px;
+  text-align: right;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.row {
+  min-height: 40px;
+  padding-block: 6px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row:nth-child(even) {
+  background: var(--slate-50);
+}
+
+.you {
+  background: var(--purple-50);
+}
+
+.you:nth-child(even) {
+  background: var(--purple-50);
+}
+
+.medal,
+.number {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+
+.gold {
+  background: var(--orange-100);
+  color: var(--orange-900);
+}
+
+.silver {
+  background: var(--slate-200);
+  color: var(--slate-800);
+}
+
+.bronze {
+  background: var(--orange-50);
+  color: var(--orange-800);
+  box-shadow: inset 0 0 0 1px var(--orange-200);
+}
+
+.number {
+  background: var(--slate-100);
+  color: var(--text-tertiary);
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding-inline: 4px;
+}
+
+.name {
+  overflow: hidden;
+  min-width: 0;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.you .name {
+  color: var(--purple-900);
+}
+
+.score {
+  padding-right: 6px;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.podiumCard {
+  min-width: 0;
+  padding: 20px 28px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-surface);
+}
+
+.podiumCardCompact {
+  padding: 8px 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.podium {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  align-items: end;
+  gap: 16px;
+}
+
+.podiumCardCompact .podium {
+  gap: 8px;
+}
+
+.stand {
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.podiumCardCompact .stand {
+  gap: 6px;
+}
+
+.podiumName {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  color: var(--text-primary);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podiumCardCompact .podiumName {
+  font-size: var(--text-2xs);
+}
+
+.podiumYou {
+  color: var(--purple-900);
+}
+
+.bar {
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 8px 18px;
+  border-radius: 16px;
+}
+
+.podiumCardCompact .bar {
+  padding: 10px 6px 12px;
+  border-radius: 12px;
+}
+
+.barGold {
+  height: 148px;
+  background: var(--orange-100);
+  color: var(--orange-900);
+}
+
+.barSilver {
+  height: 108px;
+  background: var(--slate-150);
+  color: var(--slate-800);
+}
+
+.barBronze {
+  height: 88px;
+  background: var(--pink-100);
+  color: var(--pink-800);
+}
+
+.podiumCardCompact .barGold {
+  height: 92px;
+}
+
+.podiumCardCompact .barSilver {
+  height: 68px;
+}
+
+.podiumCardCompact .barBronze {
+  height: 56px;
+}
+
+.barPlace {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight);
+}
+
+.podiumCardCompact .barPlace {
+  font-size: var(--text-2xs);
+}
+
+.barScore {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  opacity: 0.72;
+}
+
+.full {
+  display: grid;
+  min-height: 0;
+  height: 100%;
+  padding: 16px 20px 18px 24px;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+.boardBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 8px 20px;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.boardMain {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+}
+
+.windows {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  align-content: stretch;
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.window {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.windowLabel {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.full .table {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  height: 100%;
+}
+
+.full .list {
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
+  align-content: start;
+}
+
+.boardMain .table {
+  margin-top: 8px;
+}
+
+.full .podiumCardCompact .podium {
+  gap: 16px;
+}
+
+.full .podiumCardCompact .bar {
+  padding: 14px 8px 18px;
+  border-radius: 16px;
+}
+
+.full .podiumCardCompact .barGold {
+  height: 148px;
+}
+
+.full .podiumCardCompact .barSilver {
+  height: 108px;
+}
+
+.full .podiumCardCompact .barBronze {
+  height: 88px;
+}
+
+.full .podiumCardCompact .podiumName {
+  font-size: var(--text-xs);
+}
+
+.full .podiumCardCompact .barPlace {
+  font-size: var(--text-sm);
+}
+
+.youChip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  margin-left: 0;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--purple-100);
+  color: var(--purple-800);
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+@media (max-width: 1080px) {
+  .full {
+    padding: 16px;
+    overflow: auto;
+  }
+
+  .boardBody {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .boardMain,
+  .windows,
+  .window {
+    height: auto;
+  }
+
+  .windows {
+    grid-template-rows: none;
+    padding: 16px 0 0;
+  }
+
+  .window,
+  .full .table {
+    height: min(420px, 70dvh);
+  }
+}
+
+@media (max-width: 900px) {
+  .full.fullCompact {
+    display: grid;
+    align-content: start;
+    align-self: start;
+    gap: 0;
+    height: auto;
+    min-height: 0;
+    padding: 16px 16px calc(40px + env(safe-area-inset-bottom, 0px));
+    overflow: visible;
+    background: transparent;
+  }
+
+  .compactHead {
+    display: flex;
+    align-items: center;
+    min-height: 0;
+    margin-bottom: 16px;
+  }
+
+  .periodSwitch {
+    width: 100%;
+  }
+
+  .compactCard {
+    overflow: hidden;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+  }
+
+  .compactGroup {
+    margin: 0;
+    padding: 20px 8px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .sheet {
+    overflow: hidden;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+  }
+
+  .sheet .list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sheetRow {
+    min-height: 56px;
+    padding: 10px 16px 10px 12px;
+    border-bottom: 1px solid var(--slate-100);
+    background: transparent;
+  }
+
+  .sheetRow:nth-child(even) {
+    background: transparent;
+  }
+
+  .sheetRow.you,
+  .sheetRow.you:nth-child(even) {
+    background: var(--purple-50);
+  }
+
+  .sheetRow:last-child {
+    border-bottom: 0;
+  }
+
+  .sheet .name {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .sheet .score {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .full.fullCompact .table,
+  .full.fullCompact .sheet {
+    height: auto;
+    overflow: visible;
+  }
+
+  .fullCompact .podiumCardCompact {
+    padding: 16px 12px 8px;
+  }
+
+  .fullCompact .podiumCardCompact .podium {
+    gap: 8px;
+  }
+
+  .fullCompact .podiumCardCompact .bar {
+    padding: 10px 6px 12px;
+    border-radius: 12px;
+  }
+
+  .fullCompact .podiumCardCompact .barGold {
+    height: 92px;
+  }
+
+  .fullCompact .podiumCardCompact .barSilver {
+    height: 68px;
+  }
+
+  .fullCompact .podiumCardCompact .barBronze {
+    height: 56px;
+  }
+
+  .fullCompact .podiumCardCompact .podiumName {
+    font-size: var(--text-2xs);
+  }
+
+  .fullCompact .podiumCardCompact .barPlace {
+    font-size: var(--text-2xs);
+  }
+
+  .panel {
+    padding: 16px 16px 12px;
+  }
+
+  .head {
+    gap: 8px;
+  }
+
+  .headCopy {
+    gap: 8px;
+  }
+}
+

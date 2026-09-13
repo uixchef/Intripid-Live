@@ -62,6 +62,29 @@ export function boundsOf(
   ];
 }
 
+/**
+ * A closed ring around a point, in kilometres. Used for avoid-areas that
+ * are cities or small countries — at globe scale they would otherwise vanish.
+ */
+export function circleRing(
+  center: LngLat,
+  radiusKm: number,
+  steps = 48,
+): [number, number][] {
+  const lat = toRadians(center.lat);
+  const kmPerDegLat = 110.574;
+  const kmPerDegLng = Math.max(0.01, 111.32 * Math.cos(lat));
+  const ring: [number, number][] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const angle = (i / steps) * Math.PI * 2;
+    ring.push([
+      center.lng + (Math.cos(angle) * radiusKm) / kmPerDegLng,
+      center.lat + (Math.sin(angle) * radiusKm) / kmPerDegLat,
+    ]);
+  }
+  return ring;
+}
+
 /** Midpoint of a set of points, good enough for city-scale framing. */
 export function centroidOf(points: LngLat[]): LngLat | null {
   if (points.length === 0) return null;

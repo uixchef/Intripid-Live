@@ -1,422 +1,273 @@
-/*
- * The one block on the dashboard allowed any atmosphere at all, and even here
- * it is rationed: a 160px band with three contour ridges, no photograph, no
- * saturated gradient. Everything below the band is operational and plain.
- */
-
 .identity {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Cover                                                                     */
-/* ------------------------------------------------------------------------- */
+.identity[data-expanded] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
 
 .cover {
   position: relative;
-  /*
-   * 128, not 160. At 160 the band had roughly 500px of empty tint to the left
-   * of the counts — the "huge empty dead zone" a dashboard cannot afford on
-   * its first screen. Shorter, with the counts dropped to the baseline beside
-   * the avatar, and the whole band is doing work.
-   */
-  height: 128px;
-  /*
-   * A soft dawn, held to the top two ramps of the brand so it reads as
-   * Intripid without becoming the Discovery environment. Discovery is
-   * expressive; this is a home screen that happens to have a horizon on it.
-   */
-  background:
-    radial-gradient(
-      120% 150% at 12% 0%,
-      var(--purple-100) 0%,
-      transparent 62%
-    ),
-    radial-gradient(90% 120% at 92% 8%, var(--pink-100) 0%, transparent 58%),
-    linear-gradient(178deg, var(--purple-50) 0%, var(--slate-0) 88%);
+  height: 240px;
+  overflow: hidden;
+  background: var(--slate-0);
   isolation: isolate;
 }
 
-.horizon {
-  position: absolute;
-  inset: auto 0 0 0;
-  width: 100%;
-  height: 100%;
-  /* globals.css sets `svg { max-width: 100% }`; a full-bleed band needs out. */
-  max-width: none;
+.identity[data-expanded] .cover {
+  height: auto;
+  min-height: 0;
+  align-self: stretch;
 }
 
-/*
- * Raised from 0.24-0.34. At those values the ridges were invisible against
- * the tint and the band read as a flat empty rectangle; the drawing has to be
- * legible to justify being there at all.
- */
-.horizon path {
-  fill: var(--purple-200);
-  opacity: 0.55;
-}
-
-.horizon path:nth-child(2) {
-  fill: var(--purple-300);
-  opacity: 0.5;
-}
-
-.horizon path:nth-child(3) {
-  fill: var(--purple-400);
-  opacity: 0.4;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Stats — on the cover, so the decoration also does work                    */
-/* ------------------------------------------------------------------------- */
-
-/*
- * Bottom-right, on the baseline the avatar sits on. Top-right left them
- * floating in the corner furthest from the person they describe.
- */
-.stats {
-  position: absolute;
-  bottom: var(--space-5);
-  right: var(--space-8);
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-2);
-  z-index: 1;
-}
-
-.stat {
-  display: grid;
-  gap: 1px;
-  justify-items: end;
-  padding: var(--space-4) var(--space-6);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  /* Sits on a tinted band, so it needs the faintest lift to read as a plane. */
-  box-shadow: var(--shadow-xs);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  min-width: 76px;
-}
-
-.statLabel {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 9.5px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--purple-800);
-  white-space: nowrap;
-  opacity: 0.82;
-}
-
-.statLabel svg {
-  flex: none;
-}
-
-.statValue {
-  font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
-  line-height: 1.05;
-  color: var(--purple-950);
-  letter-spacing: var(--tracking-tight);
-}
-
-/* ------------------------------------------------------------------------- */
-/* Person                                                                    */
-/* ------------------------------------------------------------------------- */
-
-/*
- * Positioned, and above the cover.
- *
- * `.cover` is `position: relative` so it can host the horizon and the counts,
- * and a positioned sibling paints above a static one whatever the DOM order.
- * Without this the cover clipped the top 30px of the overlapping avatar and
- * left it looking like a circle with a flat lid.
- */
 .body {
+  --cover-overlap: 62px;
   position: relative;
   z-index: 1;
-  padding: 0 var(--space-8) var(--space-8);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 0 var(--space-12) var(--space-12);
+  /* Header pulls up over the map. Empty space must not steal legend hits. */
+  pointer-events: none;
 }
 
-.person {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--space-6);
-  /* The avatar overlaps the cover, as in the original. */
-  margin-top: -30px;
+.progressHit,
+.badgesTrigger,
+.actions {
+  pointer-events: auto;
+}
+
+.header {
+  grid-column: 1;
+  grid-row: 1;
+  margin-top: calc(var(--cover-overlap) * -1);
   min-width: 0;
 }
 
-/*
- * The account holder's mark, at hero size.
- *
- * There is no photograph in this repository and inventing one would mean
- * shipping a stock portrait of a stranger as the user. Initials on the brand
- * gradient is the honest version, and it is consistent with the header and the
- * profile menu.
- */
-.avatar {
-  display: grid;
-  place-items: center;
+.progressHit {
+  display: block;
   flex: none;
-  width: 84px;
-  height: 84px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(145deg, var(--purple-600), var(--pink-500));
-  color: var(--slate-0);
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.01em;
-  border: 3px solid var(--bg-surface);
-  box-shadow: var(--shadow-sm);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 250px;
+  overflow: visible;
+}
+
+.progressHit:focus-visible {
+  outline: 2px solid var(--purple-500);
+  outline-offset: 6px;
+}
+
+.badgesTrigger {
+  display: flex;
+  align-items: center;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: start;
+  margin: 20px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 16px;
+}
+
+.badgesTrigger:focus-visible {
+  outline: 2px solid var(--purple-500);
+  outline-offset: 4px;
 }
 
 .who {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
-  flex: 1;
-  padding-bottom: var(--space-3);
+  grid-column: 1 / -1;
 }
 
-/*
- * The one display-serif moment in the dashboard's chrome. A person's name is
- * an identity, not a control — the same licence the trip covers use for a
- * place name. Everything operational below stays sans.
- */
 .name {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  line-height: 1.08;
+  font-size: 20px;
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
   letter-spacing: var(--tracking-tight);
   color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.meta {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
-  min-width: 0;
 }
 
 .handle {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
-.dot {
-  opacity: 0.5;
+.whoSep {
+  color: var(--text-quaternary);
 }
 
 .actions {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  flex: none;
-  padding-bottom: var(--space-3);
-}
-
-/* ------------------------------------------------------------------------- */
-/* Traits                                                                    */
-/*                                                                           */
-/* A row of statements, not a row of medals. Each carries its own effect line */
-/* because a trait the user cannot connect to an outcome is decoration.      */
-/* ------------------------------------------------------------------------- */
-
-.traits {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-4);
-  margin-top: var(--space-7);
-  padding-top: var(--space-7);
-  border-top: 1px solid var(--border-hairline);
-}
-
-.trait {
-  display: grid;
-  gap: 2px;
-  padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
-  border-radius: var(--radius-md);
-  background: var(--tint);
-  /* The channel reads as a spine, the same device the calendar cards use. */
-  border-left: 3px solid var(--edge);
-  min-width: 0;
-}
-
-.trait[data-channel="purple"] {
-  --tint: var(--purple-50);
-  --edge: var(--purple-400);
-  --label-ink: var(--purple-900);
-}
-
-.trait[data-channel="teal"] {
-  --tint: var(--teal-50);
-  --edge: var(--teal-500);
-  --label-ink: var(--teal-900);
-}
-
-.trait[data-channel="orange"] {
-  --tint: var(--orange-50);
-  --edge: var(--orange-400);
-  --label-ink: var(--orange-800);
-}
-
-.trait[data-channel="pink"] {
-  --tint: var(--pink-50);
-  --edge: var(--pink-400);
-  --label-ink: var(--pink-800);
-}
-
-.traitLabel {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  color: var(--label-ink);
-  letter-spacing: var(--tracking-tight);
-}
-
-.traitEffect {
-  font-size: 10.5px;
-  line-height: 1.42;
-  color: var(--text-tertiary);
-  overflow-wrap: break-word;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Responsive                                                                */
-/* ------------------------------------------------------------------------- */
-
-@media (max-width: 1180px) {
-  .traits {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 900px) {
+  .identity[data-expanded] {
+    position: relative;
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
   .cover {
-    height: 122px;
-  }
-
-  /*
-   * Full width at the top on a phone: at the baseline they would sit directly
-   * behind the avatar, and there is no room to the right of it at 390px.
-   */
-  .stats {
-    top: var(--space-5);
-    bottom: auto;
-    right: var(--space-5);
-    left: var(--space-5);
-    justify-content: space-between;
-  }
-
-  /*
-   * Equal thirds, but the content centres in its third. Right-aligned inside
-   * a 460px card at tablet width left the label and number crammed into one
-   * corner of a mostly empty box.
-   */
-  .stat {
-    flex: 1;
-    min-width: 0;
-    justify-items: center;
-    padding: var(--space-3) var(--space-4);
-  }
-
-  .statValue {
-    font-size: var(--text-lg);
+    height: 180px;
   }
 
   .body {
-    padding: 0 var(--space-6) var(--space-6);
+    padding: 0 var(--space-8) var(--space-8);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "header"
+      "who"
+      "badges"
+      "actions";
+    gap: var(--space-8);
   }
 
-  /*
-   * Stacked on a phone. Side-by-side would put an 84px avatar, a name, a
-   * metadata line and two buttons on one 390px row, and everything would
-   * truncate to nothing.
-   */
-  .person {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: end;
-    gap: var(--space-5);
-    margin-top: -30px;
+  .header {
+    grid-area: header;
+    grid-column: auto;
+    grid-row: auto;
   }
 
-  .avatar {
-    width: 64px;
-    height: 64px;
-    font-size: var(--text-lg);
+  .who {
+    grid-area: who;
+    grid-column: auto;
   }
 
-  .name {
-    font-size: var(--text-xl);
-    white-space: normal;
+  .badgesTrigger {
+    grid-area: badges;
+    grid-column: auto;
+    grid-row: auto;
+    justify-self: start;
+    margin-block: -4px;
   }
 
   .actions {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-    padding-bottom: 0;
-    padding-top: var(--space-2);
+    grid-area: actions;
+    grid-column: auto;
   }
 
-  .traits {
-    margin-top: var(--space-6);
-    padding-top: var(--space-6);
+  .identity[data-expanded] .cover {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    background: var(--map-water-tint);
+  }
+
+  .mapTopbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-topbar);
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 16px;
+    pointer-events: none;
+    transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .identity[data-chrome-hidden] .mapTopbar {
+    transform: translateY(-120%);
+    pointer-events: none;
+  }
+
+  .mapBack {
+    pointer-events: auto;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    background: var(--slate-0);
+    box-shadow:
+      0 1px 2px rgba(60, 64, 67, 0.3),
+      0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  }
+
+  .mapBack:hover,
+  .mapBack:active {
+    background: var(--slate-50);
+  }
+
+  .mapToggle {
+    position: fixed;
+    left: 16px;
+    right: auto;
+    bottom: calc(var(--map-inset-bottom, 0px) + 8px);
+    z-index: calc(var(--z-sheet) + 2);
+    display: inline-flex;
+    align-items: center;
     gap: var(--space-3);
+    height: 28px;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-full);
+    background: rgba(22, 10, 44, 0.82);
+    border: 1px solid rgba(74, 26, 128, 0.22);
+    color: #fff;
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-tight);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .mapToggleRaised {
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mapToggle:focus-visible {
+    outline: 2px solid var(--slate-0);
+    outline-offset: 2px;
+  }
+
+  .historySheet {
+    background: var(--bg-surface);
+    box-shadow: 0 -8px 32px -12px rgba(35, 40, 56, 0.18);
+  }
+
+  .historySheetBody {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 }
 
 @media (max-width: 560px) {
-  .traits {
-    grid-template-columns: 1fr;
+  .body {
+    --cover-overlap: 48px;
   }
 
-  /*
-   * Only now do the two buttons split the row. At tablet width stretching
-   * them made a pair of 690px buttons, which reads as a form, not a profile.
-   */
+  .actions {
+    width: 100%;
+  }
+
   .actions > * {
     flex: 1;
-  }
-
-  /*
-   * "Since November 2023" wraps to a second line here and leaves its
-   * separator dangling at the end of the first — a stray "·" reads as a typo.
-   * The join date is in the account menu, so it is the part that goes.
-   */
-  .dotWide,
-  .since {
-    display: none;
-  }
-
-  /* At one column the effect line has room, so it stays. */
-  .statLabel {
-    font-size: 9px;
-  }
-}
-
-@media (max-width: 400px) {
-  .stat {
-    min-width: 0;
-    padding: var(--space-3);
-  }
-
-  /* The word stays: an icon and a number with no subject is a riddle. */
-  .statLabel {
-    font-size: 8.5px;
-    gap: 2px;
   }
 }

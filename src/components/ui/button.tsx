@@ -12,7 +12,8 @@ export type ButtonVariant =
   | "secondary"
   | "subtle"
   | "ghost"
-  | "danger";
+  | "danger"
+  | "ai";
 export type ButtonSize = "xs" | "sm" | "md" | "lg";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

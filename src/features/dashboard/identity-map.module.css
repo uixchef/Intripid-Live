@@ -1,0 +1,266 @@
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--slate-0);
+}
+
+.root :global(.mapboxgl-ctrl-logo) {
+  transform: scale(0.7);
+  transform-origin: bottom right;
+}
+
+.root :global(.mapboxgl-ctrl-bottom-right),
+.root :global(.mapboxgl-ctrl-bottom-left) {
+  margin: 0 6px 2px;
+}
+
+/* Brand home pin, sized by the <img> width/height. */
+.homePin {
+  display: block;
+  line-height: 0;
+}
+
+.homePin img {
+  display: block;
+}
+
+.placePin {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: rgb(174 110 255 / 0.2);
+}
+
+.placePinTransit {
+  background: rgb(0 144 155 / 0.2);
+}
+
+.wishPin {
+  display: block;
+  border-radius: var(--radius-full);
+  background: var(--purple-500);
+  box-shadow: 0 0 0 2px rgb(174 110 255 / 0.35);
+}
+
+.placePhoto {
+  display: block;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+
+.expand {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  background: var(--slate-0);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.legend {
+  position: absolute;
+  right: 10px;
+  bottom: calc(var(--map-inset-bottom, 0px) + 22px);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0;
+  pointer-events: none;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  pointer-events: auto;
+  transition:
+    background 120ms var(--ease-out),
+    box-shadow 120ms var(--ease-out),
+    transform 120ms var(--ease-out);
+}
+
+.legendItem:hover,
+.legendItem:focus-visible {
+  background: #fff;
+}
+
+.legendItem:hover {
+  box-shadow:
+    0 2px 6px rgba(60, 64, 67, 0.28),
+    0 1px 2px rgba(60, 64, 67, 0.15);
+}
+
+.legendItem:focus-visible {
+  outline: 2px solid var(--purple-400);
+  outline-offset: 2px;
+}
+
+.legendItem:active {
+  transform: scale(0.97);
+}
+
+.legendItem[data-on] {
+  background: #fff;
+}
+
+.legendItem:hover .legendLabel,
+.legendItem:focus-visible .legendLabel,
+.legendItem[data-on] .legendLabel {
+  color: var(--text-secondary);
+}
+
+.legendLabel {
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-tertiary);
+  order: 1;
+}
+
+.rootExpanded .legend {
+  bottom: calc(var(--map-inset-bottom, 0px) + 16px);
+}
+
+@media (max-width: 640px) {
+  .legend {
+    right: 8px;
+  }
+
+  .legendItem {
+    padding: 3px 8px 3px 7px;
+  }
+}
+
+.legendValue {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.legendItem[data-tone="wishlist"] .legendValue {
+  color: var(--purple-700);
+}
+
+.legendItem[data-tone="visited"] .legendValue {
+  color: var(--teal-700);
+}
+
+.legendItem[data-tone="avoid"] .legendValue {
+  color: var(--danger-600);
+}
+
+.legendItem[data-tone="wishlist"]:hover,
+.legendItem[data-tone="wishlist"]:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--purple-200),
+    0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.legendItem[data-tone="visited"]:hover,
+.legendItem[data-tone="visited"]:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--teal-200),
+    0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.legendItem[data-tone="avoid"]:hover,
+.legendItem[data-tone="avoid"]:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--danger-200),
+    0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.legendItem[data-tone="wishlist"][data-on],
+.legendItem[data-tone="wishlist"][data-on]:hover {
+  box-shadow:
+    0 0 0 2px var(--purple-300),
+    0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.legendItem[data-tone="visited"][data-on],
+.legendItem[data-tone="visited"][data-on]:hover {
+  box-shadow:
+    0 0 0 2px var(--teal-300),
+    0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.legendItem[data-tone="avoid"][data-on],
+.legendItem[data-tone="avoid"][data-on]:hover {
+  box-shadow:
+    0 0 0 2px var(--danger-200),
+    0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.wishPin[data-on] {
+  box-shadow:
+    0 0 0 3px rgb(174 110 255 / 0.55),
+    0 0 14px rgb(174 110 255 / 0.7);
+}
+
+.wishPin[data-dimmed],
+.placePin[data-dimmed],
+.homePin[data-dimmed] {
+  opacity: 0.22;
+  filter: saturate(0.4);
+}
+
+.placePin[data-on] {
+  background: rgb(0 144 155 / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legendItem {
+    transition: none;
+  }
+
+  .legendItem:active {
+    transform: none;
+  }
+}
+
+.expand:hover {
+  background: var(--slate-50);
+}
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  background: var(--slate-0);
+}
+
+.graticule {
+  position: absolute;
+  inset: -1px;
+  background-image:
+    linear-gradient(to right, rgba(31, 28, 25, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 28, 25, 0.055) 1px, transparent 1px),
+    linear-gradient(to right, rgba(31, 28, 25, 0.028) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 28, 25, 0.028) 1px, transparent 1px);
+  background-size:
+    112px 112px,
+    112px 112px,
+    28px 28px,
+    28px 28px;
+  mask-image: radial-gradient(circle at 50% 42%, #000 18%, transparent 82%);
+}

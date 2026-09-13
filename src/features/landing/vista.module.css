@@ -15,19 +15,15 @@
  * written to. Text is never placed over the cloud sea: white type on a lit
  * cloud is the one place this palette cannot hold contrast.
  *
- * The scene is completely static. The environment's rule applies here too —
- * colour is compositional, and the only motion in this product belongs to
- * the map camera. A drifting sky would also mean re-rasterising four large
- * Gaussian blurs for the life of the page.
+ * The painting drifts as one frame. Clipping copies of it into bands always
+ * reads as cut-outs. Reduced motion turns the camera off.
  */
 
 .vista {
   position: absolute;
   inset: 0;
-  z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  /* Painted back-to-front by DOM order; no layer needs a z-index. */
 }
 
 /* ------------------------------------------------------------------------- */
@@ -98,15 +94,15 @@
   background-image:
     linear-gradient(
       to bottom,
-      rgba(17, 30, 57, 0.46) 0%,
-      rgba(17, 30, 57, 0.28) 18%,
-      rgba(17, 30, 57, 0.1) 34%,
-      rgba(17, 30, 57, 0) 50%
+      color-mix(in srgb, var(--purple-800) 46%, transparent) 0%,
+      color-mix(in srgb, var(--purple-800) 26%, transparent) 18%,
+      color-mix(in srgb, var(--purple-800) 10%, transparent) 34%,
+      transparent 50%
     ),
     radial-gradient(
       86% 46% at 50% 22%,
-      rgba(14, 26, 52, 0.24) 0%,
-      rgba(14, 26, 52, 0) 72%
+      color-mix(in srgb, var(--purple-400) 22%, transparent) 0%,
+      transparent 72%
     );
 }
 
@@ -169,6 +165,7 @@
   /* 54 × 2.963 (1600/540) */
   --band-h: 54%;
   --band-w: 160dvh;
+  animation: cloudShift 70s var(--ease-in-out) infinite alternate;
 }
 
 .hill {
@@ -206,9 +203,91 @@
  * crop the same way or the composition detaches from the type as the window
  * changes. On a short window the sky is what should be lost, not the ground.
  */
+.photoWrap {
+  position: absolute;
+  inset: -8%;
+  animation: vistaDrift 22s var(--ease-in-out) infinite alternate;
+}
+
 .photo {
   object-fit: cover;
   object-position: center bottom;
+}
+
+.meadowLive {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 36%;
+  overflow: visible;
+  pointer-events: none;
+  mask-image: linear-gradient(to top, transparent 0%, #000 32%, #000 100%);
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 32%, #000 100%);
+}
+
+.blade {
+  transform-origin: 0 0;
+  animation: bladeSway 3.4s var(--ease-in-out) infinite alternate;
+}
+
+.blade path {
+  fill: none;
+  stroke: rgb(36 52 64 / 0.42);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.bloom {
+  transform-origin: 0 4px;
+  animation: bloomNod 4.4s var(--ease-in-out) infinite alternate;
+  mix-blend-mode: multiply;
+}
+
+.bloom[data-hue="blue"] {
+  fill: #7ea3b8;
+  opacity: 0.55;
+}
+
+.bloom[data-hue="pink"] {
+  fill: #c995b4;
+  opacity: 0.5;
+}
+
+@keyframes vistaDrift {
+  0% {
+    transform: translate3d(-1.6%, 0.4%, 0) scale(1.04);
+  }
+  100% {
+    transform: translate3d(1.8%, -0.5%, 0) scale(1.07);
+  }
+}
+
+@keyframes bladeSway {
+  0% {
+    transform: rotate(-9deg);
+  }
+  100% {
+    transform: rotate(11deg);
+  }
+}
+
+@keyframes bloomNod {
+  0% {
+    transform: rotate(-7deg) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: rotate(8deg) translate3d(0, -3px, 0);
+  }
+}
+
+@keyframes cloudShift {
+  0% {
+    transform: translateX(-52%);
+  }
+  100% {
+    transform: translateX(-48%);
+  }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -261,10 +340,10 @@
   .veil {
     background-image: linear-gradient(
       to bottom,
-      rgba(17, 30, 57, 0.5) 0%,
-      rgba(17, 30, 57, 0.32) 22%,
-      rgba(17, 30, 57, 0.12) 40%,
-      rgba(17, 30, 57, 0) 58%
+      color-mix(in srgb, var(--purple-800) 50%, transparent) 0%,
+      color-mix(in srgb, var(--purple-800) 30%, transparent) 22%,
+      color-mix(in srgb, var(--purple-800) 10%, transparent) 40%,
+      transparent 58%
     );
   }
 }
@@ -298,10 +377,24 @@
   .veil {
     background-image: linear-gradient(
       to bottom,
-      rgba(17, 30, 57, 0.48) 0%,
-      rgba(17, 30, 57, 0.3) 20%,
-      rgba(17, 30, 57, 0.1) 38%,
-      rgba(17, 30, 57, 0) 54%
+      color-mix(in srgb, var(--purple-800) 48%, transparent) 0%,
+      color-mix(in srgb, var(--purple-800) 28%, transparent) 20%,
+      color-mix(in srgb, var(--purple-800) 10%, transparent) 38%,
+      transparent 54%
     );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photoWrap,
+  .blade,
+  .bloom,
+  .clouds {
+    animation: none;
+  }
+
+  .photoWrap {
+    inset: 0;
+    transform: none;
   }
 }

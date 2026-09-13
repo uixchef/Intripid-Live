@@ -1,111 +1,49 @@
 .panel {
   display: grid;
-  gap: var(--space-5);
-  padding: var(--space-6);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  gap: 0;
   min-width: 0;
+  overflow: hidden;
+}
+
+.head {
+  display: grid;
+  gap: 1px;
+  padding: var(--space-8) var(--space-8) var(--space-6);
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.sub {
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
 }
 
 .form {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-4);
+  padding: 0 var(--space-8) var(--space-6);
   min-width: 0;
 }
-
-/* ------------------------------------------------------------------------- */
-/* Dates                                                                    */
-/*                                                                           */
-/* The two fields share one bordered shell with a divider between them, the  */
-/* way the original paired them — a date RANGE is one input, and two separate */
-/* boxes make it read as two unrelated questions.                            */
-/* ------------------------------------------------------------------------- */
 
 .dates {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  overflow: hidden;
   min-width: 0;
-  transition: border-color var(--dur-micro) var(--ease-out);
-}
-
-.dates:focus-within {
-  border-color: var(--purple-400);
-  box-shadow: 0 0 0 3px var(--purple-100);
-}
-
-.dateField {
-  display: grid;
-  gap: 1px;
-  padding: var(--space-4) var(--space-5);
-  min-width: 0;
-}
-
-.dateField + .dateField {
-  border-left: 1px solid var(--border-subtle);
-}
-
-.dateLabel {
-  font-size: 9px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--text-quaternary);
 }
 
 /*
- * A native date input, deliberately. It brings the platform's own picker,
- * keyboard entry and locale formatting for free, and a hand-built calendar
- * popover here would be a worse one — the planner already owns the
- * date-heavy interactions.
+ * The support column is ~314px. Stack the two outlined date fields instead of
+ * squeezing them side by side — same control as landing, dashboard layout.
  */
-.dateInput {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: var(--tracking-tight);
+.dates :global(.trigger) {
+  grid-template-columns: 1fr;
 }
 
-/* The wrapper carries the ring; a second one inside reads as a fault. */
-.dateInput:focus {
-  outline: none;
-}
-
-.dateInput::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.5;
-  transition: opacity var(--dur-micro) var(--ease-out);
-}
-
-.dateInput::-webkit-calendar-picker-indicator:hover {
-  opacity: 0.9;
-}
-
-.readout {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-medium);
-  color: var(--text-tertiary);
-}
-
-.readoutInvalid {
-  color: var(--danger-600);
-}
-
-.honesty {
-  font-size: 10px;
-  line-height: 1.45;
-  color: var(--text-quaternary);
+.dates :global(.field + .field) {
+  border-left: 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -116,7 +54,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-5);
-  margin-top: var(--space-2);
+  margin: 0 var(--space-8);
+  padding-top: var(--space-2);
 }
 
 .divider::before,
@@ -134,48 +73,24 @@
   white-space: nowrap;
 }
 
-/*
- * Tinted, not another grey secondary. This is the route the product is
- * actually about, and it should read as the more interesting of the two
- * buttons without shouting over the primary one above it.
- */
-.explore {
-  background: var(--purple-50);
-  border-color: var(--purple-200);
-  color: var(--purple-800);
+.exploreWrap {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-4) var(--space-8) var(--space-8);
 }
 
-.explore:hover {
-  background: var(--purple-100);
-  border-color: var(--purple-300);
-  color: var(--purple-900);
+.exploreWrap > * {
+  display: flex;
+  width: 100%;
+  max-width: none;
 }
 
-.exploreNote {
-  font-size: 10px;
-  line-height: 1.45;
-  color: var(--text-quaternary);
-}
-
-@media (max-width: 400px) {
-  /*
-   * Two date fields side by side at 320px leaves about 120px each, and a
-   * native date input needs roughly 96px for "14/04/2026" before it clips.
-   * Stacked, both keep their full width.
-   */
-  .dates {
-    grid-template-columns: 1fr;
+@media (max-width: 900px) {
+  .head {
+    padding: var(--space-8) var(--space-8) var(--space-5);
   }
 
-  .dateField + .dateField {
-    border-left: 0;
-    border-top: 1px solid var(--border-subtle);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dates,
-  .dateInput::-webkit-calendar-picker-indicator {
-    transition: none;
+  .form {
+    padding: 0 var(--space-8) var(--space-6);
   }
 }

@@ -1,20 +1,28 @@
 "use client";
 
-import { Compass, Plus } from "lucide-react";
-import Link from "next/link";
+import { useState } from "react";
+import { Plus, Share2 } from "lucide-react";
 
+import { Hummingbird } from "@/components/brand/hummingbird";
 import { Button } from "@/components/ui/button";
+import { CountryFlag } from "@/components/ui/country-flag";
 import {
   TRIP_FILTERS,
   TRIP_FILTER_LABEL,
   filterTrips,
   tripCounts,
+  visitsOutsideTrips,
 } from "@/data/trips";
 import { cn } from "@/lib/utils";
-import type { TripSummary } from "@/lib/types";
+import type { TripSummary, VisitedLocation } from "@/lib/types";
 import type { TripFilter } from "@/data/trips";
+import { useSession } from "@/stores/session-store";
 
 import { TripCard } from "./trip-card";
+import {
+  TravelPoleModal,
+  visitedPlacesForPole,
+} from "./travel-pole";
 import styles from "./travels.module.css";
 
 /**
@@ -23,14 +31,16 @@ import styles from "./travels.module.css";
  * The four tabs are the original's, in the original order — All, Completed,
  * Ongoing, Upcoming — because they are a real state machine for a trip and not
  * a filter someone invented. What is added is a count on each, so the tab
- * strip says how much is behind it before you press it. That is the one thing
- * the original's tabs could not tell you, and it is the reason an empty tab
- * feels like a bug rather than a fact.
+ * strip says how much is behind it before you press it.
+ *
+ * ALL AND COMPLETED INCLUDE LOGGED VISITS. Trips planned on Intripid stay as
+ * cards. Places logged on the map (before or without a plan) sit underneath,
+ * so those tabs are the whole of "where I have been" without turning a pin
+ * into a fake itinerary.
  *
  * ONGOING IS SEEDED EMPTY. A filter with nothing in it is a state this screen
  * genuinely has, and it is worth more on a portfolio dashboard than a fourth
- * invented trip. The empty state names what would be here and offers the one
- * action that would put something in it.
+ * invented trip. The empty state names what would be here.
  */
 
 export interface TravelsProps {
@@ -38,39 +48,72 @@ export interface TravelsProps {
   filter: TripFilter;
   onFilter: (filter: TripFilter) => void;
   onNewTrip: () => void;
+  /** Opens the identity map on Visited, to log a place. */
+  onLogVisit: () => void;
 }
 
-export function Travels({ trips, filter, onFilter, onNewTrip }: TravelsProps) {
-  const counts = tripCounts(trips);
+export function Travels({
+  trips,
+  filter,
+  onFilter,
+  onNewTrip,
+  onLogVisit,
+}: TravelsProps) {
+  const visited = useSession((s) => s.visited);
+  const user = useSession((s) => s.user);
+  const [poleOpen, setPoleOpen] = useState(false);
+  const logged = visitsOutsideTrips(visited, trips);
+  const placesOnPole = visitedPlacesForPole(visited);
+  const counts = tripCounts(trips, logged.length);
   const visible = filterTrips(trips, filter);
+  const showLogged = filter === "all" || filter === "completed";
+  const groups =
+    filter === "all"
+      ? (["upcoming", "ongoing", "completed"] as const)
+          .map((status) => ({
+            status,
+            label: TRIP_FILTER_LABEL[status],
+            items: visible.filter((trip) => trip.status === status),
+          }))
+          .filter((group) => group.items.length > 0)
+      : [
+          {
+            status: filter,
+            label: showLogged ? "Trips" : (null as string | null),
+            items: visible,
+          },
+        ];
+
+  const empty = visible.length === 0 && !showLogged;
+  const nextUp = trips.find((trip) => trip.status === "upcoming");
 
   return (
+    <>
     <section className={styles.travels} aria-label="My travels">
       <header className={styles.head}>
-        <div className={styles.headText}>
-          <h2 className={styles.title}>My travels</h2>
-          <p className={styles.sub}>
-            {counts.all} {counts.all === 1 ? "trip" : "trips"} ·{" "}
-            {counts.upcoming} upcoming
-          </p>
-        </div>
+        <h2 className={styles.title}>My travels</h2>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          iconLeft={<Plus size={14} strokeWidth={2.4} />}
-          onClick={onNewTrip}
-        >
-          New trip
-        </Button>
+        <div className={styles.headActions}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!user || placesOnPole.length === 0}
+            iconLeft={<Share2 size={14} strokeWidth={2.2} />}
+            onClick={() => setPoleOpen(true)}
+          >
+            Share my travels
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            iconLeft={<Plus size={14} strokeWidth={2.4} />}
+            onClick={onNewTrip}
+          >
+            New trip
+          </Button>
+        </div>
       </header>
 
-      {/*
-       * A tab strip, not a Segmented control. Segmented is for switching a
-       * view of one thing; these four are filters over a set, they carry
-       * counts, and there are four of them — which is one more than a pill
-       * holds at this width without shrinking the type.
-       */}
       <div className={styles.tabs} role="tablist" aria-label="Filter trips">
         {TRIP_FILTERS.map((item) => (
           <button
@@ -89,45 +132,125 @@ export function Travels({ trips, filter, onFilter, onNewTrip }: TravelsProps) {
         ))}
       </div>
 
-      {visible.length === 0 ? (
-        <div className={styles.empty}>
-          <p className={styles.emptyTitle}>
-            {filter === "ongoing"
-              ? "Nothing in progress"
-              : `No ${TRIP_FILTER_LABEL[filter].toLowerCase()} trips`}
-          </p>
-          {/*
-           * Neither line promises an automatic transition. Status is stored
-           * rather than derived from today's date (see src/data/trips.ts for
-           * why), so copy that said trips "move between these tabs on their
-           * own as their dates arrive" would be describing a mechanism this
-           * build does not have.
-           */}
-          <p className={styles.emptyBody}>
-            {filter === "ongoing"
-              ? "A trip you are currently on shows here, with the current day's plan on top."
-              : "Nothing on this list yet."}
-          </p>
-          <div className={styles.emptyActions}>
-            <Button
-              variant="secondary"
-              size="sm"
-              iconLeft={<Plus size={13} strokeWidth={2.4} />}
-              onClick={onNewTrip}
-            >
-              New trip
-            </Button>
-            <Link href="/discover" className={styles.emptyLink}>
-              <Compass size={12} strokeWidth={2.2} aria-hidden />
-              Or find where to go
-            </Link>
+      {empty ? (
+        filter === "ongoing" ? (
+          <div className={cn(styles.empty, styles.emptyOngoing)}>
+            <Hummingbird
+              mood="peaceful"
+              hovering
+              size={88}
+              className={styles.emptyBird}
+            />
+            <p className={styles.emptyTitle}>Between trips</p>
+            <p className={styles.emptyBody}>
+              {nextUp
+                ? `This is where the itinerary you’re on lives. Nothing is in motion — ${nextUp.name} is still ahead.`
+                : "This is where the itinerary you’re on lives. Nothing is in motion right now."}
+            </p>
+            <div className={styles.emptyActions}>
+              {nextUp ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onFilter("upcoming")}
+                >
+                  See what’s next
+                </Button>
+              ) : null}
+              <Button variant="ghost" size="sm" onClick={onNewTrip}>
+                Plan a trip
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className={styles.empty}>
+            <Hummingbird mood="curious" size={72} className={styles.emptyBird} />
+            <p className={styles.emptyTitle}>
+              {`No ${TRIP_FILTER_LABEL[filter].toLowerCase()} trips`}
+            </p>
+            <p className={styles.emptyBody}>Nothing on this list yet.</p>
+          </div>
+        )
       ) : (
-        <ul className={styles.grid}>
-          {visible.map((trip) => (
-            <li key={trip.id} className={styles.gridItem}>
-              <TripCard trip={trip} />
+        <div className={styles.list}>
+          {groups.map((group) =>
+            group.items.length === 0 ? null : (
+              <section
+                key={group.status}
+                className={styles.group}
+                aria-label={group.label ?? undefined}
+              >
+                {group.label ? (
+                  <h3 className={styles.groupLabel}>
+                    {group.label}
+                    <span className={cn(styles.tabCount, "tabular")}>
+                      {group.items.length}
+                    </span>
+                  </h3>
+                ) : null}
+                <ul className={styles.stack}>
+                  {group.items.map((trip) => (
+                    <li key={trip.id}>
+                      <TripCard trip={trip} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ),
+          )}
+          {showLogged ? (
+            <LoggedVisits places={logged} onLogVisit={onLogVisit} />
+          ) : null}
+        </div>
+      )}
+    </section>
+    {user ? (
+      <TravelPoleModal
+        open={poleOpen}
+        onClose={() => setPoleOpen(false)}
+        user={user}
+        visited={visited}
+      />
+    ) : null}
+    </>
+  );
+}
+
+function LoggedVisits({
+  places,
+  onLogVisit,
+}: {
+  places: VisitedLocation[];
+  onLogVisit: () => void;
+}) {
+  return (
+    <section className={styles.logged} aria-labelledby="logged-visits-title">
+      <div className={styles.loggedHead}>
+        <div className={styles.loggedCopy}>
+          <h3 className={styles.loggedTitle} id="logged-visits-title">
+            Logged visits
+            {places.length > 0 ? (
+              <span className={cn(styles.tabCount, "tabular")}>
+                {places.length}
+              </span>
+            ) : null}
+          </h3>
+        </div>
+        <Button variant="ghost" size="xs" className={styles.logVisit} onClick={onLogVisit}>
+          Log a visit
+        </Button>
+      </div>
+
+      {places.length === 0 ? (
+        <p className={styles.loggedEmpty}>Nothing logged yet.</p>
+      ) : (
+        <ul className={styles.chips}>
+          {places.map((place) => (
+            <li key={place.id}>
+              <span className={styles.chip}>
+                <CountryFlag code={place.countryCode} label={place.name} size={22} />
+                <span className={styles.chipName}>{place.name}</span>
+              </span>
             </li>
           ))}
         </ul>

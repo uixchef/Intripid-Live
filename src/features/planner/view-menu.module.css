@@ -1,0 +1,176 @@
+.cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 104px;
+  height: 40px;
+  padding: 0 10px 0 18px;
+  border-radius: 20px;
+  border: 1px solid #dadce0;
+  background: var(--slate-0);
+  color: var(--slate-800);
+  font-size: 14px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  background: var(--slate-50);
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.12);
+}
+
+.trigger svg {
+  margin-left: auto;
+  color: var(--slate-600);
+}
+
+.switcher {
+  display: flex;
+  height: 40px;
+  border: 1px solid #dadce0;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--slate-0);
+}
+
+.switchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 100%;
+  padding: 0;
+  color: var(--slate-600);
+  cursor: pointer;
+  border-right: 1px solid #dadce0;
+}
+
+.switchBtn svg {
+  flex: none;
+}
+
+.switchBtn:last-child {
+  border-right: 0;
+}
+
+.switchBtn:hover {
+  background: var(--slate-50);
+}
+
+.switchOn {
+  background: var(--purple-100);
+  color: var(--purple-800);
+}
+
+.switchOn:hover {
+  background: var(--purple-100);
+}
+
+.popover {
+  border: 0;
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.06),
+    0 4px 8px -2px rgba(16, 24, 40, 0.1),
+    0 12px 24px -4px rgba(16, 24, 40, 0.08);
+  overflow: hidden;
+}
+
+.menu {
+  display: grid;
+  gap: 2px;
+}
+
+.item,
+.toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #344054;
+}
+
+.item:hover,
+.item:focus-visible,
+.toggle:hover,
+.toggle:focus-visible {
+  background: #f9fafb;
+  outline: none;
+}
+
+.item:focus-visible,
+.toggle:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--purple-200);
+}
+
+.item:active,
+.toggle:active {
+  background: #f2f4f7;
+}
+
+.itemOn {
+  background: #f9fafb;
+}
+
+.itemOn:hover,
+.itemOn:focus-visible {
+  background: #f2f4f7;
+}
+
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.shortcut {
+  flex: none;
+  width: 18px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--slate-500);
+  font-variant-numeric: tabular-nums;
+}
+
+.rule {
+  height: 1px;
+  margin: 8px 0;
+  background: #e8eaed;
+}
+
+.toggleOff {
+  color: var(--slate-400);
+  cursor: default;
+}
+
+.toggleOff:hover {
+  background: transparent;
+}
+
+.check {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: transparent;
+}
+
+.checkOn {
+  color: var(--purple-600);
+}

@@ -20,12 +20,10 @@ import styles from "./map-canvas.module.css";
  * The leaf client module that owns the Mapbox instance and the DOM node it
  * needs. Nothing above this in the tree touches `window`.
  *
- * Map styling decision: Mapbox Standard with the `faded` theme and POI labels
- * suppressed by default. The map is a working canvas for itineraries and
- * recommendations, so the basemap deliberately recedes — overlays, routes and
- * pins are the content, and a default-styled map would fight them. This is
- * also the clearest visual break from the historical product, which used the
- * stock street style at full saturation.
+ * Map styling: planner uses Standard `faded`. Globe surfaces (identity
+ * footprint, Discovery hunt) share Intripid's brand atmosphere — lilac
+ * space, peach horizon — not Discovery-owned chrome. No raster overlays.
+ * The canvas is the background.
  */
 
 export interface MapCanvasProps {
@@ -40,18 +38,51 @@ export interface MapCanvasProps {
    */
   labels?: { poi?: boolean; roads?: boolean; places?: boolean };
   /**
-   * Basemap light preset. Discovery uses `dusk` so the map belongs to its
-   * purple environment while keeping full land/water contrast — washing a
-   * daylight basemap toward violet destroyed the geography instead.
+   * Basemap light preset. Discovery uses `day` against a lilac globe
+   * atmosphere. The planner stays on `day` over paper.
    */
   lightPreset?: "dawn" | "day" | "dusk" | "night";
+  /**
+   * Mapbox Standard theme. Discovery uses `default` so land stays colourful
+   * like the political globe. Planner uses `faded` so routes and pins lead.
+   */
+  theme?: "default" | "faded" | "monochrome";
+  /**
+   * Style URL. Discovery uses Streets so the globe reads as a political map
+   * (cyan water, pastel land) rather than Standard's muted basemap.
+   */
+  mapStyle?: string;
+  /**
+   * `globe` lets the user zoom out to a true Earth. Discovery uses it.
+   * The planner stays on `mercator` — a city itinerary does not need space.
+   */
+  projection?: "mercator" | "globe";
+  /**
+   * Space around the globe. `brand` is the Intripid lilac / peach / star
+   * atmosphere — shared look for any globe, not Discovery-owned.
+   * Omit for Mapbox defaults.
+   */
+  atmosphere?: "brand";
+  /** Floor for scroll/pinch zoom. Globe wants 0 so the Earth can fill the view. */
+  minZoom?: number;
   /** Disable all user interaction — used for decorative/preview maps. */
   interactive?: boolean;
+  /**
+   * Require a modifier key (or the on-map hint) before wheel-zoom. The
+   * dashboard banner sits in a scrolling page; without this, scrolling the
+   * page over the cover zooms the globe instead.
+   */
+  cooperativeGestures?: boolean;
   /** Padding used by fitBounds callers, in px. */
   className?: string;
   onReady?: (map: MapboxMap) => void;
   /** Called on background click (not on a marker), to clear selection. */
   onBackgroundClick?: () => void;
+  /**
+   * Keep the WebGL backbuffer readable after each frame so overlays can
+   * sample luminance (discovery chrome). Off everywhere else — it costs VRAM.
+   */
+  preserveDrawingBuffer?: boolean;
 }
 
 export function MapCanvas({
@@ -60,10 +91,17 @@ export function MapCanvas({
   children,
   labels,
   lightPreset = "day",
+  theme = "faded",
+  mapStyle = "mapbox://styles/mapbox/standard",
+  projection = "mercator",
+  atmosphere,
+  minZoom = 0,
   interactive = true,
+  cooperativeGestures = false,
   className,
   onReady,
   onBackgroundClick,
+  preserveDrawingBuffer = false,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
@@ -79,27 +117,39 @@ export function MapCanvas({
   }, [onReady, onBackgroundClick]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || mapRef.current) return;
+    const host = containerRef.current;
+    if (!host || mapRef.current) return;
+
+    /*
+     * Mapbox requires an empty node at construct time. Strict Mode remounts
+     * this effect; a leftover canvas here is `console.warn` that Next.js
+     * promotes to a blocking overlay on every page that hosts a map.
+     * The map owns `host` itself — no inner wrapper, so the node we pass
+     * is the node we empty.
+     */
+    host.replaceChildren();
 
     mapboxgl.accessToken = requireMapboxToken();
 
     const instance = new mapboxgl.Map({
-      container,
-      style: "mapbox://styles/mapbox/standard",
-      // Mercator, not globe: the globe renders a dark space backdrop at low
-      // zoom, which fights the paper palette and reads as sci-fi chrome.
-      projection: "mercator",
+      container: host,
+      style: mapStyle,
+      projection,
       center: [center.lng, center.lat],
       zoom,
+      minZoom,
       interactive,
+      cooperativeGestures,
       attributionControl: false,
       logoPosition: "bottom-right",
       // Flat, north-up: this is a planning surface, not a flyover.
+      // Globe still allows full zoom-out; rotation stays off so the Earth
+      // does not become a toy.
       pitch: 0,
       bearing: 0,
       dragRotate: false,
       touchPitch: false,
+      preserveDrawingBuffer,
     });
 
     instance.touchZoomRotate.disableRotation();
@@ -124,8 +174,7 @@ export function MapCanvas({
         }
       };
 
-      // `faded` desaturates the basemap so routes, pins and overlays lead.
-      setConfig("theme", "faded");
+      setConfig("theme", theme);
       setConfig("lightPreset", lightPreset);
       setConfig("show3dObjects", false);
       setConfig("showPointOfInterestLabels", labels?.poi ?? false);
@@ -133,12 +182,53 @@ export function MapCanvas({
       setConfig("showPlaceLabels", labels?.places ?? true);
       setConfig("showRoadLabels", labels?.roads ?? true);
 
+      if (projection === "globe") {
+        try {
+          instance.setFog(
+            atmosphere === "brand"
+              ? {
+                  color: "rgb(255, 214, 186)",
+                  "high-color": "rgb(214, 149, 214)",
+                  "horizon-blend": 0.18,
+                  "space-color": "rgb(198, 153, 255)",
+                  "star-intensity": 0.55,
+                }
+              : {
+                  color: "rgb(186, 210, 235)",
+                  "high-color": "rgb(36, 92, 223)",
+                  "horizon-blend": 0.04,
+                  "space-color": "rgb(11, 11, 25)",
+                  "star-intensity": 0.45,
+                },
+          );
+        } catch {
+          /* style without fog */
+        }
+      }
+
       setReady(true);
       onReadyRef.current?.(instance);
     };
 
     if (instance.isStyleLoaded()) handleStyleReady();
     else instance.once("style.load", handleStyleReady);
+
+    /*
+     * Mapbox sizes the WebGL canvas from the container at init. A banner or
+     * a pane that is still laying out reports 0×0, and without a resize the
+     * map stays a blank tile. Observe the container for the rest of the life
+     * of the instance — Discovery, the planner and the identity cover all share
+     * this path.
+     */
+    const resizeObserver = new ResizeObserver(() => {
+      if (!mapRef.current) return;
+      try {
+        instance.resize();
+      } catch {
+        /* map already torn down */
+      }
+    });
+    resizeObserver.observe(host);
 
     const handleClick = (event: mapboxgl.MapMouseEvent) => {
       // Markers stop propagation themselves; anything reaching here is canvas.
@@ -148,11 +238,24 @@ export function MapCanvas({
     instance.on("click", handleClick);
 
     return () => {
-      instance.off("click", handleClick);
-      instance.remove();
+      resizeObserver.disconnect();
       mapRef.current = null;
-      setMap(null);
-      setReady(false);
+      try {
+        instance.off("click", handleClick);
+      } catch {
+        /* already removed */
+      }
+      try {
+        instance.stop();
+      } catch {
+        /* already removed */
+      }
+      try {
+        instance.remove();
+      } catch {
+        /* Mapbox throws if the canvas is already gone during route changes. */
+      }
+      host.replaceChildren();
     };
     // Intentionally mount-only: subsequent camera/label changes are applied by
     // the effects below rather than by tearing the map down and rebuilding it.
@@ -171,6 +274,14 @@ export function MapCanvas({
       /* style without these config keys */
     }
   }, [map, ready, labels?.poi, labels?.places, labels?.roads, lightPreset]);
+
+  useEffect(() => {
+    if (!map) return;
+    const handler = (map as unknown as { cooperativeGestures?: { enable(): void; disable(): void } }).cooperativeGestures;
+    if (!handler) return;
+    if (cooperativeGestures) handler.enable();
+    else handler.disable();
+  }, [map, cooperativeGestures]);
 
   return (
     <div className={className ? `${styles.root} ${className}` : styles.root}>

@@ -1,0 +1,617 @@
+.dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: min(521px, calc(100dvh - var(--space-16)));
+  background: var(--bg-surface-raised);
+  overflow: hidden;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 8px 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.chrome {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 16px 16px 20px;
+  container-type: size;
+}
+
+.preview {
+  --controls: 72px;
+  --max-w: min(360px, 100cqi);
+  --max-h: calc(100cqb - var(--controls));
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: var(--max-w);
+  max-height: 100%;
+}
+
+.preview_story {
+  --rw: 0.5625;
+}
+
+.preview_post {
+  --rw: 1;
+}
+
+.preview_portrait {
+  --rw: 0.8;
+}
+
+.sharePane {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-content: start;
+  gap: 14px;
+  padding: 12px 16px 16px;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.shareList {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linkBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.or {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.or::before,
+.or::after {
+  content: "";
+  flex: 1;
+  height: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.orLabel {
+  flex: none;
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
+  white-space: nowrap;
+}
+
+.shareRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.shareRow:hover,
+.shareRow:focus-visible {
+  background: var(--bg-hover);
+  outline: none;
+}
+
+.shareMark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--slate-100);
+  color: var(--slate-700);
+}
+
+.shareName {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.formats {
+  width: 100%;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--text-2xs);
+  color: var(--text-quaternary);
+  text-align: center;
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: #6b5a9a;
+  box-shadow: var(--shadow-md);
+}
+
+.sky {
+  position: absolute;
+  inset: -14%;
+  z-index: 0;
+  background:
+    url("/footer-vista.png") 50% 42% / cover no-repeat;
+  transform-origin: 50% 40%;
+  animation: skyDrift 22s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.skyWash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 70% at 50% 18%, rgba(255, 214, 180, 0.18), transparent 52%),
+    linear-gradient(180deg, rgba(18, 12, 40, 0.12) 0%, transparent 28%, transparent 72%, rgba(18, 12, 40, 0.22) 100%);
+}
+
+.skyGrain {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+}
+
+@keyframes skyDrift {
+  from {
+    transform: scale(1.04) translate3d(-1.4%, 0.4%, 0);
+  }
+
+  to {
+    transform: scale(1.12) translate3d(1.6%, -0.8%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky {
+    animation: none;
+    inset: 0;
+    transform: none;
+  }
+}
+
+.stage_story {
+  width: min(100%, calc(var(--max-h) * var(--rw)));
+  aspect-ratio: 9 / 16;
+  border-radius: 18px;
+}
+
+.stage_post {
+  width: min(100%, calc(var(--max-h) * var(--rw)));
+  aspect-ratio: 1;
+  border-radius: 12px;
+}
+
+.stage_portrait {
+  width: min(100%, calc(var(--max-h) * var(--rw)));
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+}
+
+.frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  width: 390px;
+  height: 851px;
+  overflow: visible;
+  background: transparent;
+  transform: translate(-50%, -50%);
+}
+
+.board {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 390px;
+  height: 851px;
+  overflow: visible;
+  background: transparent;
+}
+
+.pole {
+  position: absolute;
+  bottom: 0;
+  left: calc(50% - 2.5px);
+  width: 322px;
+  height: 851px;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.pole img {
+  display: block;
+  width: 322px;
+  height: 851px;
+  object-fit: cover;
+}
+
+.sign {
+  position: absolute;
+  left: calc(50% - 2.13px);
+  width: 321.294px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.sign1 {
+  bottom: 707.96px;
+  height: 76.909px;
+}
+
+.sign2 {
+  bottom: 638.24px;
+  height: 79.784px;
+}
+
+.sign3 {
+  bottom: 587.21px;
+  height: 78.347px;
+}
+
+.sign4 {
+  bottom: 528.99px;
+  height: 84.816px;
+}
+
+.sign5 {
+  bottom: 442.02px;
+  height: 104.942px;
+}
+
+.sign6 {
+  bottom: 387.39px;
+  height: 66.846px;
+}
+
+.sign7 {
+  bottom: 339.23px;
+  height: 69.003px;
+}
+
+.sign8 {
+  bottom: 265.2px;
+  height: 82.659px;
+}
+
+.sign9 {
+  bottom: 199.07px;
+  height: 78.347px;
+}
+
+.sign10 {
+  bottom: 105.63px;
+  height: 105.66px;
+}
+
+.crop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.crop img {
+  position: absolute;
+  max-width: none;
+}
+
+.crop1 img {
+  height: 990.91%;
+  left: -0.11%;
+  top: -88.64%;
+  width: 100.22%;
+}
+
+.crop2 img {
+  height: 947.83%;
+  left: -0.11%;
+  top: -169.57%;
+  width: 100.22%;
+}
+
+.crop3 img {
+  height: 947.83%;
+  left: -0.11%;
+  top: -234.78%;
+  width: 100.22%;
+}
+
+.crop4 img {
+  height: 889.8%;
+  left: -0.11%;
+  top: -283.67%;
+  width: 100.22%;
+}
+
+.crop5 img {
+  height: 714.75%;
+  left: -0.11%;
+  top: -291.8%;
+  width: 100.22%;
+}
+
+.crop6 img {
+  height: 1117.95%;
+  left: -0.11%;
+  top: -594.87%;
+  width: 100.22%;
+}
+
+.crop7 img {
+  height: 1090%;
+  left: -0.11%;
+  top: -647.5%;
+  width: 100.22%;
+}
+
+.crop8 img {
+  height: 910.42%;
+  left: -0.23%;
+  top: -614.58%;
+  width: 100.45%;
+}
+
+.crop9 img {
+  height: 950%;
+  left: -0.23%;
+  top: -730.43%;
+  width: 100.45%;
+}
+
+.crop10 img {
+  height: 703.23%;
+  left: -0.11%;
+  top: -603.23%;
+  width: 100.22%;
+}
+
+.label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: visible;
+  font-synthesis: none;
+  transform-origin: center;
+}
+
+/* Figma pins this copy to the purple plank, not the crop-box center. */
+.label10 {
+  left: 167.66px;
+  top: 33.64px;
+}
+
+.inkLight {
+  color: #fff;
+}
+
+.inkDark {
+  color: #000;
+}
+
+.type1 {
+  font-family: var(--font-pole-shadows), "Shadows Into Light", cursive;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 2.4px;
+}
+
+.type2 {
+  font-family: var(--font-pole-urbanist), Urbanist, sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 2.4px;
+}
+
+.type3 {
+  font-family: var(--font-pole-life-savers), "Life Savers", cursive;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.type4 {
+  font-family: var(--font-pole-caveat), Caveat, cursive;
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 4.4px;
+}
+
+.type5 {
+  font-family: var(--font-pole-patrick), "Patrick Hand", cursive;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 3px;
+}
+
+.type6 {
+  font-family: var(--font-pole-indie), "Indie Flower", cursive;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 2.4px;
+}
+
+.type7 {
+  font-family: var(--font-pole-montez), Montez, cursive;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 2.8px;
+}
+
+.type8 {
+  font-family: var(--font-pole-zeyada), Zeyada, cursive;
+  font-size: 36px;
+  font-weight: 400;
+  letter-spacing: 3.6px;
+}
+
+.type9 {
+  font-family: var(--font-pole-reenie), "Reenie Beanie", cursive;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 2.8px;
+}
+
+.type10 {
+  font-family: var(--font-pole-mountains), "Mountains of Christmas", cursive;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+
+.lockup {
+  position: absolute;
+  left: 15.09px;
+  bottom: 42px;
+  width: 104.905px;
+  height: 31.472px;
+  display: block;
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(18, 12, 40, 0.45));
+}
+
+.mascot {
+  position: absolute;
+  z-index: 5;
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(18, 12, 40, 0.2));
+}
+
+.stage_story .mascot {
+  left: 14px;
+  bottom: 72px;
+}
+
+.stage_post .mascot {
+  left: 22%;
+  bottom: 72px;
+}
+
+.stage_portrait .mascot {
+  left: 28px;
+  bottom: 72px;
+}
+
+.traveller {
+  position: absolute;
+  right: 11px;
+  bottom: 115px;
+  margin: 0;
+  width: 144px;
+  font-family: var(--font-pole-urbanist), Urbanist, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  color: #1a1a1a;
+  text-shadow: 0 1px 0 rgba(255, 249, 236, 0.7);
+}
+
+.badge {
+  position: absolute;
+  right: 8px;
+  bottom: 45px;
+  display: grid;
+  place-items: center;
+  width: 143px;
+  height: 66px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: linear-gradient(
+    137deg,
+    #a279e5 3%,
+    #cc7bcc 32%,
+    #eba048 71%,
+    #f47f22 103%
+  );
+}
+
+.badgeText {
+  margin: 0;
+  font-family: var(--font-pole-urbanist), Urbanist, sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1;
+  text-align: center;
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .dialog {
+    height: auto;
+  }
+
+  .layout,
+  .chrome {
+    width: 100%;
+    height: auto;
+    container-type: normal;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .preview {
+    width: min(360px, 100%);
+  }
+
+  .sharePane {
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+}
