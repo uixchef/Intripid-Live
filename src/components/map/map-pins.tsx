@@ -72,8 +72,8 @@ export function HomePin({ title }: { title?: string }) {
   );
 }
 
-/** Discovery field pin — the hummingbird, not a photo of the city. */
-export function BirdPin({
+/** Field pin — Place Pin chrome with the lockup mascot, not a city photo. */
+export function MascotPin({
   title,
   active = false,
   className,
@@ -87,25 +87,14 @@ export function BirdPin({
   onPointerLeave?: () => void;
 }) {
   return (
-    <span
-      className={cn(
-        styles.birdPin,
-        active && styles.birdPinOn,
-        className,
-      )}
+    <PlacePin
+      src="/discovery/pins/mascot.png"
       title={title}
+      active={active}
+      className={className}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/brand/mascots/curious.png"
-        alt=""
-        width={44}
-        height={44}
-        draggable={false}
-      />
-    </span>
+    />
   );
 }
 

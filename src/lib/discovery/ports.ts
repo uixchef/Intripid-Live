@@ -14,6 +14,8 @@ export interface DeparturePort {
 
 const LOCAL_KM = 140;
 const LOCAL_FALLBACK_KM = 320;
+/** Airports that actually serve a city, not the nearest hub on another coast. */
+const CITY_PORT_KM = 80;
 
 /**
  * Real aerodromes around a point — Heathrow for London, not a pin on the
@@ -32,10 +34,8 @@ export function nearestDeparture(origin: LngLat): DeparturePort | null {
 }
 
 /**
- * Destination-side airports for the cities that already survived
- * home / where / budget. One airport per city, never the departure port.
- * Every city that will land on the map must have a port here — the hunt
- * finds ports first, then cities near those ports, then filters.
+ * Destination-side airports for the cities still in play after home / how far
+ * / budget. Every airport that serves those cities, not one hub for a continent.
  */
 export function destinationPortsFor(
   origin: Origin,
@@ -46,10 +46,23 @@ export function destinationPortsFor(
   const ports: DeparturePort[] = [];
 
   for (const destination of destinations) {
-    const airport = closestAirport(destination.coords, departure?.iata);
-    if (!airport || seen.has(airport.iata)) continue;
-    seen.add(airport.iata);
-    ports.push(toPort(origin.coords, airport));
+    const local = AIRPORTS.filter(
+      (airport) =>
+        airport.iata !== departure?.iata &&
+        distanceKm(destination.coords, airport.coords) <= CITY_PORT_KM,
+    );
+    const picks =
+      local.length > 0
+        ? local
+        : [closestAirport(destination.coords, departure?.iata)].filter(
+            (airport): airport is Airport => airport !== null,
+          );
+
+    for (const airport of picks) {
+      if (seen.has(airport.iata)) continue;
+      seen.add(airport.iata);
+      ports.push(toPort(origin.coords, airport));
+    }
   }
 
   return ports.sort((a, b) => a.hours - b.hours);
@@ -57,17 +70,10 @@ export function destinationPortsFor(
 
 /** Cities the traveller can actually visit from the destination ports. */
 export function destinationsNearPorts(
-  origin: Origin,
+  _origin: Origin,
   destinations: Destination[],
 ): Destination[] {
-  const ports = destinationPortsFor(origin, destinations);
-  if (ports.length === 0) return destinations;
-  const iata = new Set(ports.map((port) => port.iata));
-  const departure = nearestDeparture(origin.coords);
-  return destinations.filter((destination) => {
-    const airport = closestAirport(destination.coords, departure?.iata);
-    return airport !== null && iata.has(airport.iata);
-  });
+  return destinations;
 }
 
 function closestAirport(coords: LngLat, excludeIata?: string): Airport | null {

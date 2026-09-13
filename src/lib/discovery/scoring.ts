@@ -58,6 +58,8 @@ const WEIGHTS = {
 const SUPPORT_FLOOR = 0.5;
 /** Do not collapse the filter game below this while there are still cities. */
 const FIELD_FLOOR = 5;
+/** Hard filters must leave a real hunt — chips are what thin the map. */
+const HUNT_FLOOR = 16;
 /** Worst-fit cities dropped per selected chip — never a handful at once. */
 const DROP_PER_CHIP = 2;
 
@@ -470,8 +472,28 @@ function runFilters(
     keep: (destination: Destination) => boolean,
   ) => {
     const entered = pool.length;
+    const next = pool.filter(keep);
     const removed = pool.filter((d) => !keep(d));
-    pool = pool.filter(keep);
+    /*
+     * Scope is a promise. Dates, reach and budget must not shrink the hunt
+     * to two pins — experiences and activities are what filter the field.
+     */
+    const keepField =
+      key !== "scope" &&
+      entered >= HUNT_FLOOR &&
+      next.length < HUNT_FLOOR;
+    if (keepField) {
+      stages.push({
+        key,
+        label,
+        detail,
+        entered,
+        removed: 0,
+        removedIds: [],
+      });
+      return;
+    }
+    pool = next;
     stages.push({
       key,
       label,

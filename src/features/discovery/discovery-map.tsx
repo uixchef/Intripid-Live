@@ -15,12 +15,11 @@ import { clusterInPixels } from "@/lib/discovery/cluster";
 import {
   nearestDeparture,
   destinationPortsFor,
-  destinationsNearPorts,
   type DeparturePort,
 } from "@/lib/discovery/ports";
 import { briefPlacesOnMap } from "@/lib/discovery/places";
 import { cn } from "@/lib/utils";
-import { AirportPin, BirdPin, HomePin, PlacePin } from "@/components/map/map-pins";
+import { AirportPin, HomePin, MascotPin, PlacePin } from "@/components/map/map-pins";
 import type { Attraction, Destination, LngLat, Origin, RecommendationSet } from "@/lib/types";
 
 import { ChromeOnMap } from "./chrome-on-map";
@@ -137,25 +136,15 @@ export function DiscoveryMap({
 
     if (!showCities) return [];
 
-    const cities = home
-      ? destinationsNearPorts(
-          home,
-          result.ranked.map((entry) => entry.destination),
-        )
-      : result.ranked.map((entry) => entry.destination);
-    const allowed = new Set(cities.map((city) => city.id));
-
-    return result.ranked
-      .filter((recommendation) => allowed.has(recommendation.destination.id))
-      .map((recommendation) => ({
-        id: recommendation.destination.id,
-        coords: recommendation.destination.coords,
-        destination: recommendation.destination,
-        rank: recommendation.rank,
-        interactive: false,
-        score: recommendation.score,
-      }));
-  }, [origin, home, active, stage, result, showCities]);
+    return result.ranked.map((recommendation) => ({
+      id: recommendation.destination.id,
+      coords: recommendation.destination.coords,
+      destination: recommendation.destination,
+      rank: recommendation.rank,
+      interactive: false,
+      score: recommendation.score,
+    }));
+  }, [origin, active, stage, result, showCities]);
 
   const departurePort = useMemo(() => {
     if (!origin || active || !portsFound) return null;
@@ -175,10 +164,10 @@ export function DiscoveryMap({
 
   const airportPins = useMemo(() => {
     const pins: DeparturePort[] = [];
-    if (departurePort) pins.push(departurePort);
+    if (departurePort && huntKind !== "dest") pins.push(departurePort);
     pins.push(...destPorts);
     return pins;
-  }, [departurePort, destPorts]);
+  }, [departurePort, destPorts, huntKind]);
   const places = useMemo(
     () => (active ? briefPlacesOnMap(active.destination.attractions) : []),
     [active],
@@ -462,7 +451,7 @@ function FieldPins({
               exit={{ opacity: 0, scale: 0.7 }}
               transition={{ duration: reduceMotion ? 0.1 : 0.4 }}
             >
-              <BirdPin
+              <MascotPin
                 active={isHovered && pin.interactive}
                 title={pin.destination.name}
                 onPointerEnter={
