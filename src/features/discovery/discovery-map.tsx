@@ -379,22 +379,10 @@ function FieldPins({
 
   const nodes = useMemo(() => {
     void viewRevision;
-    /*
-     * The hunt is a field of cities, then filters. Clustering at globe zoom
-     * collapsed that field into a handful of discs and hid the work.
-     */
-    if (!pins.some((pin) => pin.interactive)) {
-      return pins.map((pin) => ({
-        kind: "leaf" as const,
-        id: pin.id,
-        coords: pin.coords,
-        item: pin,
-      }));
-    }
     return clusterInPixels(
       pins,
       (lng, lat) => map.project([lng, lat]),
-      48,
+      56,
     );
   }, [pins, map, viewRevision]);
 
