@@ -62,6 +62,9 @@ type FieldPin = {
   score: number;
 };
 
+/** First-question globe: Atlantic face, whole Earth, not a cropped continent. */
+const OPENING_GLOBE = { lng: 12, lat: 16 };
+
 export function DiscoveryMap({
   stage,
   step,
@@ -169,6 +172,8 @@ export function DiscoveryMap({
     [active],
   );
 
+  const openingZoom = insetBottom > 180 ? 0.78 : 1.08;
+
   const camera = useMemo(() => {
     if (active) {
       return {
@@ -179,7 +184,11 @@ export function DiscoveryMap({
     }
 
     if (!origin || !showHome) {
-      return { center: { lng: 8, lat: 28 }, zoom: 1.5, fit: null as LngLat[] | null };
+      return {
+        center: OPENING_GLOBE,
+        zoom: openingZoom,
+        fit: null as LngLat[] | null,
+      };
     }
 
     if (stage === "results") {
@@ -245,6 +254,7 @@ export function DiscoveryMap({
     destPorts,
     showCities,
     showHome,
+    openingZoom,
     portsFound,
     departurePort,
   ]);
@@ -252,8 +262,8 @@ export function DiscoveryMap({
   return (
     <div className={styles.root}>
       <MapSurface
-        center={{ lng: 8, lat: 28 }}
-        zoom={1.5}
+        center={OPENING_GLOBE}
+        zoom={0.42}
         minZoom={0}
         projection="globe"
         mapStyle="mapbox://styles/mapbox/streets-v12"
@@ -269,6 +279,7 @@ export function DiscoveryMap({
           center={camera.center}
           zoom={camera.zoom}
           fit={camera.fit}
+          settleOnMount
           maxZoom={
             active
               ? active.destination.zoom

@@ -306,6 +306,11 @@ export interface MapCameraProps {
    * Google-Earth arc. Discovery uses this between the three matches.
    */
   arc?: boolean;
+  /**
+   * Ease the first camera into place instead of jumping. Discovery's opening
+   * globe uses this so Earth arrives in frame rather than appearing cropped.
+   */
+  settleOnMount?: boolean;
 }
 
 /**
@@ -322,6 +327,7 @@ export function MapCamera({
   maxZoom = 15.5,
   revision = 0,
   arc = false,
+  settleOnMount = false,
 }: MapCameraProps) {
   const { map, ready } = useMap();
   const first = useRef(true);
@@ -350,7 +356,7 @@ export function MapCamera({
     const reduceMotion =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const animate = !instant && !first.current && !reduceMotion;
+    const animate = !instant && !reduceMotion && (!first.current || settleOnMount);
     const padOnly =
       !first.current &&
       prevKeys.current.centerKey === centerKey &&
@@ -480,7 +486,7 @@ export function MapCamera({
 
     prevKeys.current = { fitKey, centerKey, padKey };
     first.current = false;
-  }, [map, ready, fitKey, centerKey, zoom, instant, maxZoom, revision, padKey, arc]);
+  }, [map, ready, fitKey, centerKey, zoom, instant, maxZoom, revision, padKey, arc, settleOnMount]);
 
   return null;
 }
