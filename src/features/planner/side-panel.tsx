@@ -126,7 +126,11 @@ export function IdeasRail({
 
       {trip.ideas.length === 0 ? (
         <div className={styles.emptyIdeas}>
-          <Hummingbird mood="curious" size={80} />
+          <Hummingbird
+            mood="curious"
+            size={80}
+            className={styles.emptyIdeasMascot}
+          />
           <p className={styles.emptyIdeasTitle}>Ideas list is empty</p>
           <p className={styles.emptyIdeasBody}>
             {trip.destinationId

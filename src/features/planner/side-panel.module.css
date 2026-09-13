@@ -355,10 +355,16 @@
 
 .emptyIdeas {
   display: grid;
-  place-content: start center;
+  justify-items: stretch;
+  align-content: start;
   gap: var(--space-3);
   padding: var(--space-10) var(--space-8);
   text-align: center;
+}
+
+.emptyIdeasMascot {
+  display: block;
+  justify-self: center;
 }
 
 .emptyIdeasTitle {

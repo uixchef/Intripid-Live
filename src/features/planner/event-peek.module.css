@@ -204,6 +204,12 @@
   outline: none;
 }
 
+.input:focus,
+.input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .input::placeholder {
   color: var(--text-tertiary);
 }
