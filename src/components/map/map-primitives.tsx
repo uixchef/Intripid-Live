@@ -460,11 +460,15 @@ export function MapCamera({
           } else if (arc || distanceKm(here, dest) >= 500) {
             flyArc(map, dest, destZoom, box);
           } else {
+            const zoomDelta = Math.abs(destZoom - map.getZoom());
             map.easeTo({
               center: target,
               zoom: destZoom,
               padding: box,
-              duration: hopDuration(here, dest, false),
+              duration: Math.max(
+                hopDuration(here, dest, false),
+                zoomDelta > 1.5 ? Math.round(1600 + zoomDelta * 280) : 0,
+              ),
               easing: cinematicEase,
               essential: true,
             });

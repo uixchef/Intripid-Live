@@ -72,6 +72,43 @@ export function HomePin({ title }: { title?: string }) {
   );
 }
 
+/** Discovery field pin — the hummingbird, not a photo of the city. */
+export function BirdPin({
+  title,
+  active = false,
+  className,
+  onPointerEnter,
+  onPointerLeave,
+}: {
+  title?: string;
+  active?: boolean;
+  className?: string;
+  onPointerEnter?: () => void;
+  onPointerLeave?: () => void;
+}) {
+  return (
+    <span
+      className={cn(
+        styles.birdPin,
+        active && styles.birdPinOn,
+        className,
+      )}
+      title={title}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/brand/mascots/curious.png"
+        alt=""
+        width={44}
+        height={44}
+        draggable={false}
+      />
+    </span>
+  );
+}
+
 export function AirportPin({ title }: { title?: string }) {
   return (
     <span className={styles.airportPin} title={title}>

@@ -20,8 +20,7 @@ import {
 } from "@/lib/discovery/ports";
 import { briefPlacesOnMap } from "@/lib/discovery/places";
 import { cn } from "@/lib/utils";
-import { AirportPin, HomePin, PlacePin } from "@/components/map/map-pins";
-import { coverPhotoSrc } from "@/data/place-photos";
+import { AirportPin, BirdPin, HomePin, PlacePin } from "@/components/map/map-pins";
 import type { Attraction, Destination, LngLat, Origin, RecommendationSet } from "@/lib/types";
 
 import { ChromeOnMap } from "./chrome-on-map";
@@ -65,6 +64,8 @@ type FieldPin = {
 
 /** First-question globe: Atlantic face, whole Earth, not a cropped continent. */
 const OPENING_GLOBE = { lng: 12, lat: 16 };
+/** Start tight on a continent, then pull back to the full globe. */
+const OPENING_START_ZOOM = 3.4;
 
 export function DiscoveryMap({
   stage,
@@ -272,7 +273,7 @@ export function DiscoveryMap({
     <div className={styles.root}>
       <MapSurface
         center={OPENING_GLOBE}
-        zoom={0.42}
+        zoom={OPENING_START_ZOOM}
         minZoom={0}
         projection="globe"
         mapStyle="mapbox://styles/mapbox/streets-v12"
@@ -461,12 +462,7 @@ function FieldPins({
               exit={{ opacity: 0, scale: 0.7 }}
               transition={{ duration: reduceMotion ? 0.1 : 0.4 }}
             >
-              <PlacePin
-                src={
-                  coverPhotoSrc(pin.destination.id) ??
-                  pin.destination.attractions[0]?.photo ??
-                  "/discovery/pins/place.png"
-                }
+              <BirdPin
                 active={isHovered && pin.interactive}
                 title={pin.destination.name}
                 onPointerEnter={
