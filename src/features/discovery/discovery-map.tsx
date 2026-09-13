@@ -20,7 +20,7 @@ import {
 } from "@/lib/discovery/ports";
 import { briefPlacesOnMap } from "@/lib/discovery/places";
 import { cn } from "@/lib/utils";
-import { AirportPin, HomePin, MascotPin, PlacePin } from "@/components/map/map-pins";
+import { AirportPin, HomePin, MascotPin, PlacePin, PortClusterPin } from "@/components/map/map-pins";
 import type { Attraction, Destination, LngLat, Origin, RecommendationSet, TripScope } from "@/lib/types";
 
 import { ChromeOnMap } from "./chrome-on-map";
@@ -476,20 +476,12 @@ function PortPins({
 
   const nodes = useMemo(() => {
     void viewRevision;
-    if (pulse) {
-      return ports.map((port) => ({
-        kind: "leaf" as const,
-        id: port.id,
-        coords: port.coords,
-        item: port,
-      }));
-    }
     return clusterInPixels(
       ports,
       (lng, lat) => map.project([lng, lat]),
-      48,
+      56,
     );
-  }, [ports, map, viewRevision, pulse]);
+  }, [ports, map, viewRevision]);
 
   return (
     <AnimatePresence>
@@ -515,15 +507,15 @@ function PortPins({
               }}
             >
               <motion.span
-                className={cn(styles.cluster, styles.clusterPorts)}
                 initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.7 }}
                 transition={{ duration: reduceMotion ? 0.1 : 0.38 }}
               >
-                <span className={styles.clusterCore}>
-                  <span className={styles.clusterCount}>{node.count}</span>
-                </span>
+                <PortClusterPin
+                  count={node.count}
+                  title={`${node.count} airports`}
+                />
               </motion.span>
             </MapMarker>
           );

@@ -7,7 +7,7 @@
 }
 
 /* ------------------------------------------------------------------------- */
-/* Clusters — Places (purple) and Ports (teal)                               */
+/* Clusters — Places (purple). Ports reuse the green airport pin. */
 /* ------------------------------------------------------------------------- */
 
 .cluster {
@@ -24,10 +24,6 @@
   background: rgb(174 110 255 / 0.2);
 }
 
-.clusterPorts {
-  background: rgb(0 144 155 / 0.2);
-}
-
 .clusterCore {
   display: grid;
   place-items: center;
@@ -38,10 +34,6 @@
 
 .clusterPlaces .clusterCore {
   background: var(--purple-400);
-}
-
-.clusterPorts .clusterCore {
-  background: var(--teal-600);
 }
 
 .clusterCount {

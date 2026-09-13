@@ -115,6 +115,23 @@ export function AirportPin({ title }: { title?: string }) {
   );
 }
 
+/** Same green airport chrome, with a count instead of the plane. */
+export function PortClusterPin({
+  count,
+  title,
+}: {
+  count: number;
+  title?: string;
+}) {
+  return (
+    <span className={cn(styles.airportPin, styles.airportPinLive)} title={title}>
+      <span className={styles.airportCore}>
+        <span className={styles.airportCount}>{count}</span>
+      </span>
+    </span>
+  );
+}
+
 /**
  * Map hover card — photo banner + place copy, the way Maps and Airbnb
  * preview a pin without opening it.
