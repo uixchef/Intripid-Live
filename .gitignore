@@ -74,3 +74,4 @@ docs/intripid-product-report/journeys/
 
 # Design source files (not referenced by the product)
 live/
+.env*
