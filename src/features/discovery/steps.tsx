@@ -645,7 +645,6 @@ function OriginPicker({
   const discoveryApi = useDiscoveryApi();
 
   useEffect(() => {
-    if (!hydrated) return;
     if (prefs.origin) return;
     discoveryApi.getState().setOrigin(defaultOriginFromProfile(homeCity));
   }, [discoveryApi, homeCity, hydrated, prefs.origin]);

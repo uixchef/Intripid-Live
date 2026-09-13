@@ -161,6 +161,82 @@ function season(climate: Climate): SeasonMonth[] {
   return curves[climate].map((entry, month) => ({ month, ...entry }));
 }
 
+function offset(coords: Seed["coords"], eastKm: number, northKm: number) {
+  return {
+    lng: coords.lng + eastKm / (111.32 * Math.cos((coords.lat * Math.PI) / 180)),
+    lat: coords.lat + northKm / 110.57,
+  };
+}
+
+/**
+ * Catalog cities still need a real shortlist. One pin named after the city
+ * leaves the destination brief empty and the planner with a stay and nothing
+ * to do. These are typed stops around the centre — not a live POI scrape —
+ * so discovery and "Build trip here" always have places and calendar items.
+ */
+function catalogAttractions(seed: Seed): Destination["attractions"] {
+  const photo = `/places/${seed.id}.jpg`;
+  const { coords, name } = seed;
+  return [
+    {
+      name: `${name} historic centre`,
+      category: "sightseeing",
+      coords: offset(coords, 0.4, 0.2),
+      note: `Start in the centre of ${name} and walk until the streets tell you where to turn.`,
+      photo,
+    },
+    {
+      name: `Museum quarter, ${name}`,
+      category: "culture",
+      coords: offset(coords, -0.6, 0.5),
+      note: `Give the main museum a morning before the rooms fill, then sit with whatever is next door.`,
+      photo,
+    },
+    {
+      name: `${name} central market`,
+      category: "food",
+      coords: offset(coords, 0.3, -0.5),
+      note: `Eat standing if that is how the locals do it — the point is the stall, not a reservation.`,
+      photo,
+    },
+    {
+      name: `Neighbourhood table, ${name}`,
+      category: "food",
+      coords: offset(coords, -0.4, -0.7),
+      note: `Book the early sitting and let the room decide the rest of the night.`,
+      photo,
+    },
+    {
+      name: `Park or waterfront, ${name}`,
+      category: "outdoors",
+      coords: offset(coords, 0.8, -0.2),
+      note: `Walk it at the cooler end of the day. This is where ${name} exhales.`,
+      photo,
+    },
+    {
+      name: `After dark in ${name}`,
+      category: "nightlife",
+      coords: offset(coords, -0.2, 0.8),
+      note: `One room, not a crawl. Sit where you can still hear the person you came with.`,
+      photo,
+    },
+    {
+      name: `Main shopping street, ${name}`,
+      category: "shopping",
+      coords: offset(coords, 0.5, 0.6),
+      note: `Use it as a transect, not a checklist — the side streets are the actual finds.`,
+      photo,
+    },
+    {
+      name: `${name} arrival hall`,
+      category: "transit",
+      coords: offset(coords, -0.9, -0.3),
+      note: `Orient from the station or ferry and walk in. The first twenty minutes are the map.`,
+      photo,
+    },
+  ];
+}
+
 function fromSeed(seed: Seed): Destination {
   const money = budget(seed.spend);
   return {
@@ -183,15 +259,7 @@ function fromSeed(seed: Seed): Destination {
     styleFit: styleFit(seed.styles),
     interestFit: interestFit(seed.interests),
     season: season(seed.climate),
-    attractions: [
-      {
-        name: seed.name,
-        category: "sightseeing",
-        coords: seed.coords,
-        note: `Start in the centre of ${seed.name} and walk until the city tells you where to eat.`,
-        photo: `/places/${seed.id}.jpg`,
-      },
-    ],
+    attractions: catalogAttractions(seed),
     timezone: seed.timezone,
     currency: seed.currency,
     language: seed.language,

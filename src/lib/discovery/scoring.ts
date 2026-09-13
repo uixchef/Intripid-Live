@@ -204,7 +204,7 @@ export function resolvedDates(
     const start = parseISO(prefs.startDate);
     return {
       start: prefs.startDate,
-      end: addDays(start, nights).toISOString().slice(0, 10),
+      end: format(addDays(start, nights), "yyyy-MM-dd"),
     };
   }
 
@@ -214,10 +214,9 @@ export function resolvedDates(
       prefs.flexibleYear,
     );
     const start = new Date(flexibleYear, flexibleMonth, 12);
-    const end = addDays(start, prefs.flexibleNights);
     return {
-      start: start.toISOString().slice(0, 10),
-      end: end.toISOString().slice(0, 10),
+      start: format(start, "yyyy-MM-dd"),
+      end: format(addDays(start, prefs.flexibleNights), "yyyy-MM-dd"),
     };
   }
 
