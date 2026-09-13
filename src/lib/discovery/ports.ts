@@ -14,8 +14,6 @@ export interface DeparturePort {
 
 const LOCAL_KM = 140;
 const LOCAL_FALLBACK_KM = 320;
-const CITY_PORT_KM = 120;
-const CITY_PORT_FALLBACK_KM = 250;
 
 /**
  * Real aerodromes around a point — Heathrow for London, not a pin on the
@@ -36,6 +34,8 @@ export function nearestDeparture(origin: LngLat): DeparturePort | null {
 /**
  * Destination-side airports for the cities that already survived
  * home / where / budget. One airport per city, never the departure port.
+ * Every city that will land on the map must have a port here — the hunt
+ * finds ports first, then cities near those ports, then filters.
  */
 export function destinationPortsFor(
   origin: Origin,
@@ -55,6 +55,21 @@ export function destinationPortsFor(
   return ports.sort((a, b) => a.hours - b.hours);
 }
 
+/** Cities the traveller can actually visit from the destination ports. */
+export function destinationsNearPorts(
+  origin: Origin,
+  destinations: Destination[],
+): Destination[] {
+  const ports = destinationPortsFor(origin, destinations);
+  if (ports.length === 0) return destinations;
+  const iata = new Set(ports.map((port) => port.iata));
+  const departure = nearestDeparture(origin.coords);
+  return destinations.filter((destination) => {
+    const airport = closestAirport(destination.coords, departure?.iata);
+    return airport !== null && iata.has(airport.iata);
+  });
+}
+
 function closestAirport(coords: LngLat, excludeIata?: string): Airport | null {
   let best: Airport | null = null;
   let bestKm = Infinity;
@@ -68,10 +83,7 @@ function closestAirport(coords: LngLat, excludeIata?: string): Airport | null {
     }
   }
 
-  if (!best) return null;
-  if (bestKm <= CITY_PORT_KM) return best;
-  if (bestKm <= CITY_PORT_FALLBACK_KM) return best;
-  return null;
+  return best;
 }
 
 function airportsWithin(origin: LngLat, maxKm: number): DeparturePort[] {

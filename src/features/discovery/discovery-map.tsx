@@ -15,6 +15,7 @@ import { clusterInPixels } from "@/lib/discovery/cluster";
 import {
   nearestDeparture,
   destinationPortsFor,
+  destinationsNearPorts,
   type DeparturePort,
 } from "@/lib/discovery/ports";
 import { briefPlacesOnMap } from "@/lib/discovery/places";
@@ -135,15 +136,25 @@ export function DiscoveryMap({
 
     if (!showCities) return [];
 
-    return result.ranked.map((recommendation) => ({
-      id: recommendation.destination.id,
-      coords: recommendation.destination.coords,
-      destination: recommendation.destination,
-      rank: recommendation.rank,
-      interactive: false,
-      score: recommendation.score,
-    }));
-  }, [origin, active, stage, result, showCities]);
+    const cities = home
+      ? destinationsNearPorts(
+          home,
+          result.ranked.map((entry) => entry.destination),
+        )
+      : result.ranked.map((entry) => entry.destination);
+    const allowed = new Set(cities.map((city) => city.id));
+
+    return result.ranked
+      .filter((recommendation) => allowed.has(recommendation.destination.id))
+      .map((recommendation) => ({
+        id: recommendation.destination.id,
+        coords: recommendation.destination.coords,
+        destination: recommendation.destination,
+        rank: recommendation.rank,
+        interactive: false,
+        score: recommendation.score,
+      }));
+  }, [origin, home, active, stage, result, showCities]);
 
   const departurePort = useMemo(() => {
     if (!origin || active || !portsFound) return null;
@@ -159,7 +170,7 @@ export function DiscoveryMap({
       );
     }
     return [];
-  }, [home, active, huntKind, huntBeat, result]);
+  }, [home, active, huntKind, result]);
 
   const airportPins = useMemo(() => {
     const pins: DeparturePort[] = [];
@@ -205,14 +216,11 @@ export function DiscoveryMap({
           fit: [origin, ...destPorts.map((port) => port.coords)],
         };
       }
-      if (showCities && result.ranked.length > 0) {
+      if (showCities && field.length > 0) {
         return {
           center: null,
           zoom: undefined,
-          fit: [
-            origin,
-            ...result.ranked.map((entry) => entry.destination.coords),
-          ],
+          fit: [origin, ...field.map((pin) => pin.coords)],
         };
       }
       return { center: origin, zoom: 1.55, fit: null as LngLat[] | null };
@@ -234,11 +242,11 @@ export function DiscoveryMap({
       };
     }
 
-    if (showCities && result.ranked.length > 0) {
+    if (showCities && field.length > 0) {
       return {
         center: null,
         zoom: undefined,
-        fit: [origin, ...result.ranked.map((entry) => entry.destination.coords)],
+        fit: [origin, ...field.map((pin) => pin.coords)],
       };
     }
 
@@ -252,6 +260,7 @@ export function DiscoveryMap({
     huntKind,
     huntBeat,
     destPorts,
+    field,
     showCities,
     showHome,
     openingZoom,
@@ -377,6 +386,18 @@ function FieldPins({
 
   const nodes = useMemo(() => {
     void viewRevision;
+    /*
+     * The hunt is a field of cities, then filters. Clustering at globe zoom
+     * collapsed that field into a handful of discs and hid the work.
+     */
+    if (!pins.some((pin) => pin.interactive)) {
+      return pins.map((pin) => ({
+        kind: "leaf" as const,
+        id: pin.id,
+        coords: pin.coords,
+        item: pin,
+      }));
+    }
     return clusterInPixels(
       pins,
       (lng, lat) => map.project([lng, lat]),
@@ -479,12 +500,20 @@ function PortPins({
 
   const nodes = useMemo(() => {
     void viewRevision;
+    if (pulse) {
+      return ports.map((port) => ({
+        kind: "leaf" as const,
+        id: port.id,
+        coords: port.coords,
+        item: port,
+      }));
+    }
     return clusterInPixels(
       ports,
       (lng, lat) => map.project([lng, lat]),
       48,
     );
-  }, [ports, map, viewRevision]);
+  }, [ports, map, viewRevision, pulse]);
 
   return (
     <AnimatePresence>
