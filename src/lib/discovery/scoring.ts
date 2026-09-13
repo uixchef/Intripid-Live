@@ -7,6 +7,7 @@ import {
 } from "date-fns";
 
 import { flightHours } from "@/lib/geo";
+import { destinationHunt } from "@/lib/discovery/ports";
 import { INTEREST_META, STYLE_META } from "@/lib/categories";
 import type {
   Destination,
@@ -23,16 +24,13 @@ import type {
 /**
  * The recommendation engine, in the original product's two stages.
  *
- * STAGE 1 — hard filters, in a fixed order, each reporting how many
- * candidates it eliminated. This is what makes the processing narration real
- * ("Found 9 · 2 are out of reach") and what lets the map cull pins in the
- * order the reasoning happened. Filters ELIMINATE.
+ * STAGE 1 — the hunt field (50+ ports, 65+ reachable places), then
+ * experiences/activities drip-remove the weakest mismatches.
  *
- * STAGE 2 — a weighted rank over the survivors, and only the survivors.
+ * STAGE 2 — a weighted rank over the survivors.
  *
- * Experiences and activities only drip-remove the weakest mismatches
- * (a couple per chip), so one tap never clears a band of the map.
- * Find matches keeps 5–8; the brief is still three.
+ * Dates, budget and reach order the field; they do not empty it before
+ * the traveller has anything to filter.
  *
  * Two safety properties, both deliberate:
  *  - Filtering never returns an empty set. If it would, we relax to pure
@@ -58,8 +56,6 @@ const WEIGHTS = {
 const SUPPORT_FLOOR = 0.5;
 /** Do not collapse the filter game below this while there are still cities. */
 const FIELD_FLOOR = 5;
-/** Hard filters must leave a real hunt — chips are what thin the map. */
-const HUNT_FLOOR = 16;
 /** Worst-fit cities dropped per selected chip — never a handful at once. */
 const DROP_PER_CHIP = 2;
 
@@ -465,94 +461,6 @@ function runFilters(
   const stages: FilterStage[] = [];
   let pool = [...destinations];
 
-  const apply = (
-    key: FilterStage["key"],
-    label: string,
-    detail: string,
-    keep: (destination: Destination) => boolean,
-  ) => {
-    const entered = pool.length;
-    const next = pool.filter(keep);
-    const removed = pool.filter((d) => !keep(d));
-    /*
-     * Scope is a promise. Dates, reach and budget must not shrink the hunt
-     * to two pins — experiences and activities are what filter the field.
-     */
-    const keepField =
-      key !== "scope" &&
-      entered >= HUNT_FLOOR &&
-      next.length < HUNT_FLOOR;
-    if (keepField) {
-      stages.push({
-        key,
-        label,
-        detail,
-        entered,
-        removed: 0,
-        removedIds: [],
-      });
-      return;
-    }
-    pool = next;
-    stages.push({
-      key,
-      label,
-      detail,
-      entered,
-      removed: removed.length,
-      removedIds: removed.map((d) => d.id),
-    });
-  };
-
-  const window = resolveWindow(prefs);
-
-  // (a) The trip has to be long enough to be worth the journey at all.
-  if (window.nights !== null) {
-    apply(
-      "dates",
-      `Checking ${window.nights} ${window.nights === 1 ? "night" : "nights"} against each place`,
-      "Some cities simply do not repay a short trip.",
-      (d) => window.nights! >= Math.max(1, d.idealDays[0] - 2),
-    );
-  }
-
-  // (b) Scope is intent, not comfort: honour it strictly.
-  if (prefs.scope && prefs.scope !== "open" && prefs.origin) {
-    const domestic = prefs.scope === "domestic";
-    apply(
-      "scope",
-      domestic
-        ? `Keeping results inside ${prefs.origin.country}`
-        : `Ruling out ${prefs.origin.country}`,
-      "You told us how far you wanted to get from home.",
-      (d) =>
-        domestic
-          ? d.countryCode === prefs.origin!.countryCode
-          : d.countryCode !== prefs.origin!.countryCode,
-    );
-  }
-
-  // (c) Reachability — can you realistically get there and back?
-  if (prefs.origin && window.nights !== null) {
-    const ceiling = Math.max(18, window.nights * 5.5);
-    apply(
-      "reach",
-      "Working out what you can actually reach",
-      "We check how much of the trip the flight would eat.",
-      (d) => flightHours(prefs.origin!.coords, d.coords) <= ceiling,
-    );
-  }
-
-  // (d) Affordability against the declared posture.
-  if (prefs.budget && window.nights !== null) {
-    apply(
-      "afford",
-      `Filtering to what works on ${BUDGET_LABELS[prefs.budget].toLowerCase()}`,
-      "Nightly costs are checked against the trip length, not an average.",
-      (d) => d.budgetFit[prefs.budget!] >= 0.3,
-    );
-  }
-
   if (prefs.styles.length > 0) {
     const names = prefs.styles
       .slice(0, 2)
@@ -707,9 +615,12 @@ export function recommend(
   destinations: Destination[],
   prefs: DiscoveryPreferences,
 ): RecommendationSet {
-  const { survivors, stages } = runFilters(destinations, prefs);
+  const hunted = prefs.origin
+    ? destinationHunt(prefs.origin, destinations, prefs.scope).destinations
+    : destinations;
+  const { survivors, stages } = runFilters(hunted, prefs);
   const relaxed = survivors.length === 0;
-  const pool = relaxed ? destinations : survivors;
+  const pool = relaxed ? hunted : survivors;
   const ranked = rank(pool, prefs);
 
   const survivorIds = new Set(pool.map((d) => d.id));

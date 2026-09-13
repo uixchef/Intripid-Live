@@ -1,6 +1,6 @@
 import { AIRPORTS, type Airport } from "@/data/airports";
 import { distanceKm, flightHours } from "@/lib/geo";
-import type { Destination, LngLat, Origin } from "@/lib/types";
+import type { Destination, LngLat, Origin, TripScope } from "@/lib/types";
 
 export interface DeparturePort {
   id: string;
@@ -16,6 +16,9 @@ const LOCAL_KM = 140;
 const LOCAL_FALLBACK_KM = 320;
 /** Airports that actually serve a city, not the nearest hub on another coast. */
 const CITY_PORT_KM = 80;
+const PLACE_FROM_PORT_KM = 140;
+const HUNT_PORT_FLOOR = 50;
+const HUNT_PLACE_FLOOR = 65;
 
 /**
  * Real aerodromes around a point — Heathrow for London, not a pin on the
@@ -33,47 +36,142 @@ export function nearestDeparture(origin: LngLat): DeparturePort | null {
   return nearbyAirports(origin)[0] ?? null;
 }
 
+function destinationInScope(
+  destination: Destination,
+  origin: Origin,
+  scope: TripScope | null,
+): boolean {
+  if (!scope || scope === "open") return true;
+  if (scope === "domestic") return destination.countryCode === origin.countryCode;
+  return destination.countryCode !== origin.countryCode;
+}
+
+function airportInScope(
+  airport: Airport,
+  origin: Origin,
+  scope: TripScope | null,
+): boolean {
+  if (!scope || scope === "open") return true;
+  if (scope === "domestic") return airport.country === origin.country;
+  return airport.country !== origin.country;
+}
+
+function originSeed(coords: LngLat): number {
+  return Math.abs(Math.round((coords.lng + 180) * 7919 + (coords.lat + 90) * 104729));
+}
+
+function seededShuffle<T>(items: T[], seed: number): T[] {
+  const next = [...items];
+  let value = seed || 1;
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    value = (value * 16807) % 2147483647;
+    const swap = value % (index + 1);
+    const held = next[index];
+    next[index] = next[swap];
+    next[swap] = held;
+  }
+  return next;
+}
+
+function airportsServing(coords: LngLat, excludeIata?: string): Airport[] {
+  const local = AIRPORTS.filter(
+    (airport) =>
+      airport.iata !== excludeIata &&
+      distanceKm(coords, airport.coords) <= CITY_PORT_KM,
+  );
+  if (local.length > 0) return local;
+  const closest = closestAirport(coords, excludeIata);
+  return closest ? [closest] : [];
+}
+
 /**
- * Destination-side airports for the cities still in play after home / how far
- * / budget. Every airport that serves those cities, not one hub for a continent.
+ * Destination hunt: a seeded field of 50+ ports, then 65+ places those
+ * ports can actually reach. Chip filters thin that field afterwards.
+ */
+export function destinationHunt(
+  origin: Origin,
+  destinations: Destination[],
+  scope: TripScope | null,
+): { ports: DeparturePort[]; destinations: Destination[] } {
+  const departure = nearestDeparture(origin.coords);
+  const scoped = destinations.filter((destination) =>
+    destinationInScope(destination, origin, scope),
+  );
+  const airportPool = AIRPORTS.filter(
+    (airport) =>
+      airport.iata !== departure?.iata &&
+      airportInScope(airport, origin, scope),
+  );
+
+  const seen = new Set<string>();
+  const serving: Airport[] = [];
+  for (const destination of scoped) {
+    for (const airport of airportsServing(destination.coords, departure?.iata)) {
+      if (!airportInScope(airport, origin, scope)) continue;
+      if (seen.has(airport.iata)) continue;
+      seen.add(airport.iata);
+      serving.push(airport);
+    }
+  }
+
+  const fillers = seededShuffle(
+    airportPool.filter((airport) => !seen.has(airport.iata)),
+    originSeed(origin.coords),
+  );
+  for (const airport of fillers) {
+    if (serving.length >= HUNT_PORT_FLOOR) break;
+    seen.add(airport.iata);
+    serving.push(airport);
+  }
+
+  let places = scoped.filter((destination) =>
+    serving.some(
+      (airport) =>
+        distanceKm(destination.coords, airport.coords) <= PLACE_FROM_PORT_KM,
+    ),
+  );
+
+  if (places.length < HUNT_PLACE_FLOOR) {
+    const missing = scoped.filter(
+      (destination) => !places.some((place) => place.id === destination.id),
+    );
+    for (const destination of missing) {
+      for (const airport of airportsServing(destination.coords, departure?.iata)) {
+        if (seen.has(airport.iata)) continue;
+        seen.add(airport.iata);
+        serving.push(airport);
+      }
+      places.push(destination);
+      if (places.length >= HUNT_PLACE_FLOOR && serving.length >= HUNT_PORT_FLOOR) {
+        break;
+      }
+    }
+  }
+
+  return {
+    ports: serving
+      .map((airport) => toPort(origin.coords, airport))
+      .sort((a, b) => a.hours - b.hours),
+    destinations: places,
+  };
+}
+
+/**
+ * Destination-side airports for the cities still in play.
  */
 export function destinationPortsFor(
   origin: Origin,
   destinations: Destination[],
 ): DeparturePort[] {
-  const departure = nearestDeparture(origin.coords);
-  const seen = new Set<string>();
-  const ports: DeparturePort[] = [];
-
-  for (const destination of destinations) {
-    const local = AIRPORTS.filter(
-      (airport) =>
-        airport.iata !== departure?.iata &&
-        distanceKm(destination.coords, airport.coords) <= CITY_PORT_KM,
-    );
-    const picks =
-      local.length > 0
-        ? local
-        : [closestAirport(destination.coords, departure?.iata)].filter(
-            (airport): airport is Airport => airport !== null,
-          );
-
-    for (const airport of picks) {
-      if (seen.has(airport.iata)) continue;
-      seen.add(airport.iata);
-      ports.push(toPort(origin.coords, airport));
-    }
-  }
-
-  return ports.sort((a, b) => a.hours - b.hours);
+  return destinationHunt(origin, destinations, "open").ports;
 }
 
 /** Cities the traveller can actually visit from the destination ports. */
 export function destinationsNearPorts(
-  _origin: Origin,
+  origin: Origin,
   destinations: Destination[],
 ): Destination[] {
-  return destinations;
+  return destinationHunt(origin, destinations, "open").destinations;
 }
 
 function closestAirport(coords: LngLat, excludeIata?: string): Airport | null {

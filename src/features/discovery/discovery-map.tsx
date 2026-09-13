@@ -12,15 +12,16 @@ import {
   useMapViewRevision,
 } from "@/components/map/map-surface";
 import { clusterInPixels } from "@/lib/discovery/cluster";
+import { DESTINATIONS } from "@/data/destinations";
 import {
   nearestDeparture,
-  destinationPortsFor,
+  destinationHunt,
   type DeparturePort,
 } from "@/lib/discovery/ports";
 import { briefPlacesOnMap } from "@/lib/discovery/places";
 import { cn } from "@/lib/utils";
 import { AirportPin, HomePin, MascotPin, PlacePin } from "@/components/map/map-pins";
-import type { Attraction, Destination, LngLat, Origin, RecommendationSet } from "@/lib/types";
+import type { Attraction, Destination, LngLat, Origin, RecommendationSet, TripScope } from "@/lib/types";
 
 import { ChromeOnMap } from "./chrome-on-map";
 import styles from "./discovery-map.module.css";
@@ -37,6 +38,7 @@ export interface DiscoveryMapProps {
   portsFound: boolean;
   destinationsFound: boolean;
   home: Origin | null;
+  scope: TripScope | null;
   result: RecommendationSet;
   processingStage: number;
   activeId: string | null;
@@ -77,6 +79,7 @@ export function DiscoveryMap({
   portsFound,
   destinationsFound: _destinationsFound,
   home,
+  scope,
   result,
   processingStage: _processingStage,
   activeId,
@@ -120,6 +123,11 @@ export function DiscoveryMap({
       stage === "results" ||
       stage === "processing");
 
+  const hunt = useMemo(() => {
+    if (!home) return { ports: [] as DeparturePort[], destinations: [] as Destination[] };
+    return destinationHunt(home, DESTINATIONS, scope);
+  }, [home, scope]);
+
   const field = useMemo((): FieldPin[] => {
     if (!origin || active) return [];
 
@@ -153,14 +161,9 @@ export function DiscoveryMap({
 
   const destPorts = useMemo(() => {
     if (!home || active) return [];
-    if (huntKind === "dest") {
-      return destinationPortsFor(
-        home,
-        result.ranked.map((entry) => entry.destination),
-      );
-    }
+    if (huntKind === "dest") return hunt.ports;
     return [];
-  }, [home, active, huntKind, result]);
+  }, [home, active, huntKind, hunt]);
 
   const airportPins = useMemo(() => {
     const pins: DeparturePort[] = [];

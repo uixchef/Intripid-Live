@@ -228,6 +228,7 @@ export function DiscoveryExperience() {
           portsFound={portsFound}
           destinationsFound={destinationsFound}
           home={prefs.origin}
+          scope={prefs.scope}
           result={result}
           processingStage={processingStage}
           activeId={activeId}
