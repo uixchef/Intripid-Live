@@ -289,8 +289,6 @@ export function PlannerMap({
           );
         })}
 
-        })}
-
         {restStops.map((item) =>
           item.place ? (
             <MapMarker
