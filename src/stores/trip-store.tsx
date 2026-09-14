@@ -1038,7 +1038,7 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
         },
       }),
       {
-        name: `intripid.trip.v2.${seed.id}`,
+        name: `intripid.trip.v3.${seed.id}`,
         // Only the itinerary survives a refresh. UI focus should not.
         partialize: (state) => ({
           trip: state.trip,

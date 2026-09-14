@@ -1,3 +1,4 @@
+import { briefPlacesOnMap } from "@/lib/discovery/places";
 import { commentsFromText } from "@/lib/trip/schedule";
 import { atMinutes, tripDays } from "@/lib/trip/time";
 import type {
@@ -11,9 +12,9 @@ import type {
 /**
  * A first itinerary from a catalog destination.
  *
- * Discovery's job is to pick the city. The planner should then open with a
- * real week on the calendar — stay plus the destination's attractions on
- * those nights — not an empty grid and a pile of ideas.
+ * Discovery's job is to pick the city. "Build trip here" should open the
+ * planner with every place from that brief on the calendar — stay plus the
+ * shortlist, spread across the nights — not two pins and a pile of ideas.
  */
 
 const DURATION: Partial<Record<ItemCategory, number>> = {
@@ -42,41 +43,81 @@ const DAY_WORD = [
 
 type Slot = { minutes: number; prefer: ItemCategory[] };
 
-function slotsForDay(index: number, total: number): Slot[] {
-  if (total === 1) {
-    return [
-      { minutes: 10 * 60, prefer: ["culture", "sightseeing", "outdoors"] },
-      { minutes: 13 * 60, prefer: ["food"] },
-      { minutes: 16 * 60, prefer: ["sightseeing", "shopping"] },
-      { minutes: 19 * 60 + 30, prefer: ["food", "nightlife"] },
-    ];
-  }
-  if (index === 0) {
-    return [
-      { minutes: 16 * 60, prefer: ["sightseeing", "outdoors", "shopping"] },
-      { minutes: 19 * 60 + 30, prefer: ["food", "nightlife"] },
-    ];
-  }
-  if (index === total - 1) {
-    return [
-      { minutes: 9 * 60 + 30, prefer: ["culture", "sightseeing", "outdoors"] },
-      { minutes: 13 * 60, prefer: ["food"] },
-    ];
-  }
-  return [
-    { minutes: 10 * 60, prefer: ["culture", "sightseeing", "outdoors"] },
-    { minutes: 13 * 60, prefer: ["food"] },
-    { minutes: 16 * 60, prefer: ["sightseeing", "shopping", "outdoors"] },
-    { minutes: 21 * 60, prefer: ["nightlife"] },
-  ];
+const MORNING: Slot = {
+  minutes: 10 * 60,
+  prefer: ["culture", "sightseeing", "outdoors"],
+};
+const LUNCH: Slot = { minutes: 13 * 60, prefer: ["food"] };
+const AFTERNOON: Slot = {
+  minutes: 16 * 60,
+  prefer: ["sightseeing", "shopping", "outdoors", "transit"],
+};
+const EVENING: Slot = {
+  minutes: 19 * 60 + 30,
+  prefer: ["nightlife", "food"],
+};
+
+function capForDay(index: number, total: number): number {
+  if (total === 1) return 4;
+  if (index === 0 || index === total - 1) return 3;
+  return 4;
 }
 
-function takeAttraction(pool: Attraction[], prefer: ItemCategory[]): Attraction | undefined {
+/** Spread every attraction across the trip days, middle days first. */
+function spreadCounts(totalPlaces: number, days: number): number[] {
+  const counts = Array.from({ length: days }, () => 0);
+  if (days <= 0 || totalPlaces <= 0) return counts;
+  const order: number[] = [];
+  for (let day = 0; day < days; day += 1) {
+    if (days === 1 || (day !== 0 && day !== days - 1)) order.push(day);
+  }
+  if (days > 1) {
+    order.push(0);
+    order.push(days - 1);
+  }
+  let left = totalPlaces;
+  while (left > 0) {
+    let placed = 0;
+    for (const day of order) {
+      if (left === 0) break;
+      if (counts[day] < capForDay(day, days)) {
+        counts[day] += 1;
+        left -= 1;
+        placed += 1;
+      }
+    }
+    if (placed === 0) break;
+  }
+  return counts;
+}
+
+function slotsForDay(index: number, total: number, count: number): Slot[] {
+  if (count <= 0) return [];
+  const middle = total === 1 || (index > 0 && index < total - 1);
+  if (middle) {
+    if (count === 1) return [AFTERNOON];
+    if (count === 2) return [MORNING, EVENING];
+    if (count === 3) return [MORNING, LUNCH, EVENING];
+    return [MORNING, LUNCH, AFTERNOON, EVENING];
+  }
+  if (index === 0) {
+    if (count === 1) return [AFTERNOON];
+    if (count === 2) return [AFTERNOON, EVENING];
+    return [LUNCH, AFTERNOON, EVENING];
+  }
+  const lastMorning = { ...MORNING, minutes: 9 * 60 + 30 };
+  if (count === 1) return [lastMorning];
+  if (count === 2) return [lastMorning, LUNCH];
+  return [lastMorning, LUNCH, AFTERNOON];
+}
+
+function takeAttraction(
+  pool: Attraction[],
+  prefer: ItemCategory[],
+): Attraction | undefined {
   if (pool.length === 0) return undefined;
-  const nightlifeOnly = prefer.length === 1 && prefer[0] === "nightlife";
   const index = pool.findIndex((attraction) => prefer.includes(attraction.category));
   if (index >= 0) return pool.splice(index, 1)[0];
-  if (nightlifeOnly) return undefined;
   return pool.shift();
 }
 
@@ -151,7 +192,8 @@ export function planFromDestination(
 ): { items: ItineraryItem[]; ideas: Idea[] } {
   const days = tripDays(startDate, endDate);
   const nights = Math.max(days.length - 1, 1);
-  const pool = [...destination.attractions];
+  const pool = [...briefPlacesOnMap(destination.attractions)];
+  const perDay = spreadCounts(pool.length, days.length);
   const items: ItineraryItem[] = [
     {
       id: `stay-${destination.id}`,
@@ -175,7 +217,7 @@ export function planFromDestination(
   let index = 0;
   for (let dayIndex = 0; dayIndex < days.length; dayIndex += 1) {
     const day = days[dayIndex];
-    for (const slot of slotsForDay(dayIndex, days.length)) {
+    for (const slot of slotsForDay(dayIndex, days.length, perDay[dayIndex] ?? 0)) {
       const attraction = takeAttraction(pool, slot.prefer);
       if (!attraction) continue;
       items.push(

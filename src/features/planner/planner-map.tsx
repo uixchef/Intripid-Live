@@ -27,8 +27,10 @@ import styles from "./planner-map.module.css";
 /**
  * The map half of the planner.
  *
- * The route line is the day's schedule order. Stops use the same photo pins
- * as destination discovery; the stay uses the home pin.
+ * The route line is the day's schedule order. Every other itinerary place
+ * stays on the map (dimmed) so the field matches discovery's city shortlist.
+ * Stops use the same photo pins as destination discovery; the stay uses the
+ * home pin.
  */
 
 export interface PlannerMapProps {
@@ -68,19 +70,32 @@ export function PlannerMap({
 
   const stops = useMemo(() => routeForDay(trip, activeDay), [trip, activeDay]);
   const stay = stayForDay(trip, activeDay);
+  const restStops = useMemo(() => {
+    const today = new Set(stops.map((stop) => stop.item.id));
+    return trip.items.filter(
+      (item) =>
+        item.kind === "activity" &&
+        item.place &&
+        !today.has(item.id),
+    );
+  }, [stops, trip.items]);
 
   const routePoints = useMemo<LngLat[]>(
     () => stops.map((stop) => stop.place.coords),
     [stops],
   );
+  const tripPoints = useMemo<LngLat[]>(() => {
+    const points = [
+      ...routePoints,
+      ...restStops.flatMap((item) => (item.place ? [item.place.coords] : [])),
+    ];
+    return points;
+  }, [routePoints, restStops]);
 
   const destination = getDestination(trip.destinationId);
   const ideaPins = useMemo(
-    () =>
-      stops.length > 0
-        ? []
-        : trip.ideas.filter((idea) => idea.place).slice(0, 12),
-    [stops.length, trip.ideas],
+    () => trip.ideas.filter((idea) => idea.place).slice(0, 12),
+    [trip.ideas],
   );
   const ideaPoints = useMemo(
     () => ideaPins.flatMap((idea) => (idea.place ? [idea.place.coords] : [])),
@@ -96,6 +111,18 @@ export function PlannerMap({
             title: stop.item.title,
             coords: stop.place.coords,
           })),
+          ...restStops.flatMap((item) =>
+            item.place
+              ? [
+                  {
+                    id: item.id,
+                    name: item.place.name,
+                    title: item.title,
+                    coords: item.place.coords,
+                  },
+                ]
+              : [],
+          ),
           ...ideaPins.flatMap((idea) =>
             idea.place
               ? [
@@ -121,29 +148,34 @@ export function PlannerMap({
         ],
         trip.destinationId,
       ),
-    [stops, ideaPins, stay, trip.destinationId],
+    [stops, restStops, ideaPins, stay, trip.destinationId],
   );
 
   const selected = stops.find((stop) => stop.item.id === selectedItemId);
-  const peekedStop = stops.find((stop) => stop.item.id === mapPeekId);
+  const peekedStop =
+    stops.find((stop) => stop.item.id === mapPeekId) ??
+    restStops
+      .filter((item) => item.place)
+      .map((item) => ({
+        item,
+        place: item.place!,
+        letter: "",
+        index: -1,
+      }))
+      .find((stop) => stop.item.id === mapPeekId);
   const peekedIdea = ideaPins.find((idea) => idea.id === mapPeekId);
 
   /**
-   * Camera: a selected stop takes the frame; otherwise hold the whole day.
-   * Moving the camera on selection is the map's half of the conversation —
-   * it shows where this stop sits relative to the rest of the day.
+   * Camera: a selected stop takes the frame; otherwise the whole itinerary.
+   * Discovery already showed every place in the city — the planner map
+   * should not hide the rest of the week behind today's two pins.
    */
   const camera = useMemo(() => {
     if (selected) {
-      /*
-       * Close enough to read the streets, wide enough to keep the neighbouring
-       * stops and the route line in frame — the point of moving the camera is
-       * to show where this stop sits in the day, not to isolate it.
-       */
       return { center: selected.place.coords, zoom: 13.6, fit: null };
     }
-    if (routePoints.length > 0) {
-      return { center: null, zoom: undefined, fit: routePoints };
+    if (tripPoints.length > 0) {
+      return { center: null, zoom: undefined, fit: tripPoints };
     }
     if (stay?.place) {
       return { center: stay.place.coords, zoom: 13, fit: null };
@@ -155,7 +187,7 @@ export function PlannerMap({
       return { center: destination.coords, zoom: destination.zoom, fit: null };
     }
     return { center: { lng: 12, lat: 22 }, zoom: 1.6, fit: null };
-  }, [selected, routePoints, stay, ideaPoints, destination]);
+  }, [selected, tripPoints, stay, ideaPoints, destination]);
 
   return (
     <div className={styles.root} data-deck={deck ? "" : undefined}>
@@ -189,9 +221,9 @@ export function PlannerMap({
         <RelocateControl
           points={
             stay?.place
-              ? [...routePoints, stay.place.coords]
-              : routePoints.length > 0
-                ? routePoints
+              ? [...tripPoints, stay.place.coords]
+              : tripPoints.length > 0
+                ? tripPoints
                 : ideaPoints
           }
           onRelocate={() => setCameraRevision((value) => value + 1)}
@@ -257,6 +289,35 @@ export function PlannerMap({
           );
         })}
 
+        })}
+
+        {restStops.map((item) =>
+          item.place ? (
+            <MapMarker
+              key={item.id}
+              coords={item.place.coords}
+              z={hoveredItemId === item.id ? 50 : 14}
+              anchor="center"
+              label={item.title}
+              eventId={item.id}
+              onClick={() => onSelect(item.id)}
+            >
+              <PlacePin
+                src={pinPhotos[item.id] ?? "/discovery/pins/place.png"}
+                dimmed
+                onPointerEnter={() => {
+                  onHover(item.id);
+                  if (!deck) setMapPeekId(item.id);
+                }}
+                onPointerLeave={() => {
+                  onHover(null);
+                  if (!deck) setMapPeekId(null);
+                }}
+              />
+            </MapMarker>
+          ) : null,
+        )}
+
         {ideaPins.map((idea) =>
           idea.place ? (
             <MapMarker
@@ -289,7 +350,11 @@ export function PlannerMap({
         <PinPreview
           eventId={peekedStop.item.id}
           photo={pinPhotos[peekedStop.item.id] ?? "/discovery/pins/place.png"}
-          kicker={`${peekedStop.letter.toUpperCase()} · ${categoryMeta(peekedStop.item.category).label}`}
+          kicker={
+            peekedStop.letter
+              ? `${peekedStop.letter.toUpperCase()} · ${categoryMeta(peekedStop.item.category).label}`
+              : categoryMeta(peekedStop.item.category).label
+          }
           title={peekedStop.item.title}
           subtitle={[
             peekedStop.place.name,
