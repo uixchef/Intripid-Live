@@ -110,6 +110,20 @@ export function DiscoveryMap({
     step === "activities";
 
   /*
+   * Port markers are the intermediate discovery layer — departure
+   * airports during the origin hunt, destination ports during the
+   * dest hunt. Once candidate cities exist and the user is filtering
+   * destinations (Step 5/6), ports must leave the visible map so the
+   * semantic layer reads "places you can visit," not "airports you can
+   * fly through." The data stays for camera bounds; only visibility
+   * changes. Step-based gating also handles Back navigation: returning
+   * to Budget re-shows the departure port because the step is "budget,"
+   * not "experiences."
+   */
+  const showPorts =
+    stage === "questions" && step !== "experiences" && step !== "activities";
+
+  /*
    * Dates and "how far" are not about home. Home is an origin-step output.
    * Showing the pin on question one implied we already knew where they live.
    */
@@ -321,7 +335,7 @@ export function DiscoveryMap({
           </MapMarker>
         ) : null}
 
-        {airportPins.length > 0 ? (
+        {showPorts && airportPins.length > 0 ? (
           <PortPins
             ports={airportPins}
             padding={cameraPad}
