@@ -325,12 +325,14 @@ function cityCoverFromPhoto(src: string | undefined): string | null {
 function PlaceCard({
   attraction,
   variant = "spot",
+  fallback,
 }: {
   attraction: Recommendation["destination"]["attractions"][number];
   variant?: "spot" | "event";
+  fallback?: string | null;
 }) {
   const photo = attraction.photo;
-  const cover = cityCoverFromPhoto(photo);
+  const cover = cityCoverFromPhoto(photo) ?? fallback ?? undefined;
   const src = photo ?? cover;
   return (
     <article className={cn(styles.spotCard, variant === "event" && styles.eventCard)}>
@@ -345,8 +347,7 @@ function PlaceCard({
             className={styles.spotPhoto}
             onError={(event) => {
               const img = event.currentTarget;
-              if (cover && !img.dataset.coverTried && img.getAttribute("src") !== cover) {
-                img.dataset.coverTried = "1";
+              if (cover && img.getAttribute("src") !== cover) {
                 img.src = cover;
                 return;
               }
@@ -754,7 +755,11 @@ export function DestinationBrief({
             </div>
             <div className={styles.spotRail}>
               {immersive.map((attraction) => (
-                <PlaceCard key={attraction.name} attraction={attraction} />
+                <PlaceCard
+                  key={attraction.name}
+                  attraction={attraction}
+                  fallback={cover}
+                />
               ))}
             </div>
           </section>
@@ -776,6 +781,7 @@ export function DestinationBrief({
                   key={attraction.name}
                   attraction={attraction}
                   variant="event"
+                  fallback={cover}
                 />
               ))}
             </div>
@@ -797,6 +803,7 @@ export function DestinationBrief({
                   key={attraction.name}
                   attraction={attraction}
                   variant="event"
+                  fallback={cover}
                 />
               ))}
             </div>

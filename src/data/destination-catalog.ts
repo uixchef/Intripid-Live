@@ -174,11 +174,20 @@ function offset(coords: Seed["coords"], eastKm: number, northKm: number) {
  * to do. These are typed stops around the centre — not a live POI scrape —
  * so discovery and "Build trip here" always have places and calendar items.
  */
+const CORE_COVER: Record<string, string> = {
+  tokyo: "/destinations/tokyo.jpg",
+  nyc: "/destinations/nyc.jpg",
+  lisbon: "/destinations/lisbon.jpg",
+  copenhagen: "/destinations/copenhagen.jpg",
+  marrakesh: "/destinations/marrakesh.jpg",
+};
+
 function placePhoto(id: string, slot?: string) {
+  if (!slot && CORE_COVER[id]) return CORE_COVER[id];
   return slot ? `/places/${id}-${slot}.jpg` : `/places/${id}.jpg`;
 }
 
-function catalogAttractions(seed: Seed): Destination["attractions"] {
+function catalogAttractions(seed: Pick<Seed, "id" | "name" | "coords">): Destination["attractions"] {
   const { coords, name, id } = seed;
   return [
     {
@@ -237,6 +246,90 @@ function catalogAttractions(seed: Seed): Destination["attractions"] {
       note: `Orient from the station or ferry and walk in. The first twenty minutes are the map.`,
       photo: placePhoto(id, "transit"),
     },
+    {
+      name: `Morning coffee in ${name}`,
+      category: "food",
+      coords: offset(coords, 0.15, 0.35),
+      note: `A counter, not a laptop cafe. Watch the neighbourhood wake up before the day gets busy.`,
+      photo: placePhoto(id, "table"),
+    },
+    {
+      name: `Lookout over ${name}`,
+      category: "sightseeing",
+      coords: offset(coords, 1.1, 0.4),
+      note: `Go for the view, stay for the walk down. This is how the city explains its layout.`,
+      photo: placePhoto(id),
+    },
+    {
+      name: `Gallery afternoon, ${name}`,
+      category: "culture",
+      coords: offset(coords, -0.35, 0.9),
+      note: `A smaller room than the headline museum — one that still has space to think.`,
+      photo: placePhoto(id, "culture"),
+    },
+    {
+      name: `Garden walk, ${name}`,
+      category: "outdoors",
+      coords: offset(coords, 0.55, -0.9),
+      note: `Not a hike. Shade, a bench, and enough quiet to reset the day.`,
+      photo: placePhoto(id, "outdoors"),
+    },
+    {
+      name: `Late lunch in ${name}`,
+      category: "food",
+      coords: offset(coords, -0.75, 0.15),
+      note: `The sitting after the locals have gone back to work. Order what the next table is having.`,
+      photo: placePhoto(id, "food"),
+    },
+    {
+      name: `Laneway browse, ${name}`,
+      category: "shopping",
+      coords: offset(coords, 0.7, -0.35),
+      note: `Ignore the flagship street. The interesting shops are one turning off it.`,
+      photo: placePhoto(id, "street"),
+    },
+    {
+      name: `Sunset hour in ${name}`,
+      category: "sightseeing",
+      coords: offset(coords, 0.2, 1.1),
+      note: `A terrace or a water edge. This is the pause the itinerary is built around, not an extra.`,
+      photo: placePhoto(id, "night"),
+    },
+    {
+      name: `Night market wander, ${name}`,
+      category: "nightlife",
+      coords: offset(coords, -0.55, -0.4),
+      note: `Walk, taste, leave. You do not need a reservation to belong here after dark.`,
+      photo: placePhoto(id, "night"),
+    },
+  ];
+}
+
+/** Extra neighbourhood stops when a destination's editorial list is short. */
+export function supplementAttractions(
+  destination: Pick<Destination, "id" | "name" | "coords" | "attractions">,
+): Destination["attractions"] {
+  const existing = destination.attractions;
+  if (existing.length >= 14) return existing;
+  const extras = catalogAttractions({
+    id: destination.id,
+    name: destination.name.replace(/^New York City$/, "New York"),
+    coords: destination.coords,
+  });
+  const names = new Set(existing.map((item) => item.name.toLowerCase()));
+  const photos = existing.map((item) => item.photo).filter(Boolean);
+  return [
+    ...existing,
+    ...extras
+      .filter((item) => !names.has(item.name.toLowerCase()))
+      .map((item, index) => ({
+        ...item,
+        /* Core cities have editorial files under /attractions, not /places/{id}-slot. */
+        photo:
+          photos.length > 0
+            ? photos[index % photos.length]
+            : item.photo,
+      })),
   ];
 }
 

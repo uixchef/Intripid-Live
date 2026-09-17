@@ -50,6 +50,10 @@ import { useHideOnScroll } from "@/lib/use-hide-on-scroll";
 import { cn } from "@/lib/utils";
 import { offersForDay } from "@/lib/trip/assistant";
 import {
+  previewItemIds,
+  tripWithPlanPreview,
+} from "@/lib/trip/ai-actions";
+import {
   gapsForDay,
   guestsForItem,
   summariseDay,
@@ -188,7 +192,16 @@ export function PlannerExperience() {
   const isCompact = useIsCompact();
   const isShort = useIsShort();
 
-  const trip = useTrip((s) => s.trip);
+  const committedTrip = useTrip((s) => s.trip);
+  const assistant = useTrip((s) => s.assistant);
+  const trip = useMemo(
+    () => tripWithPlanPreview(committedTrip, assistant.plan, assistant.applied),
+    [committedTrip, assistant.plan, assistant.applied],
+  );
+  const proposedIds = useMemo(
+    () => previewItemIds(assistant.plan, assistant.applied),
+    [assistant.plan, assistant.applied],
+  );
   const prefs = useTrip((s) => s.prefs);
   const activeDay = useTrip((s) => s.activeDay);
   const rawView = useTrip((s) => s.view);
@@ -197,7 +210,6 @@ export function PlannerExperience() {
   const hoveredItemId = useTrip((s) => s.hoveredItemId);
   const draggingId = useTrip((s) => s.draggingId);
   const editor = useTrip((s) => s.editor);
-  const assistant = useTrip((s) => s.assistant);
   const invite = useTrip((s) => s.invite);
   const toast = useTrip((s) => s.toast);
   const selectedItem = useTrip(selectSelectedItem);
@@ -968,11 +980,16 @@ export function PlannerExperience() {
       onApplyOne={(id) => api.getState().applyChange(id)}
       onDismiss={() => api.getState().dismissPlan()}
       onHoverChange={onHover}
+      canUndo={Boolean(assistant.undoTrip)}
+      onUndo={() => api.getState().undoPlan()}
     />
   ) : (
     <AssistantOffers
       offers={offers}
       onRequest={(intent) => api.getState().requestPlan(intent)}
+      onInterpret={(text) => api.getState().requestFromText(text)}
+      canUndo={Boolean(assistant.undoTrip)}
+      onUndo={() => api.getState().undoPlan()}
       reading={dayReading}
     />
   );
@@ -1552,6 +1569,7 @@ export function PlannerExperience() {
                           selectedItemId={selectedItemId}
                           hoveredItemId={hoveredItemId}
                           draggingId={draggingId}
+                          proposedIds={proposedIds}
                           hourHeight={hourHeight}
                           onSelect={onSelect}
                           onOpen={onOpen}
@@ -1604,6 +1622,7 @@ export function PlannerExperience() {
                         selectedItemId={selectedItemId}
                         hoveredItemId={hoveredItemId}
                         draggingId={draggingId}
+                        proposedIds={proposedIds}
                         hourHeight={hourHeight}
                         onSelect={onSelect}
                         onOpen={onOpen}

@@ -407,6 +407,12 @@ export function DiscoveryExperience() {
                   plannerHref={plannerHrefForDestination(
                     active.destination.id,
                     resolvedDates(prefs) ?? undefined,
+                    {
+                      budget: prefs.budget,
+                      styles: prefs.styles,
+                      interests: prefs.interests,
+                      score: active.score,
+                    },
                   )}
                   celebrate={celebrateOpening}
                   onCelebrateDone={handleCelebrateDone}

@@ -113,10 +113,14 @@ export function DestinationCover({
             src={photo}
             alt=""
             fill
+            unoptimized
             priority={featured}
             loading={featured ? "eager" : undefined}
             sizes={thumb ? "72px" : featured ? "360px" : "(max-width: 1080px) 100vw, 50vw"}
             className={styles.photo}
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
           />
           {!hideLabel ? <span className={styles.veil} aria-hidden /> : null}
         </>

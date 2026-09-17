@@ -547,6 +547,15 @@ export function offersForDay(trip: Trip, day: string): AssistantOffer[] {
     });
   }
 
+  if (items.filter((item) => item.kind === "activity").length >= 2) {
+    offers.push({
+      intent: "nearby-dinner",
+      label: "Add dinner nearby",
+      detail: "A meal after the last stop",
+      severity: "info",
+    });
+  }
+
   return offers;
 }
 
@@ -564,6 +573,8 @@ export function buildPlan(
     case "rebalance":
       return planRebalance(trip, day);
     case "near-route":
+      return null;
+    default:
       return null;
   }
 }

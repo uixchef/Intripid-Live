@@ -11,6 +11,12 @@ import { DRAFT_TRIP_ID } from "@/data/trips";
 import { partyTravellers } from "@/lib/collaboration";
 import { buildPlan } from "@/lib/trip/assistant";
 import {
+  applyPlanChanges,
+  nearbyDinnerPlan,
+  planFromUtterance,
+  reduceTravelPlan,
+} from "@/lib/trip/ai-actions";
+import {
   commentViewerId,
   commentsFromText,
   migrateItemComments,
@@ -179,7 +185,13 @@ export interface TripState {
   /** Idea currently being dragged, for cross-surface drag feedback. */
   draggingId: string | null;
   editor: { open: boolean; mode: "create" | "edit"; draft: EditorDraft | null };
-  assistant: { open: boolean; plan: AssistantPlan | null; applied: string[] };
+  assistant: {
+    open: boolean;
+    plan: AssistantPlan | null;
+    applied: string[];
+    undoTrip: Trip | null;
+    focusItemId: string | null;
+  };
   invite: { open: boolean; sent: string[] };
   /** Transient confirmations, e.g. "Moved to Thursday 2:00 PM". */
   toast: { id: number; message: string; tone: "info" | "success" | "warning" } | null;
@@ -218,9 +230,11 @@ export interface TripState {
   commitDraft: (draft?: EditorDraft | null) => void;
 
   requestPlan: (intent: AssistantPlan["intent"]) => void;
+  requestFromText: (text: string) => boolean;
   dismissPlan: () => void;
   applyPlan: () => void;
   applyChange: (changeId: string) => void;
+  undoPlan: () => void;
 
   openInvite: () => void;
   closeInvite: () => void;
@@ -395,7 +409,7 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
         hoveredItemId: null,
         draggingId: null,
         editor: { open: false, mode: "create", draft: null },
-        assistant: { open: false, plan: null, applied: [] },
+        assistant: { open: false, plan: null, applied: [], undoTrip: null, focusItemId: null },
         invite: { open: false, sent: [] },
         toast: null,
         pendingChatShare: null,
@@ -814,29 +828,126 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
 
         requestPlan: (intent) => {
           const state = get();
-          const plan = buildPlan(state.trip, state.activeDay, intent);
+          const canned: Partial<Record<AssistantPlan["intent"], string>> = {
+            "nearby-dinner": "add dinner near my last stop",
+            "reduce-travel": "reduce travel time",
+            replace: "replace this with something outdoors",
+            remove: "remove one activity so the day feels easier",
+            move: "move this to the morning",
+          };
+          const plan =
+            buildPlan(state.trip, state.activeDay, intent) ??
+            (intent === "nearby-dinner"
+              ? nearbyDinnerPlan(state.trip, state.activeDay)
+              : intent === "reduce-travel"
+                ? reduceTravelPlan(state.trip, state.activeDay)
+                : planFromUtterance(
+                    state.trip,
+                    state.activeDay,
+                    canned[intent] ?? intent,
+                    state.selectedItemId,
+                  ));
           if (!plan) {
             get().showToast("Nothing to change on this day", "info");
             return;
           }
-          set({ assistant: { open: true, plan, applied: [] } });
+          const focusItemId =
+            plan.changes.find((change) => change.create)?.create?.id ??
+            plan.changes.find((change) => change.itemId)?.itemId ??
+            state.assistant.focusItemId;
+          set({
+            assistant: {
+              open: true,
+              plan,
+              applied: [],
+              undoTrip: state.assistant.undoTrip,
+              focusItemId,
+            },
+          });
+        },
+
+        requestFromText: (text) => {
+          const state = get();
+          const plan = planFromUtterance(
+            state.trip,
+            state.activeDay,
+            text,
+            state.selectedItemId ?? state.assistant.focusItemId,
+          );
+          if (!plan) return false;
+          const focusItemId =
+            plan.changes.find((change) => change.create)?.create?.id ??
+            plan.changes.find((change) => change.itemId)?.itemId ??
+            state.assistant.focusItemId;
+          set({
+            assistant: {
+              open: true,
+              plan,
+              applied: [],
+              undoTrip: state.assistant.undoTrip,
+              focusItemId,
+            },
+          });
+          return true;
         },
 
         dismissPlan: () =>
-          set({ assistant: { open: false, plan: null, applied: [] } }),
+          set({
+            assistant: {
+              open: false,
+              plan: null,
+              applied: [],
+              undoTrip: get().assistant.undoTrip,
+              focusItemId: get().assistant.focusItemId,
+            },
+          }),
 
         applyPlan: () => {
-          const { assistant } = get();
+          const { assistant, trip } = get();
           if (!assistant.plan) return;
-          for (const change of assistant.plan.changes) {
-            get().applyChange(change.id);
-          }
+          const pending = assistant.plan.changes.filter(
+            (change) => !assistant.applied.includes(change.id),
+          );
+          const next = applyPlanChanges(trip, pending);
           const count = assistant.plan.changes.length;
-          set({ assistant: { open: false, plan: null, applied: [] } });
+          const focusItemId =
+            pending.find((change) => change.create)?.create?.id ??
+            pending.find((change) => change.itemId)?.itemId ??
+            assistant.focusItemId;
+          set({
+            trip: next,
+            selectedItemId: focusItemId,
+            assistant: {
+              open: true,
+              plan: null,
+              applied: [],
+              undoTrip: trip,
+              focusItemId,
+            },
+          });
           get().showToast(
-            `Applied ${count} ${count === 1 ? "change" : "changes"}`,
+            `Applied ${count} ${count === 1 ? "change" : "changes"} · Undo available`,
             "success",
           );
+        },
+
+        undoPlan: () => {
+          const previous = get().assistant.undoTrip;
+          if (!previous) {
+            get().showToast("Nothing to undo", "info");
+            return;
+          }
+          set({
+            trip: previous,
+            assistant: {
+              open: true,
+              plan: null,
+              applied: [],
+              undoTrip: null,
+              focusItemId: null,
+            },
+          });
+          get().showToast("Restored the previous trip", "success");
         },
 
         applyChange: (changeId) => {
@@ -847,6 +958,7 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
           const change = plan.changes.find((c) => c.id === changeId);
           if (!change || state.assistant.applied.includes(changeId)) return;
 
+          const undoTrip = state.assistant.undoTrip ?? state.trip;
           let items = state.trip.items;
 
           if (change.kind === "add" && change.create) {
@@ -886,6 +998,7 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
                 assistant: {
                   ...state.assistant,
                   applied: [...state.assistant.applied, changeId],
+                  undoTrip,
                 },
               });
               return;
@@ -898,6 +1011,7 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
             assistant: {
               ...state.assistant,
               applied: [...state.assistant.applied, changeId],
+              undoTrip,
             },
           });
         },
@@ -961,7 +1075,7 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
             selectionSource: null,
             hoveredItemId: null,
             editor: { open: false, mode: "create", draft: null },
-            assistant: { open: false, plan: null, applied: [] },
+            assistant: { open: false, plan: null, applied: [], undoTrip: null, focusItemId: null },
             prefs: { ...DEFAULT_PLANNER_PREFS },
             commentSeen: {},
           });

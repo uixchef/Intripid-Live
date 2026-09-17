@@ -63,6 +63,7 @@ export interface CalendarProps {
   selectedItemId: string | null;
   hoveredItemId: string | null;
   draggingId: string | null;
+  proposedIds?: Set<string>;
   hourHeight: number;
   onSelect: (id: string) => void;
   onOpen: (id: string) => void;
@@ -101,6 +102,7 @@ export function Calendar({
   selectedItemId,
   hoveredItemId,
   draggingId,
+  proposedIds,
   hourHeight,
   onSelect,
   onOpen,
@@ -212,6 +214,7 @@ export function Calendar({
               selectedItemId={selectedItemId}
               hoveredItemId={hoveredItemId}
               draggingId={draggingId}
+              proposedIds={proposedIds}
               onSelect={onSelect}
               onOpen={onOpen}
               onHover={onHover}
@@ -255,6 +258,7 @@ interface DayColumnProps {
   selectedItemId: string | null;
   hoveredItemId: string | null;
   draggingId: string | null;
+  proposedIds?: Set<string>;
   onSelect: (id: string) => void;
   onOpen: (id: string) => void;
   onHover: (id: string | null) => void;
@@ -285,6 +289,7 @@ function DayColumn({
   selectedItemId,
   hoveredItemId,
   draggingId,
+  proposedIds,
   onSelect,
   onOpen,
   onHover,
@@ -492,6 +497,7 @@ function DayColumn({
             columns={columns}
             selected={selectedItemId === item.id}
             hovered={hoveredItemId === item.id}
+            proposed={proposedIds?.has(item.id) ?? false}
             conflicted={conflicts.errors.has(item.id)}
             warned={conflicts.warnings.has(item.id)}
             dimmed={
@@ -523,6 +529,7 @@ interface DraggableEventProps {
   columns: number;
   selected: boolean;
   hovered: boolean;
+  proposed: boolean;
   conflicted: boolean;
   warned: boolean;
   dimmed: boolean;
@@ -541,6 +548,7 @@ function DraggableEvent({
   columns,
   selected,
   hovered,
+  proposed,
   conflicted,
   warned,
   dimmed,
@@ -600,6 +608,7 @@ function DraggableEvent({
         height={height}
         selected={selected}
         hovered={hovered}
+        proposed={proposed}
         conflicted={conflicted}
         warned={warned}
         dimmed={dimmed}

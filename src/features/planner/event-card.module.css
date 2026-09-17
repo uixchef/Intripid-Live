@@ -171,6 +171,12 @@
   z-index: 4;
 }
 
+.proposed {
+  background: color-mix(in srgb, var(--purple-50) 70%, var(--slate-0));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--purple-500) 55%, transparent);
+  opacity: 0.92;
+}
+
 .conflicted {
   background: var(--danger-50);
 }

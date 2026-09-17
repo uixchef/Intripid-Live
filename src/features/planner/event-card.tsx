@@ -65,6 +65,7 @@ export interface EventCardProps {
   height: number;
   selected?: boolean;
   hovered?: boolean;
+  proposed?: boolean;
   conflicted?: boolean;
   warned?: boolean;
   dimmed?: boolean;
@@ -87,6 +88,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
       height,
       selected = false,
       hovered = false,
+      proposed = false,
       conflicted = false,
       warned = false,
       dimmed = false,
@@ -186,10 +188,13 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
         ref={ref}
         data-event={item.id}
         data-event-card=""
+        data-kind={item.kind}
+        data-proposed={proposed ? "" : undefined}
         className={cn(
           styles.card,
           styles[tier],
           selected && styles.selected,
+          proposed && !selected && styles.proposed,
           hovered && !selected && styles.hovered,
           conflicted && styles.conflicted,
           warned && !conflicted && styles.warned,

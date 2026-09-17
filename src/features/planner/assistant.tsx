@@ -35,6 +35,9 @@ import styles from "./assistant.module.css";
 export interface AssistantOffersProps {
   offers: AssistantOffer[];
   onRequest: (intent: AssistantPlan["intent"]) => void;
+  onInterpret: (text: string) => boolean;
+  canUndo?: boolean;
+  onUndo?: () => void;
   /** The day the advisor is reading, so it can show its working. */
   reading?: {
     label: string;
@@ -50,6 +53,9 @@ export interface AssistantOffersProps {
 export function AssistantOffers({
   offers,
   onRequest,
+  onInterpret,
+  canUndo,
+  onUndo,
   reading,
 }: AssistantOffersProps) {
   const dayKey = reading?.label ?? "day";
@@ -106,12 +112,23 @@ export function AssistantOffers({
     thinkTimer.current = window.setTimeout(
       () => {
         setMessages((current) => {
+          const built = onInterpret(trimmed);
+          if (built) {
+            return [
+              ...current,
+              {
+                id: `ai-${Date.now()}`,
+                from: "ai",
+                text: "I've put a proposal on the calendar as a preview. Check the ghost blocks, then apply or dismiss — nothing is committed yet.",
+              },
+            ];
+          }
           const reply = replyToAskAi(trimmed, offers, current);
           return [...current, reply];
         });
         setThinking(false);
       },
-      reduceMotion ? 0 : 720,
+      reduceMotion ? 0 : 640,
     );
   }
 
@@ -167,14 +184,12 @@ export function AssistantOffers({
           </article>
         ))}
         {thinking ? (
-          <div className={cn(styles.turn, styles.turnAi)} aria-label="Thinking">
+          <div className={cn(styles.turn, styles.turnAi)} aria-label="Working">
             <span className={styles.turnMark} aria-hidden>
               <AiMark size={16} />
             </span>
-            <div className={styles.typing} aria-hidden>
-              <span />
-              <span />
-              <span />
+            <div className={styles.turnBody}>
+              <p>Reading this day and checking nearby options…</p>
             </div>
           </div>
         ) : null}
@@ -187,13 +202,19 @@ export function AssistantOffers({
           pushYou(draft);
         }}
       >
+        {canUndo && onUndo ? (
+          <button type="button" className={styles.prompt} onClick={onUndo}>
+            <span className={styles.promptLabel}>Undo last AI apply</span>
+            <span className={styles.promptDetail}>Restore the previous trip</span>
+          </button>
+        ) : null}
         <div className={styles.composer}>
           <textarea
             ref={inputRef}
             className={styles.input}
             rows={1}
             value={draft}
-            placeholder="Ask anything about this day…"
+            placeholder="Fill the afternoon, move this, add dinner nearby…"
             aria-label="Message Ask AI"
             disabled={thinking}
             onChange={(event) => {
@@ -230,6 +251,8 @@ export interface AssistantPlanPanelProps {
   onApplyOne: (changeId: string) => void;
   onDismiss: () => void;
   onHoverChange: (itemId: string | null) => void;
+  canUndo?: boolean;
+  onUndo?: () => void;
 }
 
 export function AssistantPlanPanel({
@@ -239,6 +262,8 @@ export function AssistantPlanPanel({
   onApplyOne,
   onDismiss,
   onHoverChange,
+  canUndo,
+  onUndo,
 }: AssistantPlanPanelProps) {
   const reduceMotion = useReducedMotion();
   const allApplied = plan.changes.every((change) => applied.includes(change.id));
@@ -320,9 +345,15 @@ export function AssistantPlanPanel({
       </div>
 
       <footer className={styles.panelFoot}>
-        <Button variant="ghost" size="sm" onClick={onDismiss}>
-          {allApplied ? "Close" : "Not now"}
-        </Button>
+        {canUndo && onUndo ? (
+          <Button variant="ghost" size="sm" onClick={onUndo}>
+            Undo last AI apply
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={onDismiss}>
+            {allApplied ? "Close" : "Not now"}
+          </Button>
+        )}
         {!allApplied ? (
           <Button
             variant="ai"

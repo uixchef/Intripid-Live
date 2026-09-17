@@ -7,14 +7,18 @@ import { planFixedTrip } from "@/lib/trip/fixed-plan";
 import {
   planFromDestination,
   tripTitleForDestination,
+  type DraftPrefs,
 } from "@/lib/trip/from-destination";
 import { atMinutes, shiftDayKey } from "@/lib/trip/time";
 import type { Route } from "next";
 import type {
+  BudgetTier,
+  Interest,
   LngLat,
   Traveller,
   Trip,
   TripStatus,
+  TripStyle,
   TripSummary,
   VisitedLocation,
 } from "@/lib/types";
@@ -166,11 +170,22 @@ function rosterFor(ids: string[]): Traveller[] {
 /** Planner trip for a catalog destination — calendar filled from attractions. */
 export function tripFromDestination(
   destinationId: string,
-  options?: { startDate?: string; endDate?: string; name?: string },
+  options?: {
+    startDate?: string;
+    endDate?: string;
+    name?: string;
+    prefs?: DraftPrefs;
+  },
 ): Trip | undefined {
   const destination = getDestination(destinationId);
   if (!destination) return undefined;
-  if (destinationId === "nyc") return NYC_TRIP;
+  const fromDiscovery = Boolean(
+    options?.prefs?.styles?.length ||
+      options?.prefs?.interests?.length ||
+      options?.prefs?.budget ||
+      options?.startDate,
+  );
+  if (destinationId === "nyc" && !fromDiscovery) return NYC_TRIP;
 
   const window = defaultWindow(destinationId);
   const startDate = options?.startDate ?? window.startDate;
@@ -181,6 +196,7 @@ export function tripFromDestination(
     startDate,
     endDate,
     owner.id,
+    options?.prefs,
   );
 
   return {
@@ -194,6 +210,14 @@ export function tripFromDestination(
     items,
     ideas,
     coverImage: coverPhotoSrc(destinationId),
+    fromDiscovery: options?.prefs
+      ? {
+          budget: options.prefs.budget ?? null,
+          styles: options.prefs.styles ?? [],
+          interests: options.prefs.interests ?? [],
+          score: options.prefs.score ?? 0,
+        }
+      : undefined,
   };
 }
 
@@ -232,13 +256,19 @@ export function plannerTripIdForDestination(destinationId: string): string {
 export function plannerHrefForDestination(
   destinationId: string,
   dates?: { start?: string | null; end?: string | null },
+  prefs?: DraftPrefs,
 ): Route {
-  const tripId = plannerTripIdForDestination(destinationId);
-  if (destinationId === "nyc" || !dates?.start || !dates.end) {
-    return `/trip/${tripId}` as Route;
+  const tripId = destinationId;
+  const params = new URLSearchParams();
+  if (dates?.start && dates.end) {
+    params.set("from", dates.start);
+    params.set("to", dates.end);
   }
-  const params = new URLSearchParams({ from: dates.start, to: dates.end });
-  return `/trip/${tripId}?${params.toString()}` as Route;
+  if (prefs?.styles?.length) params.set("styles", prefs.styles.join(","));
+  if (prefs?.interests?.length) params.set("interests", prefs.interests.join(","));
+  if (prefs?.budget) params.set("budget", prefs.budget);
+  const query = params.toString();
+  return (query ? `/trip/${tripId}?${query}` : `/trip/${tripId}`) as Route;
 }
 
 /** Empty planner for people who already have dates and do not need a city yet. */
@@ -379,6 +409,7 @@ export function getPlannerTrip(
     endDate?: string;
     name?: string;
     coords?: LngLat;
+    prefs?: DraftPrefs;
   },
 ): Trip | undefined {
   if (tripId === DRAFT_TRIP_ID) return blankTripFromDates(dates);
@@ -391,14 +422,30 @@ export function getPlannerTrip(
       placeName: label,
     });
   }
-  if (tripId === NYC_TRIP_ID || tripId === "nyc") return NYC_TRIP;
+  const fromDiscovery = Boolean(
+    dates?.prefs?.styles?.length ||
+      dates?.prefs?.interests?.length ||
+      dates?.prefs?.budget ||
+      dates?.startDate,
+  );
+  if ((tripId === NYC_TRIP_ID || tripId === "nyc") && !fromDiscovery) {
+    return NYC_TRIP;
+  }
+  if (tripId === NYC_TRIP_ID || tripId === "nyc") {
+    return tripFromDestination("nyc", dates);
+  }
 
   const summary = TRIP_SUMMARIES.find(
     (trip) => trip.id === tripId || trip.plannerTripId === tripId,
   );
-  if (summary) return withDates(plannerTripFromSummary(summary), dates);
+  if (summary && !fromDiscovery) {
+    return withDates(plannerTripFromSummary(summary), dates);
+  }
 
-  const draft = tripFromDestination(tripId, dates);
+  const draft = tripFromDestination(
+    tripId === NYC_TRIP_ID ? "nyc" : tripId,
+    dates,
+  );
   return draft;
 }
 

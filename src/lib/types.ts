@@ -553,7 +553,17 @@ export interface AssistantChange {
 export interface AssistantPlan {
   id: string;
   /** Which intervention produced this plan. */
-  intent: "rebalance" | "resolve-overlap" | "fill-gap" | "near-route";
+  intent:
+    | "rebalance"
+    | "resolve-overlap"
+    | "fill-gap"
+    | "near-route"
+    | "replace"
+    | "move"
+    | "remove"
+    | "reduce-travel"
+    | "nearby-dinner"
+    | "alternatives";
   title: string;
   /** The reasoning, shown as narrated steps rather than a chat bubble. */
   rationale: string[];

@@ -10,7 +10,8 @@ export const DESTINATION_COVER: Record<string, string> = {
   marrakesh: "/destinations/marrakesh.jpg",
 };
 
-const CITY_PHOTO: Record<string, string> = Object.fromEntries(
+const CITY_PHOTO: Record<string, string> = {
+  ...Object.fromEntries(
   [
     "amsterdam",
     "athens",
@@ -98,7 +99,10 @@ const CITY_PHOTO: Record<string, string> = Object.fromEntries(
     "zanzibar",
     "zurich",
   ].map((id) => [id, `/places/${id}.jpg`]),
-);
+  ),
+  /* Core editorial cities live under /destinations, not /places/{id}.jpg. */
+  ...DESTINATION_COVER,
+};
 
 const FALLBACK = "/discovery/pins/place.png";
 
@@ -297,8 +301,12 @@ export function photosForPlaces(
 export function coverPhotoSrc(destinationId: string): string | null {
   if (!destinationId) return null;
   if (DESTINATION_COVER[destinationId]) return DESTINATION_COVER[destinationId];
-  if (CITY_PHOTO[destinationId]) return CITY_PHOTO[destinationId];
-  return `/places/${destinationId}.jpg`;
+  const city = CITY_PHOTO[destinationId];
+  if (city) return city;
+  const slugId = slug(destinationId);
+  if (DESTINATION_COVER[slugId]) return DESTINATION_COVER[slugId];
+  if (CITY_PHOTO[slugId]) return CITY_PHOTO[slugId];
+  return FALLBACK;
 }
 
 /**
