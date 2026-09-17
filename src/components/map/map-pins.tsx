@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { CardMedia } from "@/components/card-media";
 import { cn } from "@/lib/utils";
 import { publicEnv } from "@/lib/env";
 import type { LngLat } from "@/lib/types";
@@ -236,23 +237,11 @@ export function PinPreview({
       role="tooltip"
     >
       <div className={styles.previewCard}>
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className={styles.previewBanner}
-            src={photo}
-            alt=""
-            onError={(event) => {
-              event.currentTarget.style.display = "none";
-            }}
-          />
-        ) : (
-          <div
-            className={styles.previewBanner}
-            data-card-placeholder=""
-            aria-hidden
-          />
-        )}
+        <CardMedia
+          photo={photo}
+          variant="utility"
+          className={styles.previewBanner}
+        />
         <div className={styles.previewBody}>
           {kicker ? <p className={styles.previewKicker}>{kicker}</p> : null}
           <p className={styles.previewTitle}>{title}</p>

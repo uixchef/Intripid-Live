@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { LocateFixed } from "lucide-react";
 
+import { CardMedia } from "@/components/card-media";
 import { AvatarStack } from "@/components/ui/avatar";
 import { IconButton } from "@/components/ui/button";
 import { getDestination } from "@/data/destinations";
@@ -542,21 +543,13 @@ function MapStopCard({
         else onSelect(id);
       }}
     >
-      {photo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          className={styles.cardPhoto}
-          src={photo}
-          alt=""
-          width={92}
-          height={112}
-          onError={(event) => {
-            event.currentTarget.style.display = "none";
-          }}
-        />
-      ) : (
-        <div className={styles.cardPhoto} data-card-placeholder="" aria-hidden />
-      )}
+      <CardMedia
+        photo={photo}
+        variant="utility"
+        className={styles.cardPhoto}
+        width={92}
+        height={112}
+      />
       <span className={styles.cardBody}>
         <span className={styles.cardKicker}>
           {categoryLabel ? `${letter} · ${categoryLabel}` : letter}

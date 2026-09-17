@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { Mark } from "@/components/brand/mark";
+import { CardMedia } from "@/components/card-media";
 import { coverPhotoSrc } from "@/data/place-photos";
 import { Button, IconButton } from "@/components/ui/button";
 import { Confidence, ScoreRing, SeasonSpark } from "@/components/ui/meter";
@@ -323,35 +324,15 @@ function PlaceCard({
   attraction: Recommendation["destination"]["attractions"][number];
   variant?: "spot" | "event";
 }) {
-  /*
-   * Card image rule: a card shows its own place-specific photograph, or a
-   * CSS placeholder — never the Intripid bird, never a borrowed city
-   * cover, never another attraction's photo.
-   */
-  const src = attraction.photo ?? undefined;
   return (
     <article className={cn(styles.spotCard, variant === "event" && styles.eventCard)}>
-      {src ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt=""
-            width={200}
-            height={variant === "event" ? 200 : 160}
-            className={styles.spotPhoto}
-            onError={(event) => {
-              event.currentTarget.style.display = "none";
-            }}
-          />
-        </>
-      ) : (
-        <div
-          className={styles.spotPhoto}
-          data-card-placeholder=""
-          aria-hidden
-        />
-      )}
+      <CardMedia
+        photo={attraction.photo}
+        variant="editorial"
+        className={styles.spotPhoto}
+        width={200}
+        height={variant === "event" ? 200 : 160}
+      />
       <div className={styles.spotBody}>
         <p className={styles.spotName}>{attraction.name}</p>
         {variant === "event" && attraction.note ? (

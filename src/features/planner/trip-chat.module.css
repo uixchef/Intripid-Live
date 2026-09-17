@@ -318,6 +318,10 @@
   object-fit: cover;
 }
 
+.stopPhoto[data-placeholder-variant="utility"] {
+  object-position: 50% 40%;
+}
+
 .stopGlyph {
   display: grid;
   place-items: center;

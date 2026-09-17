@@ -131,6 +131,10 @@
   background: var(--slate-100);
 }
 
+.previewBanner[data-placeholder-variant="utility"] {
+  object-position: 50% 38%;
+}
+
 .previewBody {
   display: grid;
   gap: 2px;

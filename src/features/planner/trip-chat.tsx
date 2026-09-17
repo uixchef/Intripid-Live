@@ -12,6 +12,7 @@ import {
 import { format, isSameDay, parseISO } from "date-fns";
 import { Camera, ChevronDown, ChevronLeft, FileText, Image as ImageIcon, Lightbulb, MapPin, MapPinned, Plus, Reply, Search, Send, Smile, X } from "lucide-react";
 
+import { CardMedia } from "@/components/card-media";
 import { Hummingbird } from "@/components/brand/hummingbird";
 import { ACCOUNT_USER, ACCOUNT_USER_ID } from "@/data/account";
 import { getDestination } from "@/data/destinations";
@@ -437,14 +438,13 @@ function StopCard({
   const detail = [attachment.place, when].filter(Boolean).join(" · ");
   const inner = (
     <>
-      {photo ? (
-        // eslint-disable-next-line @next/next/no-img-element -- local attraction still
-        <img className={styles.stopPhoto} src={photo} alt="" />
-      ) : (
-        <span className={styles.stopGlyph} aria-hidden>
-          <MapPin size={14} strokeWidth={2} />
-        </span>
-      )}
+      <CardMedia
+        photo={photo}
+        variant="utility"
+        className={styles.stopPhoto}
+        width={40}
+        height={40}
+      />
       <span className={styles.stopCopy}>
         <strong>{attachment.title}</strong>
         {detail ? <em>{detail}</em> : null}

@@ -787,6 +787,10 @@
   background: var(--purple-50);
 }
 
+.spotPhoto[data-placeholder-variant="editorial"] {
+  object-position: 42% 46%;
+}
+
 .eventCard .spotPhoto {
   height: 200px;
 }

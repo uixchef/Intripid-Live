@@ -157,6 +157,10 @@
   background: var(--slate-100);
 }
 
+.cardPhoto[data-placeholder-variant="utility"] {
+  object-position: 50% 42%;
+}
+
 .cardBody {
   display: flex;
   flex-direction: column;
