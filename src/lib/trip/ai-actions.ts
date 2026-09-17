@@ -299,8 +299,17 @@ export function nearbyDinnerPlan(trip: Trip, day: string): AssistantPlan | null 
 }
 
 export function reduceTravelPlan(trip: Trip, day: string): AssistantPlan | null {
+  const days = [day, ...tripDayKeys(trip).filter((key) => key !== day)];
+  for (const target of days) {
+    const plan = reduceTravelOnDay(trip, target);
+    if (plan) return plan;
+  }
+  return planRebalance(trip, day) ?? removeOnePlan(trip, day);
+}
+
+function reduceTravelOnDay(trip: Trip, day: string): AssistantPlan | null {
   const stops = routeForDay(trip, day);
-  if (stops.length < 3) return planRebalance(trip, day);
+  if (stops.length < 3) return null;
   let worst = { index: -1, km: 0 };
   for (let index = 1; index < stops.length; index += 1) {
     const prev = stops[index - 1]?.place;
@@ -309,9 +318,9 @@ export function reduceTravelPlan(trip: Trip, day: string): AssistantPlan | null 
     const km = distanceKm(prev.coords, next.coords);
     if (km > worst.km) worst = { index, km };
   }
-  if (worst.index < 1 || worst.km < 1.2) return planRebalance(trip, day);
+  if (worst.index < 1) return null;
   const mover = stops[worst.index]?.item;
-  if (!mover?.start || !mover.end || !mover.flexible) return planRebalance(trip, day);
+  if (!mover?.start || !mover.end || !mover.flexible) return null;
   const duration = durationMinutes(mover.start, mover.end);
   const startMin = minutesIntoDay(stops[0]!.item.start ?? mover.start) + 30;
   return {
