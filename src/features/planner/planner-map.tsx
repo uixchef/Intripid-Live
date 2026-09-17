@@ -338,7 +338,7 @@ export function PlannerMap({
       {!deck && peekedStop ? (
         <PinPreview
           eventId={peekedStop.item.id}
-          photo={pinPhotos[peekedStop.item.id] ?? "/discovery/pins/place.png"}
+          photo={pinPhotos[peekedStop.item.id] ?? null}
           kicker={
             peekedStop.letter
               ? `${peekedStop.letter.toUpperCase()} · ${categoryMeta(peekedStop.item.category).label}`
@@ -361,7 +361,7 @@ export function PlannerMap({
       ) : !deck && peekedIdea?.place ? (
         <PinPreview
           eventId={peekedIdea.id}
-          photo={pinPhotos[peekedIdea.id] ?? "/discovery/pins/place.png"}
+          photo={pinPhotos[peekedIdea.id] ?? null}
           kicker="Idea"
           title={peekedIdea.title}
           subtitle={peekedIdea.place.name}
@@ -415,7 +415,7 @@ function MapDeck({
   selectedItemId: string | null;
   stay: ItineraryItem | null;
   stops: DayStop[];
-  photos: Record<string, string>;
+  photos: Record<string, string | null>;
   clock: ClockFormat;
   onSelect: (id: string) => void;
   onOpen?: (id: string) => void;
@@ -470,7 +470,7 @@ function MapDeck({
             place={stop.place}
             item={stop.item}
             trip={trip}
-            photo={photos[stop.item.id] ?? "/discovery/pins/place.png"}
+            photo={photos[stop.item.id] ?? null}
             selected={selectedItemId === stop.item.id}
             clock={clock}
             onSelect={onSelect}
@@ -511,7 +511,7 @@ function MapStopCard({
   place: Place;
   item: ItineraryItem;
   trip: Trip;
-  photo: string;
+  photo: string | null;
   selected: boolean;
   clock: ClockFormat;
   onSelect: (id: string) => void;
@@ -542,17 +542,21 @@ function MapStopCard({
         else onSelect(id);
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        className={styles.cardPhoto}
-        src={photo}
-        alt=""
-        width={92}
-        height={112}
-        onError={(event) => {
-          event.currentTarget.src = "/discovery/pins/place.png";
-        }}
-      />
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className={styles.cardPhoto}
+          src={photo}
+          alt=""
+          width={92}
+          height={112}
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+          }}
+        />
+      ) : (
+        <div className={styles.cardPhoto} data-card-placeholder="" aria-hidden />
+      )}
       <span className={styles.cardBody}>
         <span className={styles.cardKicker}>
           {categoryLabel ? `${letter} · ${categoryLabel}` : letter}

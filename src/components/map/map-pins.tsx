@@ -144,7 +144,7 @@ export function PinPreview({
   subtitle,
 }: {
   eventId: string;
-  photo: string;
+  photo: string | null;
   kicker?: string;
   title: string;
   subtitle?: string;
@@ -236,15 +236,23 @@ export function PinPreview({
       role="tooltip"
     >
       <div className={styles.previewCard}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className={styles.previewBanner}
-          src={photo}
-          alt=""
-          onError={(event) => {
-            event.currentTarget.src = FALLBACK;
-          }}
-        />
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className={styles.previewBanner}
+            src={photo}
+            alt=""
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+        ) : (
+          <div
+            className={styles.previewBanner}
+            data-card-placeholder=""
+            aria-hidden
+          />
+        )}
         <div className={styles.previewBody}>
           {kicker ? <p className={styles.previewKicker}>{kicker}</p> : null}
           <p className={styles.previewTitle}>{title}</p>

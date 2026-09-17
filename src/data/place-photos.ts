@@ -245,7 +245,7 @@ export function photosForPlaces(
     coords?: LngLat;
   }[],
   destinationId?: string,
-): Record<string, string> {
+): Record<string, string | null> {
   const photos: Record<string, string> = {};
   const pool = catalog(destinationId);
   const used = new Set<string>();
@@ -263,9 +263,9 @@ export function photosForPlaces(
     }
   }
 
-  /* No nearest-attraction, no leftover cycle, no city cover — bird fallback. */
+  /* No nearest-attraction, no leftover cycle, no city cover — null for cards, bird for pins. */
   for (const place of places) {
-    if (!photos[place.id]) photos[place.id] = FALLBACK;
+    if (!photos[place.id]) photos[place.id] = null as unknown as string;
   }
 
   return photos;

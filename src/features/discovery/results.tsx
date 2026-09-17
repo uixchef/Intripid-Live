@@ -316,24 +316,19 @@ function activityScores(
     .sort((a, b) => b.score - a.score);
 }
 
-function cityCoverFromPhoto(src: string | undefined): string | null {
-  if (!src) return null;
-  const match = src.match(/^(\/places\/[^/]+?)(?:-[a-z]+)?\.jpg$/);
-  return match ? `${match[1]}.jpg` : null;
-}
-
 function PlaceCard({
   attraction,
   variant = "spot",
-  fallback,
 }: {
   attraction: Recommendation["destination"]["attractions"][number];
   variant?: "spot" | "event";
-  fallback?: string | null;
 }) {
-  const photo = attraction.photo;
-  const cover = cityCoverFromPhoto(photo) ?? fallback ?? undefined;
-  const src = photo ?? cover;
+  /*
+   * Card image rule: a card shows its own place-specific photograph, or a
+   * CSS placeholder — never the Intripid bird, never a borrowed city
+   * cover, never another attraction's photo.
+   */
+  const src = attraction.photo ?? undefined;
   return (
     <article className={cn(styles.spotCard, variant === "event" && styles.eventCard)}>
       {src ? (
@@ -346,16 +341,17 @@ function PlaceCard({
             height={variant === "event" ? 200 : 160}
             className={styles.spotPhoto}
             onError={(event) => {
-              const img = event.currentTarget;
-              if (cover && img.getAttribute("src") !== cover) {
-                img.src = cover;
-                return;
-              }
-              img.style.display = "none";
+              event.currentTarget.style.display = "none";
             }}
           />
         </>
-      ) : null}
+      ) : (
+        <div
+          className={styles.spotPhoto}
+          data-card-placeholder=""
+          aria-hidden
+        />
+      )}
       <div className={styles.spotBody}>
         <p className={styles.spotName}>{attraction.name}</p>
         {variant === "event" && attraction.note ? (
@@ -758,7 +754,6 @@ export function DestinationBrief({
                 <PlaceCard
                   key={attraction.name}
                   attraction={attraction}
-                  fallback={cover}
                 />
               ))}
             </div>
@@ -781,7 +776,6 @@ export function DestinationBrief({
                   key={attraction.name}
                   attraction={attraction}
                   variant="event"
-                  fallback={cover}
                 />
               ))}
             </div>
@@ -803,7 +797,6 @@ export function DestinationBrief({
                   key={attraction.name}
                   attraction={attraction}
                   variant="event"
-                  fallback={cover}
                 />
               ))}
             </div>
