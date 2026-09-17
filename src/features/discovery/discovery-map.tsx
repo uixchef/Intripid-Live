@@ -77,7 +77,7 @@ export function DiscoveryMap({
   huntKind,
   huntBeat,
   portsFound,
-  destinationsFound: _destinationsFound,
+  destinationsFound,
   home,
   scope,
   result,
@@ -161,9 +161,9 @@ export function DiscoveryMap({
 
   const destPorts = useMemo(() => {
     if (!home || active) return [];
-    if (huntKind === "dest") return hunt.ports;
+    if (huntKind === "dest" || destinationsFound) return hunt.ports;
     return [];
-  }, [home, active, huntKind, hunt]);
+  }, [home, active, huntKind, destinationsFound, hunt]);
 
   const airportPins = useMemo(() => {
     const pins: DeparturePort[] = [];
@@ -201,8 +201,18 @@ export function DiscoveryMap({
       return { center: null, zoom: undefined, fit: points };
     }
 
-    if (huntKind === "dest") {
-      if (huntBeat === 0 && destPorts.length > 0) {
+    /*
+     * Destination hunt (and the questions that follow it) must keep the
+     * world-scale frame. `portsFound` stays true after the departure-port
+     * search, so fitting home + the nearest airport would otherwise win
+     * here and collapse the globe onto a street-level origin (Singapore
+     * + Changi is ~18 km, which Mapbox will take to zoom 10).
+     */
+    const framingDestinations =
+      huntKind === "dest" || destinationsFound || showCities;
+
+    if (framingDestinations) {
+      if (huntKind === "dest" && huntBeat === 0 && destPorts.length > 0) {
         return {
           center: null,
           zoom: undefined,
@@ -210,10 +220,21 @@ export function DiscoveryMap({
         };
       }
       if (showCities && field.length > 0) {
+        const points = [origin, ...field.map((pin) => pin.coords)];
+        if (destPorts.length > 0) {
+          points.push(...destPorts.map((port) => port.coords));
+        }
         return {
           center: null,
           zoom: undefined,
-          fit: [origin, ...field.map((pin) => pin.coords)],
+          fit: points,
+        };
+      }
+      if (destPorts.length > 0) {
+        return {
+          center: null,
+          zoom: undefined,
+          fit: [origin, ...destPorts.map((port) => port.coords)],
         };
       }
       return { center: origin, zoom: 1.55, fit: null as LngLat[] | null };
@@ -235,14 +256,6 @@ export function DiscoveryMap({
       };
     }
 
-    if (showCities && field.length > 0) {
-      return {
-        center: null,
-        zoom: undefined,
-        fit: [origin, ...field.map((pin) => pin.coords)],
-      };
-    }
-
     return { center: origin, zoom: 1.8, fit: null as LngLat[] | null };
   }, [
     active,
@@ -258,6 +271,7 @@ export function DiscoveryMap({
     showHome,
     openingZoom,
     portsFound,
+    destinationsFound,
     departurePort,
   ]);
 
@@ -285,7 +299,7 @@ export function DiscoveryMap({
           maxZoom={
             active
               ? active.destination.zoom
-              : huntKind === "dest"
+              : huntKind === "dest" || destinationsFound || showCities
                 ? 4.6
                 : portsFound
                   ? 10.5
