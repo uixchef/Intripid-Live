@@ -125,7 +125,12 @@ function nameScore(query: string, attractionName: string): number {
   const a = slug(attractionName);
   if (!q || !a) return 0;
   if (q === a) return 1;
-  if (q.includes(a) || a.includes(q)) return 0.92;
+  /*
+   * Only allow the query to contain the attraction name, not the reverse.
+   * "Paris" containing "paris-historic-centre" is a false positive that
+   * borrows another place's photo — the query must be the longer string.
+   */
+  if (q.includes(a) && q.length > a.length) return 0.92;
   const qTokens = new Set(tokens(query));
   const aTokens = tokens(attractionName);
   if (aTokens.length === 0) return 0;
@@ -202,7 +207,7 @@ export function footprintPhotoSrc(place: { id: string; name?: string }): string 
   return cityPhoto(place) ?? FALLBACK;
 }
 
-/** A real photograph for a map pin — never a satellite still. */
+/** A real photograph for a map pin — never a satellite still, never a borrowed photo. */
 export function placePhotoSrc(place: {
   id: string;
   name?: string;
@@ -213,26 +218,24 @@ export function placePhotoSrc(place: {
   const city = cityPhoto(place);
   if (city) return city;
 
+  /*
+   * Place-specific photo only: a canonical name match to an attraction
+   * that has its own photograph. No nearest-attraction fallback, no city
+   * cover fallback — those borrow another place's real photo. Missing
+   * photos use the Intripid bird pin.
+   */
   const queries = [place.name, place.title, place.id].filter(
     (value): value is string => Boolean(value),
   );
   const pool = catalog(place.destinationId);
   const named = bestNameMatch(queries, pool);
   if (named?.photo) return named.photo;
-  if (place.coords) {
-    const near = nearestAttraction(place.coords, pool);
-    if (near?.photo) return near.photo;
-  }
-  if (place.destinationId) {
-    const cover = DESTINATION_COVER[place.destinationId];
-    if (cover) return cover;
-  }
   return FALLBACK;
 }
 
 /**
- * One beautiful photo per stop on a day. Name match first, then nearest
- * unused catalog shot, so neighbouring pins do not share a rooftop crop.
+ * One photo per stop on a day. Name match only — each place gets its own
+ * canonical photograph or the bird fallback, never a borrowed photo.
  */
 export function photosForPlaces(
   places: {
@@ -247,11 +250,6 @@ export function photosForPlaces(
   const pool = catalog(destinationId);
   const used = new Set<string>();
 
-  function take(src: string): string {
-    used.add(src);
-    return src;
-  }
-
   for (const place of places) {
     const named = bestNameMatch(
       [place.name, place.title].filter((value): value is string =>
@@ -260,38 +258,14 @@ export function photosForPlaces(
       pool,
     );
     if (named?.photo && !used.has(named.photo)) {
-      photos[place.id] = take(named.photo);
+      photos[place.id] = named.photo;
+      used.add(named.photo);
     }
   }
 
+  /* No nearest-attraction, no leftover cycle, no city cover — bird fallback. */
   for (const place of places) {
-    if (photos[place.id] || !place.coords) continue;
-    const unused = pool.filter(
-      (attraction) => attraction.photo && !used.has(attraction.photo),
-    );
-    const pick = nearestAttraction(
-      place.coords,
-      unused.length > 0 ? unused : pool,
-    );
-    if (pick?.photo) {
-      photos[place.id] = unused.length > 0 ? take(pick.photo) : pick.photo;
-    }
-  }
-
-  const cover = destinationId ? DESTINATION_COVER[destinationId] : null;
-  const leftovers = pool.filter(
-    (attraction) => attraction.photo && !used.has(attraction.photo),
-  );
-  let cycle = 0;
-  for (const place of places) {
-    if (photos[place.id]) continue;
-    const next = leftovers[cycle]?.photo;
-    if (next) {
-      photos[place.id] = take(next);
-      cycle += 1;
-      continue;
-    }
-    photos[place.id] = cover ?? FALLBACK;
+    if (!photos[place.id]) photos[place.id] = FALLBACK;
   }
 
   return photos;

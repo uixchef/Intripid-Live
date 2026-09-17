@@ -135,20 +135,11 @@ export function PlannerMap({
                 ]
               : [],
           ),
-          ...(stay?.place
-            ? [
-                {
-                  id: stay.id,
-                  name: stay.place.name,
-                  title: stay.title,
-                  coords: stay.place.coords,
-                },
-              ]
-            : []),
+          /* The stay is a city-level entity, not a POI — it uses the home icon, never a borrowed place photo. */
         ],
         trip.destinationId,
       ),
-    [stops, restStops, ideaPins, stay, trip.destinationId],
+    [stops, restStops, ideaPins, trip.destinationId],
   );
 
   const selected = stops.find((stop) => stop.item.id === selectedItemId);

@@ -189,6 +189,12 @@ function placePhoto(id: string, slot?: string) {
 
 function catalogAttractions(seed: Pick<Seed, "id" | "name" | "coords">): Destination["attractions"] {
   const { coords, name, id } = seed;
+  /*
+   * Eight distinct slot photographs exist per city (base, culture, food,
+   * table, outdoors, night, street, transit). Each is assigned to exactly
+   * one attraction so map markers never reuse another place's real photo.
+   * Attractions beyond the photo budget render the Intripid bird fallback.
+   */
   return [
     {
       name: `${name} historic centre`,
@@ -251,56 +257,48 @@ function catalogAttractions(seed: Pick<Seed, "id" | "name" | "coords">): Destina
       category: "food",
       coords: offset(coords, 0.15, 0.35),
       note: `A counter, not a laptop cafe. Watch the neighbourhood wake up before the day gets busy.`,
-      photo: placePhoto(id, "table"),
     },
     {
       name: `Lookout over ${name}`,
       category: "sightseeing",
       coords: offset(coords, 1.1, 0.4),
       note: `Go for the view, stay for the walk down. This is how the city explains its layout.`,
-      photo: placePhoto(id),
     },
     {
       name: `Gallery afternoon, ${name}`,
       category: "culture",
       coords: offset(coords, -0.35, 0.9),
       note: `A smaller room than the headline museum — one that still has space to think.`,
-      photo: placePhoto(id, "culture"),
     },
     {
       name: `Garden walk, ${name}`,
       category: "outdoors",
       coords: offset(coords, 0.55, -0.9),
       note: `Not a hike. Shade, a bench, and enough quiet to reset the day.`,
-      photo: placePhoto(id, "outdoors"),
     },
     {
       name: `Late lunch in ${name}`,
       category: "food",
       coords: offset(coords, -0.75, 0.15),
       note: `The sitting after the locals have gone back to work. Order what the next table is having.`,
-      photo: placePhoto(id, "food"),
     },
     {
       name: `Laneway browse, ${name}`,
       category: "shopping",
       coords: offset(coords, 0.7, -0.35),
       note: `Ignore the flagship street. The interesting shops are one turning off it.`,
-      photo: placePhoto(id, "street"),
     },
     {
       name: `Sunset hour in ${name}`,
       category: "sightseeing",
       coords: offset(coords, 0.2, 1.1),
       note: `A terrace or a water edge. This is the pause the itinerary is built around, not an extra.`,
-      photo: placePhoto(id, "night"),
     },
     {
       name: `Night market wander, ${name}`,
       category: "nightlife",
       coords: offset(coords, -0.55, -0.4),
       note: `Walk, taste, leave. You do not need a reservation to belong here after dark.`,
-      photo: placePhoto(id, "night"),
     },
   ];
 }
@@ -317,18 +315,14 @@ export function supplementAttractions(
     coords: destination.coords,
   });
   const names = new Set(existing.map((item) => item.name.toLowerCase()));
-  const photos = existing.map((item) => item.photo).filter(Boolean);
   return [
     ...existing,
     ...extras
       .filter((item) => !names.has(item.name.toLowerCase()))
-      .map((item, index) => ({
+      .map((item) => ({
         ...item,
-        /* Core cities have editorial files under /attractions, not /places/{id}-slot. */
-        photo:
-          photos.length > 0
-            ? photos[index % photos.length]
-            : item.photo,
+        /* Supplemental stops have no place-specific photo — they use the bird fallback, never a borrowed attraction photo. */
+        photo: undefined,
       })),
   ];
 }
