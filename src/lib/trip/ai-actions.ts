@@ -1,6 +1,9 @@
 import { distanceKm, walkMinutes } from "@/lib/geo";
+import { photosForPlaces } from "@/data/place-photos";
 import type {
   AssistantChange,
+  AssistantChoice,
+  AssistantChoiceSet,
   AssistantPlan,
   Idea,
   ItineraryItem,
@@ -24,6 +27,7 @@ import {
 import {
   atMinutes,
   dayLabel,
+  durationLabel,
   durationMinutes,
   minutesIntoDay,
   shiftDayKey,
@@ -458,4 +462,262 @@ export function alternativeIdeas(
       return bs - as;
     })
     .slice(0, 3);
+}
+
+function ideaToChoice(
+  trip: Trip,
+  idea: Idea,
+  why: string,
+  travelMin: number | null,
+): AssistantChoice {
+  const photo =
+    idea.place
+      ? photosForPlaces(
+          [{ id: idea.id, name: idea.place.name, title: idea.title }],
+          trip.destinationId,
+        )[idea.id]
+      : null;
+  return {
+    ideaId: idea.id,
+    title: idea.title,
+    subtitle: idea.subtitle,
+    category: idea.category,
+    area: idea.place?.neighbourhood ?? idea.place?.name ?? null,
+    durationMin: idea.durationMin,
+    travelMin,
+    why,
+    photo: photo ?? null,
+  };
+}
+
+export function fillGapChoiceSet(trip: Trip, day: string): AssistantChoiceSet | null {
+  const gaps = gapsForDay(trip, day);
+  if (gaps.length === 0) return null;
+  const gap = gaps.reduce((a, b) => (b.minutes > a.minutes ? b : a));
+  const dayItems = activitiesForDay(trip, day);
+  const before = [...dayItems]
+    .filter((item) => item.end && minutesIntoDay(item.end) <= gap.startMinutes)
+    .pop();
+  const after = dayItems.find(
+    (item) => item.start && minutesIntoDay(item.start) >= gap.endMinutes,
+  );
+  const anchor = before?.place ?? after?.place ?? null;
+  const blocked = new Set(trip.items.map((item) => item.title.toLowerCase()));
+  const ranked = trip.ideas
+    .filter((idea) => idea.place && !blocked.has(idea.title.toLowerCase()))
+    .filter((idea) => idea.durationMin + 30 <= gap.minutes)
+    .map((idea) => ({
+      idea,
+      km: anchor ? distanceKm(anchor.coords, idea.place!.coords) : 0,
+      hop: anchor ? walkMinutes(anchor.coords, idea.place!.coords) : null,
+    }))
+    .sort((a, b) => a.km - b.km)
+    .slice(0, 3);
+  if (ranked.length === 0) return null;
+  return {
+    action: "add",
+    heading: "Options for the open stretch",
+    detail: `${durationLabel(gap.minutes)} free from ${timeLabel(atMinutes(day, gap.startMinutes))}${
+      before ? ` after “${before.title}”` : ""
+    }.`,
+    ideas: ranked.map(({ idea, hop }) =>
+      ideaToChoice(
+        trip,
+        idea,
+        idea.reason,
+        hop === null ? null : Math.max(8, hop),
+      ),
+    ),
+  };
+}
+
+export function dinnerChoiceSet(trip: Trip, day: string): AssistantChoiceSet | null {
+  const activities = activitiesForDay(trip, day);
+  const last = [...activities].reverse().find((item) => item.place) ?? null;
+  const blocked = new Set(trip.items.map((item) => item.title.toLowerCase()));
+  const ranked = trip.ideas
+    .filter((idea) => idea.place && idea.category === "food" && !blocked.has(idea.title.toLowerCase()))
+    .map((idea) => ({
+      idea,
+      hop:
+        last?.place && idea.place
+          ? walkMinutes(last.place.coords, idea.place.coords)
+          : null,
+    }))
+    .sort((a, b) => (a.hop ?? 99) - (b.hop ?? 99))
+    .slice(0, 3);
+  if (ranked.length === 0) return null;
+  return {
+    action: "add",
+    heading: last ? `Dinner near “${last.title}”` : "Dinner options",
+    detail: last
+      ? `Last stop on ${dayLabel(day)} is “${last.title}”.`
+      : `${dayLabel(day)} has no anchored last stop yet.`,
+    currentTitle: last?.title,
+    currentWhen: last?.end ? `${dayLabel(day)} · ${timeLabel(last.end)}` : undefined,
+    ideas: ranked.map(({ idea, hop }) =>
+      ideaToChoice(
+        trip,
+        idea,
+        idea.reason,
+        hop === null ? null : Math.max(8, hop),
+      ),
+    ),
+  };
+}
+
+export function replaceChoiceSet(
+  trip: Trip,
+  item: ItineraryItem,
+  prefer: Array<Idea["category"]>,
+): AssistantChoiceSet | null {
+  const ideas = alternativeIdeas(trip, item).filter((idea) =>
+    prefer.length === 0 ? true : prefer.includes(idea.category) || idea.category === item.category,
+  );
+  const pool = ideas.length > 0 ? ideas : alternativeIdeas(trip, item);
+  if (pool.length === 0) return null;
+  const day = item.start?.slice(0, 10);
+  return {
+    action: "replace",
+    heading: `Replace “${item.title}”`,
+    detail: "Pick one option. The rest of the day stays put until you apply.",
+    currentTitle: item.title,
+    currentWhen:
+      item.start && item.end
+        ? `${dayLabel(item.start.slice(0, 10))} · ${timeLabel(item.start)}–${timeLabel(item.end)}`
+        : undefined,
+    ideas: pool.slice(0, 3).map((idea) =>
+      ideaToChoice(
+        trip,
+        idea,
+        idea.reason,
+        item.place && idea.place
+          ? Math.max(8, walkMinutes(item.place.coords, idea.place.coords))
+          : null,
+      ),
+    ),
+  };
+}
+
+export function addIdeaPlan(
+  trip: Trip,
+  day: string,
+  idea: Idea,
+  selected?: ItineraryItem | null,
+): AssistantPlan | null {
+  const dinner = nearbyDinnerPlan(trip, day);
+  if (idea.category === "food") {
+    const targeted = nearbyDinnerPlan(trip, day);
+    if (targeted?.changes[0]?.create) {
+      const created = {
+        ...targeted.changes[0].create,
+        title: idea.title,
+        subtitle: idea.subtitle,
+        place: idea.place,
+        category: idea.category,
+        costUsd: idea.costUsd,
+        comments: commentsFromText("assistant", idea.reason),
+      };
+      return {
+        ...targeted,
+        title: `Add ${idea.title}`,
+        rationale: [
+          selected?.title
+            ? `Near “${selected.title}”.`
+            : targeted.rationale[0] ?? `Adds dinner on ${dayLabel(day)}.`,
+          idea.reason,
+        ],
+        changes: [
+          {
+            ...targeted.changes[0],
+            summary: `Add “${idea.title}” at ${timeLabel(created.start!)}`,
+            create: created,
+          },
+        ],
+      };
+    }
+  }
+  const filled = planFillGap(trip, day, [idea]);
+  if (filled) return filled;
+  return dinner;
+}
+
+export function choicesFromUtterance(
+  trip: Trip,
+  day: string,
+  text: string,
+  selectedItemId?: string | null,
+): AssistantChoiceSet | null {
+  const line = text.trim().toLowerCase();
+  const selected =
+    trip.items.find((item) => item.id === selectedItemId) ??
+    activitiesForDay(trip, day).find((item) =>
+      line.includes(item.title.toLowerCase()),
+    ) ??
+    null;
+
+  if (/alternative|another option|three options|give me three/.test(line) && selected) {
+    return replaceChoiceSet(trip, selected, [selected.category, "outdoors", "food"]);
+  }
+  if (/replace|swap|instead|outdoors|something quieter|something else/.test(line) && selected) {
+    const prefer = /outdoor|park|walk|hike/.test(line)
+      ? (["outdoors"] as Idea["category"][])
+      : /quiet|slower/.test(line)
+        ? (["outdoors", "culture"] as Idea["category"][])
+        : /food|dinner|lunch/.test(line)
+          ? (["food"] as Idea["category"][])
+          : ([selected.category] as Idea["category"][]);
+    return replaceChoiceSet(trip, selected, prefer);
+  }
+  if (/dinner|eat near|near my last|near the last/.test(line)) {
+    const set = dinnerChoiceSet(trip, day);
+    if (set && set.ideas.length > 1) return set;
+  }
+  if (/fill|afternoon|gap|empty|nothing to do/.test(line)) {
+    const set = fillGapChoiceSet(trip, day);
+    if (set && set.ideas.length > 1) return set;
+  }
+  return null;
+}
+
+export function choiceSetForIntent(
+  trip: Trip,
+  day: string,
+  intent: AssistantPlan["intent"],
+  selected?: ItineraryItem | null,
+): AssistantChoiceSet | null {
+  if (intent === "fill-gap") {
+    const set = fillGapChoiceSet(trip, day);
+    return set && set.ideas.length > 1 ? set : null;
+  }
+  if (intent === "nearby-dinner") {
+    const set = dinnerChoiceSet(trip, day);
+    return set && set.ideas.length > 1 ? set : null;
+  }
+  if ((intent === "replace" || intent === "alternatives") && selected) {
+    const prefer =
+      intent === "replace" ? (["outdoors"] as Idea["category"][]) : [selected.category];
+    return replaceChoiceSet(trip, selected, prefer);
+  }
+  return null;
+}
+
+export function planFromChoice(
+  trip: Trip,
+  day: string,
+  set: AssistantChoiceSet,
+  ideaId: string,
+  selected?: ItineraryItem | null,
+): AssistantPlan | null {
+  const idea = trip.ideas.find((entry) => entry.id === ideaId);
+  if (!idea) return null;
+  if (set.action === "replace") {
+    const target =
+      selected ??
+      trip.items.find((item) => item.title === set.currentTitle) ??
+      null;
+    if (!target) return null;
+    return replacePlan(trip, target, idea, target.start?.slice(0, 10) ?? day);
+  }
+  return addIdeaPlan(trip, day, idea, selected);
 }

@@ -8,87 +8,110 @@ import {
   type KeyboardEvent,
 } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Check, Send, X } from "lucide-react";
+import { ArrowRight, Check, Send } from "lucide-react";
 
 import { AiMark } from "@/components/brand/ai-mark";
+import { CardMedia } from "@/components/card-media";
 import { Button, IconButton } from "@/components/ui/button";
+import { CATEGORY_META } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import {
+  appliedAskAi,
+  choicesIntro,
+  noResultAskAi,
   openingAskAi,
   replyToAskAi,
+  workingLabel,
   type AskAiMessage,
   type AskAiOption,
+  type AskAiReading,
 } from "@/lib/trip/ai-chat";
+import { dayLabel, durationLabel, timeLabel } from "@/lib/trip/time";
 import type { AssistantOffer } from "@/lib/trip/assistant";
-import type { AssistantPlan } from "@/lib/types";
+import type {
+  AssistantAppliedNote,
+  AssistantChange,
+  AssistantChoice,
+  AssistantChoiceSet,
+  AssistantPlan,
+  Trip,
+} from "@/lib/types";
 
 import styles from "./assistant.module.css";
 
-/**
- * Ask AI — the conversation is the product.
- *
- * Offers and day facts are folded into the first turn, not a competing
- * dashboard. The traveller describes or picks a prompt; a proposal still
- * lands as a reviewable plan. Not a blank chatbot, not a stats panel.
- */
-
-export interface AssistantOffersProps {
+export interface AskAiPanelProps {
   offers: AssistantOffer[];
-  onRequest: (intent: AssistantPlan["intent"]) => void;
-  onInterpret: (text: string) => boolean;
+  reading: AskAiReading;
+  trip: Trip;
+  plan: AssistantPlan | null;
+  choices: AssistantChoiceSet | null;
+  applied: string[];
+  appliedNote: AssistantAppliedNote | null;
   canUndo?: boolean;
+  onRequest: (intent: AssistantPlan["intent"]) => void;
+  onInterpret: (text: string) => "plan" | "choices" | false;
+  onChoose: (ideaId: string) => boolean;
+  onApplyAll: () => void;
+  onApplyOne: (changeId: string) => void;
+  onDismissPlan: () => void;
   onUndo?: () => void;
-  /** The day the advisor is reading, so it can show its working. */
-  reading?: {
-    label: string;
-    stops: number;
-    errorCount: number;
-    warningCount: number;
-    freeMinutes: number;
-    travelMinutes: number;
-    costUsd: number;
-  };
+  onHoverChange: (itemId: string | null) => void;
 }
 
-export function AssistantOffers({
+export function AskAiPanel({
   offers,
+  reading,
+  trip,
+  plan,
+  choices,
+  applied,
+  appliedNote,
+  canUndo,
   onRequest,
   onInterpret,
-  canUndo,
+  onChoose,
+  onApplyAll,
+  onApplyOne,
+  onDismissPlan,
   onUndo,
-  reading,
-}: AssistantOffersProps) {
-  const dayKey = reading?.label ?? "day";
+  onHoverChange,
+}: AskAiPanelProps) {
+  const dayKey = reading.label;
   const reduceMotion = useReducedMotion();
-  const [messages, setMessages] = useState<AskAiMessage[]>(() =>
-    reading ? [openingAskAi(reading, offers)] : [],
-  );
+  const [messages, setMessages] = useState<AskAiMessage[]>(() => [
+    openingAskAi(reading, offers),
+  ]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const thinkTimer = useRef(0);
+  const noteSeen = useRef<string | null>(null);
 
   useEffect(() => {
-    setMessages(reading ? [openingAskAi(reading, offers)] : []);
+    setMessages([openingAskAi(reading, offers)]);
     setDraft("");
     setThinking(false);
   }, [dayKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (plan || choices) return;
     inputRef.current?.focus();
-  }, [dayKey]);
+  }, [dayKey, plan, choices]);
 
   useEffect(() => {
     const node = threadRef.current;
-    if (!node) return;
+    if (!node || plan) return;
     node.scrollTop = node.scrollHeight;
-  }, [messages, thinking]);
+  }, [messages, thinking, plan, choices]);
 
-  useEffect(
-    () => () => window.clearTimeout(thinkTimer.current),
-    [],
-  );
+  useEffect(() => () => window.clearTimeout(thinkTimer.current), []);
+
+  useEffect(() => {
+    if (!appliedNote || noteSeen.current === appliedNote.id) return;
+    noteSeen.current = appliedNote.id;
+    setMessages((current) => [...current, appliedAskAi(appliedNote)]);
+  }, [appliedNote]);
 
   function resizeInput() {
     const node = inputRef.current;
@@ -99,7 +122,11 @@ export function AssistantOffers({
 
   function pushYou(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || thinking) return;
+    if (!trimmed || thinking || plan) return;
+    if (trimmed === "__undo__") {
+      onUndo?.();
+      return;
+    }
     const yours: AskAiMessage = {
       id: `you-${Date.now()}`,
       from: "you",
@@ -113,27 +140,30 @@ export function AssistantOffers({
       () => {
         setMessages((current) => {
           const built = onInterpret(trimmed);
-          if (built) {
-            return [
-              ...current,
-              {
-                id: `ai-${Date.now()}`,
-                from: "ai",
-                text: "I've put a proposal on the calendar as a preview. Check the ghost blocks, then apply or dismiss — nothing is committed yet.",
-              },
-            ];
-          }
-          const reply = replyToAskAi(trimmed, offers, current);
-          return [...current, reply];
+          if (built) return current;
+          return [...current, replyToAskAi(trimmed, offers, current)];
         });
         setThinking(false);
       },
-      reduceMotion ? 0 : 640,
+      reduceMotion ? 0 : 420,
     );
   }
 
+  useEffect(() => {
+    if (!choices) return;
+    setMessages((current) => {
+      const last = current[current.length - 1];
+      if (last?.text.startsWith(choices.heading)) return current;
+      return [...current, choicesIntro(choices)];
+    });
+  }, [choices]);
+
   function pickOption(option: AskAiOption) {
-    if (thinking) return;
+    if (thinking || plan) return;
+    if (option.prompt === "__undo__") {
+      onUndo?.();
+      return;
+    }
     if (option.intent) {
       onRequest(option.intent);
       return;
@@ -141,111 +171,202 @@ export function AssistantOffers({
     if (option.prompt) pushYou(option.prompt);
   }
 
-  const canSend = draft.trim().length > 0 && !thinking;
+  const canSend = draft.trim().length > 0 && !thinking && !plan;
 
   return (
     <div className={styles.canvas}>
-      <div className={styles.thread} ref={threadRef} role="log" aria-live="polite">
-        {messages.map((message) => (
-          <article
-            key={message.id}
-            className={cn(
-              styles.turn,
-              message.from === "you" ? styles.turnYou : styles.turnAi,
-            )}
-          >
-            {message.from === "ai" ? (
-              <span className={styles.turnMark} aria-hidden>
-                <AiMark size={16} />
-              </span>
-            ) : null}
-            <div className={styles.turnBody}>
-              {message.text.split("\n\n").map((para) => (
-                <p key={para}>{para}</p>
-              ))}
-              {message.options && message.options.length > 0 ? (
-                <div className={styles.prompts}>
-                  {message.options.map((option) => (
-                    <button
-                      key={`${message.id}-${option.id}`}
-                      type="button"
-                      className={styles.prompt}
-                      onClick={() => pickOption(option)}
-                    >
-                      <span className={styles.promptLabel}>{option.label}</span>
-                      {option.detail ? (
-                        <span className={styles.promptDetail}>{option.detail}</span>
-                      ) : null}
-                    </button>
+      {plan ? (
+        <AssistantPlanPanel
+          plan={plan}
+          trip={trip}
+          applied={applied}
+          onApplyAll={onApplyAll}
+          onApplyOne={onApplyOne}
+          onDismiss={onDismissPlan}
+          onHoverChange={onHoverChange}
+          canUndo={canUndo}
+          onUndo={onUndo}
+        />
+      ) : (
+        <>
+          <div className={styles.thread} ref={threadRef} role="log" aria-live="polite">
+            {messages.map((message) => (
+              <article
+                key={message.id}
+                className={cn(
+                  styles.turn,
+                  message.from === "you" ? styles.turnYou : styles.turnAi,
+                )}
+              >
+                {message.from === "ai" ? (
+                  <span className={styles.turnMark} aria-hidden>
+                    <AiMark size={16} />
+                  </span>
+                ) : null}
+                <div className={styles.turnBody}>
+                  {message.text.split("\n\n").map((para) => (
+                    <p key={para}>{para}</p>
                   ))}
+                  {message.options && message.options.length > 0 ? (
+                    <div className={styles.prompts}>
+                      {message.options.map((option) => (
+                        <button
+                          key={`${message.id}-${option.id}`}
+                          type="button"
+                          className={styles.prompt}
+                          onClick={() => pickOption(option)}
+                        >
+                          <span className={styles.promptLabel}>{option.label}</span>
+                          {option.detail ? (
+                            <span className={styles.promptDetail}>{option.detail}</span>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          </article>
-        ))}
-        {thinking ? (
-          <div className={cn(styles.turn, styles.turnAi)} aria-label="Working">
-            <span className={styles.turnMark} aria-hidden>
-              <AiMark size={16} />
-            </span>
-            <div className={styles.turnBody}>
-              <p>Reading this day and checking nearby options…</p>
-            </div>
+              </article>
+            ))}
+            {choices ? (
+              <ChoiceCards
+                set={choices}
+                onChoose={(ideaId) => {
+                  const ok = onChoose(ideaId);
+                  if (!ok) {
+                    setMessages((current) => [
+                      ...current,
+                      noResultAskAi("choose", offers),
+                    ]);
+                  }
+                }}
+              />
+            ) : null}
+            {thinking ? (
+              <div className={cn(styles.turn, styles.turnAi)} aria-label="Working">
+                <span className={styles.turnMark} aria-hidden>
+                  <AiMark size={16} />
+                </span>
+                <div className={styles.turnBody}>
+                  <p>{workingLabel(draft || messages.at(-1)?.text || "")}</p>
+                </div>
+              </div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
 
-      <form
-        className={styles.compose}
-        onSubmit={(event: FormEvent) => {
-          event.preventDefault();
-          pushYou(draft);
-        }}
-      >
-        {canUndo && onUndo ? (
-          <button type="button" className={styles.prompt} onClick={onUndo}>
-            <span className={styles.promptLabel}>Undo last AI apply</span>
-            <span className={styles.promptDetail}>Restore the previous trip</span>
-          </button>
-        ) : null}
-        <div className={styles.composer}>
-          <textarea
-            ref={inputRef}
-            className={styles.input}
-            rows={1}
-            value={draft}
-            placeholder="Fill the afternoon, move this, add dinner nearby…"
-            aria-label="Message Ask AI"
-            disabled={thinking}
-            onChange={(event) => {
-              setDraft(event.target.value);
-              resizeInput();
+          <form
+            className={styles.compose}
+            onSubmit={(event: FormEvent) => {
+              event.preventDefault();
+              pushYou(draft);
             }}
-            onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                pushYou(draft);
-              }
-            }}
-          />
-          <IconButton
-            type="submit"
-            label="Send"
-            size="sm"
-            variant="primary"
-            disabled={!canSend}
-            className={canSend ? styles.send : undefined}
           >
-            <Send size={15} strokeWidth={2.2} />
-          </IconButton>
-        </div>
-      </form>
+            {canUndo && onUndo && !choices && !appliedNote ? (
+              <button type="button" className={styles.prompt} onClick={onUndo}>
+                <span className={styles.promptLabel}>Undo last AI apply</span>
+                <span className={styles.promptDetail}>Restore the previous trip</span>
+              </button>
+            ) : null}
+            <div className={styles.composer}>
+              <textarea
+                ref={inputRef}
+                className={styles.input}
+                rows={1}
+                value={draft}
+                placeholder="Ask to move, replace, add or rebalance anything…"
+                aria-label="Message Ask AI"
+                disabled={thinking}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+                  resizeInput();
+                }}
+                onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    pushYou(draft);
+                  }
+                }}
+              />
+              <IconButton
+                type="submit"
+                label="Send"
+                size="sm"
+                variant="primary"
+                disabled={!canSend}
+                className={canSend ? styles.send : undefined}
+              >
+                <Send size={15} strokeWidth={2.2} />
+              </IconButton>
+            </div>
+          </form>
+        </>
+      )}
     </div>
+  );
+}
+
+function ChoiceCards({
+  set,
+  onChoose,
+}: {
+  set: AssistantChoiceSet;
+  onChoose: (ideaId: string) => void;
+}) {
+  return (
+    <div className={styles.choices}>
+      {set.currentTitle ? (
+        <p className={styles.choiceCurrent}>
+          Current
+          <strong>{set.currentTitle}</strong>
+          {set.currentWhen ? <span>{set.currentWhen}</span> : null}
+        </p>
+      ) : null}
+      <div className={styles.choiceList}>
+        {set.ideas.map((idea) => (
+          <PlaceOptionCard
+            key={idea.ideaId}
+            choice={idea}
+            onSelect={() => onChoose(idea.ideaId)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlaceOptionCard({
+  choice,
+  onSelect,
+}: {
+  choice: AssistantChoice;
+  onSelect: () => void;
+}) {
+  const meta = CATEGORY_META[choice.category];
+  return (
+    <button type="button" className={styles.optionCard} onClick={onSelect}>
+      <CardMedia
+        photo={choice.photo}
+        variant="utility"
+        className={styles.optionCardMedia}
+      />
+      <span className={styles.optionCardBody}>
+        <span className={styles.optionCardKicker}>
+          {meta.label}
+          {choice.area ? ` · ${choice.area}` : ""}
+        </span>
+        <span className={styles.optionCardTitle}>{choice.title}</span>
+        <span className={styles.optionCardMeta}>
+          {durationLabel(choice.durationMin)}
+          {choice.travelMin != null ? ` · ${choice.travelMin} min from context` : ""}
+        </span>
+        <span className={styles.optionCardWhy}>{choice.why}</span>
+      </span>
+    </button>
   );
 }
 
 export interface AssistantPlanPanelProps {
   plan: AssistantPlan;
+  trip: Trip;
   applied: string[];
   onApplyAll: () => void;
   onApplyOne: (changeId: string) => void;
@@ -257,6 +378,7 @@ export interface AssistantPlanPanelProps {
 
 export function AssistantPlanPanel({
   plan,
+  trip,
   applied,
   onApplyAll,
   onApplyOne,
@@ -277,20 +399,10 @@ export function AssistantPlanPanel({
       transition={{ duration: reduceMotion ? 0.12 : 0.26, ease: [0.2, 0.8, 0.2, 1] }}
     >
       <header className={styles.panelHead}>
-        <div className={styles.panelHeadTop}>
-          <span className={styles.panelBadge}>
-            <AiMark size={12} />
-            Proposal
-          </span>
-          <IconButton
-            label="Dismiss suggestion"
-            size="xs"
-            variant="ghost"
-            onClick={onDismiss}
-          >
-            <X size={14} strokeWidth={2} />
-          </IconButton>
-        </div>
+        <span className={styles.panelBadge}>
+          <AiMark size={12} />
+          Proposal
+        </span>
         <h3 className={styles.panelTitle}>{plan.title}</h3>
       </header>
 
@@ -307,16 +419,13 @@ export function AssistantPlanPanel({
                 <li
                   key={change.id}
                   className={cn(styles.change, isApplied && styles.changeApplied)}
-                  onPointerEnter={() => onHoverChange(change.itemId ?? null)}
+                  onPointerEnter={() =>
+                    onHoverChange(change.itemId ?? change.create?.id ?? null)
+                  }
                   onPointerLeave={() => onHoverChange(null)}
                 >
-                  <span className={styles.changeSummary}>{change.summary}</span>
-                  {isApplied ? (
-                    <span className={styles.changeDone}>
-                      <Check size={12} strokeWidth={2.8} />
-                      Done
-                    </span>
-                  ) : (
+                  <ChangeVisual change={change} trip={trip} />
+                  {plan.changes.length > 1 && !isApplied ? (
                     <Button
                       variant="ghost"
                       size="xs"
@@ -324,7 +433,12 @@ export function AssistantPlanPanel({
                     >
                       Apply
                     </Button>
-                  )}
+                  ) : isApplied ? (
+                    <span className={styles.changeDone}>
+                      <Check size={12} strokeWidth={2.8} />
+                      Done
+                    </span>
+                  ) : null}
                 </li>
               );
             })}
@@ -345,15 +459,9 @@ export function AssistantPlanPanel({
       </div>
 
       <footer className={styles.panelFoot}>
-        {canUndo && onUndo ? (
-          <Button variant="ghost" size="sm" onClick={onUndo}>
-            Undo last AI apply
-          </Button>
-        ) : (
-          <Button variant="ghost" size="sm" onClick={onDismiss}>
-            {allApplied ? "Close" : "Not now"}
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" onClick={onDismiss}>
+          {allApplied ? "Close" : "Not now"}
+        </Button>
         {!allApplied ? (
           <Button
             variant="ai"
@@ -361,10 +469,56 @@ export function AssistantPlanPanel({
             iconLeft={<AiMark size={13} />}
             onClick={onApplyAll}
           >
-            Apply {plan.changes.length > 1 ? "all" : "change"}
+            Apply {plan.changes.length > 1 ? "changes" : "change"}
+          </Button>
+        ) : canUndo && onUndo ? (
+          <Button variant="secondary" size="sm" onClick={onUndo}>
+            Undo
           </Button>
         ) : null}
       </footer>
     </motion.div>
   );
+}
+
+function ChangeVisual({ change, trip }: { change: AssistantChange; trip: Trip }) {
+  const item = trip.items.find((entry) => entry.id === change.itemId) ?? null;
+  if (change.kind === "move" && item?.start && change.patch?.start) {
+    return (
+      <span className={styles.changeVisual}>
+        <span className={styles.changeSummary}>{change.summary}</span>
+        <span className={styles.changeShift}>
+          <span>
+            {dayLabel(item.start.slice(0, 10))} · {timeLabel(item.start)}
+          </span>
+          <ArrowRight size={12} strokeWidth={2.2} aria-hidden />
+          <span>
+            {dayLabel(change.patch.start.slice(0, 10))} · {timeLabel(change.patch.start)}
+          </span>
+        </span>
+      </span>
+    );
+  }
+  if (change.kind === "add" && change.create) {
+    return (
+      <span className={styles.changeVisual}>
+        <span className={styles.changeSummary}>{change.summary}</span>
+        {change.create.start ? (
+          <span className={styles.changeShift}>
+            Lands {dayLabel(change.create.start.slice(0, 10))} ·{" "}
+            {timeLabel(change.create.start)}
+          </span>
+        ) : null}
+      </span>
+    );
+  }
+  if (change.kind === "remove" && item) {
+    return (
+      <span className={styles.changeVisual}>
+        <span className={styles.changeSummary}>{change.summary}</span>
+        <span className={styles.changeShift}>Leaves the calendar · stays in Ideas</span>
+      </span>
+    );
+  }
+  return <span className={styles.changeSummary}>{change.summary}</span>;
 }

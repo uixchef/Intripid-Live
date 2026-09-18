@@ -1,13 +1,11 @@
-import type { AssistantPlan } from "@/lib/types";
+import type { AssistantChoiceSet, AssistantPlan } from "@/lib/types";
 import type { AssistantOffer } from "@/lib/trip/assistant";
 
 export type AskAiOption = {
   id: string;
   label: string;
   detail?: string;
-  /** Run a day plan if the traveller picks this. */
   intent?: AssistantPlan["intent"];
-  /** Send this as the traveller's next line. */
   prompt?: string;
 };
 
@@ -25,11 +23,13 @@ export type AskAiReading = {
   warningCount: number;
   freeMinutes: number;
   travelMinutes: number;
+  largestGapMinutes: number;
+  largestGapLabel: string | null;
+  selectedTitle: string | null;
+  selectedWhen: string | null;
+  busiest: boolean;
+  eveningOpen: boolean;
 };
-
-function hasIntent(offers: AssistantOffer[], intent: AssistantPlan["intent"]) {
-  return offers.some((offer) => offer.intent === intent);
-}
 
 function optionFor(
   offers: AssistantOffer[],
@@ -45,51 +45,104 @@ function optionFor(
   };
 }
 
-/** First turn: the assistant asks, based on what it already sees. */
 export function openingAskAi(
   reading: AskAiReading,
   offers: AssistantOffer[],
 ): AskAiMessage {
-  const options = [
-    optionFor(offers, "resolve-overlap"),
-    optionFor(offers, "fill-gap"),
-    optionFor(offers, "rebalance"),
-  ].filter(Boolean) as AskAiOption[];
+  const options = offers
+    .map((offer) => optionFor(offers, offer.intent))
+    .filter((option): option is AskAiOption => Boolean(option))
+    .slice(0, 4);
 
-  const free =
-    reading.freeMinutes >= 60
-      ? `About ${Math.round(reading.freeMinutes / 60)}h still unscheduled.`
-      : reading.freeMinutes > 0
-        ? `${reading.freeMinutes} minutes still open.`
-        : "The day is fully booked.";
   const pressure =
     reading.errorCount > 0
-      ? `${reading.errorCount === 1 ? "One clash" : `${reading.errorCount} clashes`} to unstick.`
+      ? reading.errorCount === 1
+        ? "One clash to unstick."
+        : `${reading.errorCount} clashes to unstick.`
       : reading.warningCount > 0
         ? "A few hops are tighter than they should be."
-        : "Nothing is actually breaking.";
+        : null;
 
-  const text = `I've looked at ${reading.label} — ${reading.stops} ${reading.stops === 1 ? "stop" : "stops"}. ${pressure} ${free}\n\nTell me what you want the day to feel like, or pick a move and I'll show a proposal you can take or leave.`;
+  const gap =
+    reading.largestGapMinutes >= 90 && reading.largestGapLabel
+      ? reading.largestGapLabel
+      : reading.freeMinutes >= 60
+        ? `About ${Math.round(reading.freeMinutes / 60)}h still unscheduled.`
+        : reading.freeMinutes > 0
+          ? `${reading.freeMinutes} minutes still open.`
+          : "The day is fully booked.";
+
+  const selected = reading.selectedTitle
+    ? `Selected: ${reading.selectedTitle}${reading.selectedWhen ? ` · ${reading.selectedWhen}` : ""}.`
+    : null;
+
+  const travel =
+    reading.travelMinutes >= 40
+      ? `${reading.label} has about ${Math.round(reading.travelMinutes / 60) || 1}h of travel.`
+      : null;
+
+  const lead = reading.busiest
+    ? `${reading.label} is your busiest day — ${reading.stops} ${reading.stops === 1 ? "stop" : "stops"}.`
+    : `I've read ${reading.label} — ${reading.stops} ${reading.stops === 1 ? "stop" : "stops"}.`;
+
+  const parts = [lead, pressure, travel, gap, selected].filter(Boolean);
 
   return {
     id: "ai-open",
     from: "ai",
-    text,
+    text: `${parts.join(" ")}\n\nPick a move, or ask to add, move, replace or rebalance anything.`,
+    options,
+  };
+}
+
+export function workingLabel(text: string): string {
+  const line = text.toLowerCase();
+  if (/dinner|eat|food|restaurant/.test(line)) return "Checking nearby dining options…";
+  if (/travel|walk|backtrack/.test(line)) return "Comparing travel between stops…";
+  if (/alternative|replace|outdoors/.test(line)) return "Looking through saved ideas…";
+  if (/move|friday|thursday|later/.test(line)) return "Checking the calendar…";
+  if (/rushed|easier|slow/.test(line)) return "Reading how dense the day is…";
+  return "Reading this day…";
+}
+
+export function noResultAskAi(text: string, offers: AssistantOffer[]): AskAiMessage {
+  const fallback = offers[0];
+  return {
+    id: `ai-empty-${Date.now()}`,
+    from: "ai",
+    text: "I couldn't find a suitable option in the current trip ideas. Broaden the ask, or keep the current plan.",
+    options: fallback
+      ? [
+          { id: fallback.intent, label: fallback.label, intent: fallback.intent },
+          { id: "keep", label: "Keep current plan", prompt: "Keep the current plan." },
+        ]
+      : [{ id: "keep", label: "Keep current plan", prompt: "Keep the current plan." }],
+  };
+}
+
+export function appliedAskAi(note: { title: string; lines: string[] }): AskAiMessage {
+  return {
+    id: `ai-applied-${Date.now()}`,
+    from: "ai",
+    text: [note.title, ...note.lines].join("\n\n"),
     options: [
-      ...options,
-      {
-        id: "describe",
-        label: "Something specific",
-        detail: "A neighbourhood, a meal, a slower morning…",
-        prompt: "I have something specific in mind.",
-      },
-    ].slice(0, 4),
+      { id: "undo", label: "Undo", prompt: "__undo__" },
+      { id: "refine", label: "Continue refining", prompt: "Continue refining this day." },
+    ],
+  };
+}
+
+export function choicesIntro(set: AssistantChoiceSet): AskAiMessage {
+  return {
+    id: `ai-choices-${Date.now()}`,
+    from: "ai",
+    text: `${set.heading}\n\n${set.detail}`,
   };
 }
 
 /**
- * Deterministic reply. Same day + same line → same next question or plan.
- * The chat exists to narrow, then hand off to a reviewable plan.
+ * Deterministic reply when a plan or choice set was not produced.
+ * Same day + same line → same next question.
  */
 export function replyToAskAi(
   text: string,
@@ -97,121 +150,45 @@ export function replyToAskAi(
   prior: AskAiMessage[],
 ): AskAiMessage {
   const line = text.trim().toLowerCase();
-  const asked = prior.filter((msg) => msg.from === "ai").length;
-
-  const clash = hasIntent(offers, "resolve-overlap");
-  const gap = hasIntent(offers, "fill-gap");
-  const air = hasIntent(offers, "rebalance");
-
-  const wantsFood = /food|eat|dinner|lunch|breakfast|restaurant|hungry|cuisine/.test(
-    line,
-  );
-  const wantsNight = /night|bar|drink|cocktail|club|late/.test(line);
-  const wantsSlow = /slow|air|tired|packed|pace|relax|quiet|breath|easier/.test(
-    line,
-  );
-  const wantsWalk = /walk|commute|travel|too much moving|distance/.test(line);
-  const wantsFix = /clash|overlap|conflict|stuck|double/.test(line);
-  const wantsFill = /gap|free|empty|fill|nothing to do/.test(line);
-  const affirms = /^(yes|yeah|yep|ok|okay|that|do it|go ahead|please)\b/.test(line);
-  const specific = /i have something specific/.test(line);
-
-  const lastIntent = [...prior]
-    .reverse()
-    .flatMap((msg) => msg.options ?? [])
-    .find((opt) => opt.intent)?.intent;
-
-  if (affirms && lastIntent && hasIntent(offers, lastIntent)) {
+  if (/keep the current plan|continue refining/.test(line)) {
     return {
       id: `ai-${prior.length + 1}`,
       from: "ai",
-      text: "I'll put that together as a proposal — nothing lands until you apply it, and you can take the changes one at a time.",
-      options: [
-        {
-          id: lastIntent,
-          label: "Show the proposal",
-          intent: lastIntent,
-        },
-      ],
+      text: "Keeping this plan. Ask to move, replace, add or rebalance anything.",
+      options: offers.slice(0, 3).map((offer) => ({
+        id: offer.intent,
+        label: offer.label,
+        detail: offer.detail,
+        intent: offer.intent,
+      })),
     };
   }
 
-  if (specific) {
+  const clash = offers.some((offer) => offer.intent === "resolve-overlap");
+  const gap = offers.some((offer) => offer.intent === "fill-gap");
+  const air = offers.some((offer) => offer.intent === "rebalance");
+
+  if (/clash|overlap|conflict/.test(line) && clash) {
+    const option = optionFor(offers, "resolve-overlap");
     return {
       id: `ai-${prior.length + 1}`,
       from: "ai",
-      text: "Say it in a line. A neighbourhood, a kind of food, a slower morning, or a stop you'd drop — I'll aim the next move there.",
+      text: "I can unstick the overlap without deleting anything. You'll see the exact shift before it lands.",
+      options: option ? [option] : undefined,
     };
   }
 
-  if (wantsFix && clash) {
+  if ((/slow|rushed|easier|packed/.test(line) && air) || (/gap|fill|afternoon/.test(line) && gap)) {
+    const intent = /slow|rushed|easier|packed/.test(line) ? "rebalance" : "fill-gap";
+    const option = optionFor(offers, intent);
     return {
       id: `ai-${prior.length + 1}`,
       from: "ai",
-      text: "I can unstick the overlap without deleting anything. The later stop moves so both still happen — you'll see the exact shift before it lands.",
-      options: [optionFor(offers, "resolve-overlap")!],
-    };
-  }
-
-  if ((wantsFill || wantsFood || wantsNight) && gap) {
-    return {
-      id: `ai-${prior.length + 1}`,
-      from: "ai",
-      text: wantsFood
-        ? "There's a free stretch that can take a real meal, not a squeeze. Sit-down, or something you can walk between stops?"
-        : "I can drop one of your saved ideas into that free stretch so it actually fits the day. Want to see the fit first?",
-      options: [
-        optionFor(offers, "fill-gap")!,
-        {
-          id: "sitdown",
-          label: "Sit-down",
-          prompt: "A proper sit-down meal, not a grab and go.",
-        },
-        {
-          id: "quick",
-          label: "Something quick",
-          prompt: "Something quick between stops.",
-        },
-      ].filter(Boolean) as AskAiOption[],
-    };
-  }
-
-  if ((wantsSlow || wantsWalk) && air) {
-    return {
-      id: `ai-${prior.length + 1}`,
-      from: "ai",
-      text: "I can give the day air — shorten a block or open a hop so you're not stacked. Nothing is dropped unless you apply it.",
-      options: [optionFor(offers, "rebalance")!],
-    };
-  }
-
-  if (wantsFood && !gap) {
-    return {
-      id: `ai-${prior.length + 1}`,
-      from: "ai",
-      text: "This day is already full, so a meal has to replace something or the pacing has to open up. I can make room — or you name the stop you'd swap.",
-      options: [
-        optionFor(offers, "rebalance"),
-        {
-          id: "swap",
-          label: "I'd drop a stop",
-          prompt: "I'd rather drop a stop to make room for dinner.",
-        },
-      ].filter(Boolean) as AskAiOption[],
-    };
-  }
-
-  if (asked >= 3) {
-    const fallback = offers[0];
-    return {
-      id: `ai-${prior.length + 1}`,
-      from: "ai",
-      text: fallback
-        ? `From what you've said, the strongest move is ${fallback.label.toLowerCase()}. I'll show the proposal so you can check it against the calendar.`
-        : "I don't have a structural change from that yet. Name a stop or a time of day and I'll aim there.",
-      options: fallback
-        ? [{ id: fallback.intent, label: fallback.label, intent: fallback.intent }]
-        : undefined,
+      text:
+        intent === "rebalance"
+          ? "I can give the day air — move or drop one stop. Nothing lands until you apply it."
+          : "There's a free stretch that can take a real stop from your ideas.",
+      options: option ? [option] : undefined,
     };
   }
 
@@ -219,19 +196,15 @@ export function replyToAskAi(
     id: `ai-${prior.length + 1}`,
     from: "ai",
     text: clash
-      ? "Should I fix the clash first, or is there something you'd rather add instead?"
+      ? "Should I fix the clash first, or is there something you'd rather add?"
       : gap
-        ? "Food, a quieter stretch, or keep the free time as breathing room?"
-        : "Slower pace, a better meal, or less walking — which is the actual problem?",
-    options: [
-      optionFor(offers, "resolve-overlap"),
-      optionFor(offers, "fill-gap"),
-      optionFor(offers, "rebalance"),
-      {
-        id: "more",
-        label: "Something else",
-        prompt: "It's something else — I'll explain.",
-      },
-    ].filter(Boolean) as AskAiOption[],
+        ? "Fill the free stretch, add dinner, or keep it as breathing room?"
+        : "Move something, replace a stop, or make the day less rushed — which is the actual problem?",
+    options: offers.slice(0, 3).map((offer) => ({
+      id: offer.intent,
+      label: offer.label,
+      detail: offer.detail,
+      intent: offer.intent,
+    })),
   };
 }

@@ -500,17 +500,23 @@ export interface AssistantOffer {
  * derived from the actual state of the day, so the affordance never appears
  * with nothing behind it.
  */
-export function offersForDay(trip: Trip, day: string): AssistantOffer[] {
+export function offersForDay(
+  trip: Trip,
+  day: string,
+  selected?: ItineraryItem | null,
+): AssistantOffer[] {
   const offers: AssistantOffer[] = [];
   const conflicts = conflictsForDay(trip, day);
   const overlaps = conflicts.filter((c) => c.kind === "overlap");
   const gaps = gapsForDay(trip, day);
   const items = itemsForDay(trip, day);
+  const activities = items.filter((item) => item.kind === "activity");
+  const route = routeForDay(trip, day);
 
   if (overlaps.length > 0) {
     offers.push({
       intent: "resolve-overlap",
-      label: overlaps.length === 1 ? "Resolve clash" : "Resolve clashes",
+      label: overlaps.length === 1 ? "Resolve this clash" : "Resolve clashes",
       detail:
         overlaps.length === 1
           ? "Two things are booked at once"
@@ -519,14 +525,69 @@ export function offersForDay(trip: Trip, day: string): AssistantOffer[] {
     });
   }
 
+  let longestHop = 0;
+  for (let index = 1; index < route.length; index += 1) {
+    const prev = route[index - 1]?.place;
+    const next = route[index]?.place;
+    if (!prev || !next) continue;
+    longestHop = Math.max(longestHop, walkMinutes(prev.coords, next.coords));
+  }
+  if (longestHop >= 35) {
+    offers.push({
+      intent: "reduce-travel",
+      label: "Reduce travel time",
+      detail: `Longest hop is about ${durationLabel(longestHop)}`,
+      severity: "info",
+    });
+  }
+
+  if (selected?.kind === "activity") {
+    offers.push({
+      intent: "alternatives",
+      label: "Find alternatives",
+      detail: `Options instead of “${selected.title}”`,
+      severity: "info",
+    });
+    if (selected.category !== "outdoors") {
+      offers.push({
+        intent: "replace",
+        label: "Replace with something outdoors",
+        detail: "Keep the slot, change the stop",
+        severity: "info",
+      });
+    }
+    offers.push({
+      intent: "move",
+      label: "Move this later",
+      detail: selected.start
+        ? `Currently ${timeLabel(selected.start)}`
+        : "Shift it on the calendar",
+      severity: "info",
+    });
+  }
+
   if (gaps.length > 0 && trip.ideas.length > 0) {
     const biggest = gaps.reduce((a, b) => (b.minutes > a.minutes ? b : a));
+    if (biggest.minutes >= 90) {
+      offers.push({
+        intent: "fill-gap",
+        label: biggest.startMinutes >= 12 * 60 ? "Fill this afternoon" : "Fill this gap",
+        detail: `${durationLabel(biggest.minutes)} free from ${timeLabel(
+          atMinutes(day, biggest.startMinutes),
+        )}`,
+        severity: "info",
+      });
+    }
+  }
+
+  const last = [...activities].reverse()[0];
+  const eveningOpen =
+    !last?.end || minutesIntoDay(last.end) <= 18 * 60;
+  if (eveningOpen && trip.ideas.some((idea) => idea.category === "food")) {
     offers.push({
-      intent: "fill-gap",
-      label: "Fill the gap",
-      detail: `${durationLabel(biggest.minutes)} free from ${timeLabel(
-        atMinutes(day, biggest.startMinutes),
-      )}`,
+      intent: "nearby-dinner",
+      label: "Add dinner nearby",
+      detail: last ? `After “${last.title}”` : "An evening meal on this day",
       severity: "info",
     });
   }
@@ -538,25 +599,34 @@ export function offersForDay(trip: Trip, day: string): AssistantOffer[] {
   if (busy >= 8 * 60 || conflicts.some((c) => c.kind !== "overlap")) {
     offers.push({
       intent: "rebalance",
-      label: "Give the day air",
+      label: "Make this day less rushed",
       detail:
         busy >= 8 * 60
-          ? `${durationLabel(busy)} scheduled back to back`
+          ? `${durationLabel(busy)} scheduled`
           : "Some transitions are too tight",
       severity: "info",
     });
   }
 
-  if (items.filter((item) => item.kind === "activity").length >= 2) {
+  if (offers.length === 0 && trip.ideas.length > 0) {
     offers.push({
-      intent: "nearby-dinner",
-      label: "Add dinner nearby",
-      detail: "A meal after the last stop",
+      intent: "fill-gap",
+      label: "Find a hidden gem nearby",
+      detail: "The day is balanced — improve one stretch",
       severity: "info",
     });
   }
 
-  return offers;
+  const ranked = [
+    ...offers.filter((offer) => offer.severity === "attention"),
+    ...offers.filter((offer) => offer.severity !== "attention"),
+  ];
+  const seen = new Set<string>();
+  return ranked.filter((offer) => {
+    if (seen.has(offer.intent)) return false;
+    seen.add(offer.intent);
+    return true;
+  }).slice(0, 4);
 }
 
 /** Builds the plan for a given intent, or null if it no longer applies. */

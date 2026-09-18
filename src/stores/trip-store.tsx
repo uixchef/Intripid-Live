@@ -12,7 +12,10 @@ import { partyTravellers } from "@/lib/collaboration";
 import { buildPlan } from "@/lib/trip/assistant";
 import {
   applyPlanChanges,
+  choiceSetForIntent,
+  choicesFromUtterance,
   nearbyDinnerPlan,
+  planFromChoice,
   planFromUtterance,
   reduceTravelPlan,
 } from "@/lib/trip/ai-actions";
@@ -35,6 +38,8 @@ import {
 } from "@/lib/trip/time";
 import {
   IDEA_WHEN_LABELS,
+  type AssistantAppliedNote,
+  type AssistantChoiceSet,
   type AssistantPlan,
   type CommuteMode,
   type Idea,
@@ -188,9 +193,12 @@ export interface TripState {
   assistant: {
     open: boolean;
     plan: AssistantPlan | null;
+    choices: AssistantChoiceSet | null;
+    lastChoices: AssistantChoiceSet | null;
     applied: string[];
     undoTrip: Trip | null;
     focusItemId: string | null;
+    appliedNote: AssistantAppliedNote | null;
   };
   invite: { open: boolean; sent: string[] };
   /** Transient confirmations, e.g. "Moved to Thursday 2:00 PM". */
@@ -230,7 +238,8 @@ export interface TripState {
   commitDraft: (draft?: EditorDraft | null) => void;
 
   requestPlan: (intent: AssistantPlan["intent"]) => void;
-  requestFromText: (text: string) => boolean;
+  requestFromText: (text: string) => "plan" | "choices" | false;
+  chooseAssistantIdea: (ideaId: string) => boolean;
   dismissPlan: () => void;
   applyPlan: () => void;
   applyChange: (changeId: string) => void;
@@ -409,7 +418,7 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
         hoveredItemId: null,
         draggingId: null,
         editor: { open: false, mode: "create", draft: null },
-        assistant: { open: false, plan: null, applied: [], undoTrip: null, focusItemId: null },
+        assistant: { open: false, plan: null, choices: null, lastChoices: null, applied: [], undoTrip: null, focusItemId: null, appliedNote: null },
         invite: { open: false, sent: [] },
         toast: null,
         pendingChatShare: null,
@@ -828,12 +837,33 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
 
         requestPlan: (intent) => {
           const state = get();
+          const selected =
+            state.trip.items.find((item) => item.id === state.selectedItemId) ?? null;
+          const choices = choiceSetForIntent(
+            state.trip,
+            state.activeDay,
+            intent,
+            selected,
+          );
+          if (choices) {
+            set({
+              assistant: {
+                ...state.assistant,
+                open: true,
+                plan: null,
+                choices,
+                applied: [],
+              },
+            });
+            return;
+          }
           const canned: Partial<Record<AssistantPlan["intent"], string>> = {
             "nearby-dinner": "add dinner near my last stop",
             "reduce-travel": "reduce travel time",
             replace: "replace this with something outdoors",
+            alternatives: "give me three alternatives",
             remove: "remove one activity so the day feels easier",
-            move: "move this to the morning",
+            move: "move this later",
           };
           const plan =
             buildPlan(state.trip, state.activeDay, intent) ??
@@ -857,10 +887,11 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
             state.assistant.focusItemId;
           set({
             assistant: {
+              ...state.assistant,
               open: true,
               plan,
+              choices: null,
               applied: [],
-              undoTrip: state.assistant.undoTrip,
               focusItemId,
             },
           });
@@ -868,11 +899,30 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
 
         requestFromText: (text) => {
           const state = get();
+          const selectedId = state.selectedItemId ?? state.assistant.focusItemId;
+          const choices = choicesFromUtterance(
+            state.trip,
+            state.activeDay,
+            text,
+            selectedId,
+          );
+          if (choices) {
+            set({
+              assistant: {
+                ...state.assistant,
+                open: true,
+                plan: null,
+                choices,
+                applied: [],
+              },
+            });
+            return "choices";
+          }
           const plan = planFromUtterance(
             state.trip,
             state.activeDay,
             text,
-            state.selectedItemId ?? state.assistant.focusItemId,
+            selectedId,
           );
           if (!plan) return false;
           const focusItemId =
@@ -881,10 +931,43 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
             state.assistant.focusItemId;
           set({
             assistant: {
+              ...state.assistant,
               open: true,
               plan,
+              choices: null,
               applied: [],
-              undoTrip: state.assistant.undoTrip,
+              focusItemId,
+            },
+          });
+          return "plan";
+        },
+
+        chooseAssistantIdea: (ideaId) => {
+          const state = get();
+          const setChoices = state.assistant.choices;
+          if (!setChoices) return false;
+          const selected =
+            state.trip.items.find((item) => item.id === state.selectedItemId) ?? null;
+          const plan = planFromChoice(
+            state.trip,
+            state.activeDay,
+            setChoices,
+            ideaId,
+            selected,
+          );
+          if (!plan) return false;
+          const focusItemId =
+            plan.changes.find((change) => change.create)?.create?.id ??
+            plan.changes.find((change) => change.itemId)?.itemId ??
+            state.assistant.focusItemId;
+          set({
+            assistant: {
+              ...state.assistant,
+              open: true,
+              plan,
+              choices: null,
+              lastChoices: setChoices,
+              applied: [],
               focusItemId,
             },
           });
@@ -894,11 +977,11 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
         dismissPlan: () =>
           set({
             assistant: {
-              open: false,
+              ...get().assistant,
+              open: true,
               plan: null,
+              choices: get().assistant.lastChoices,
               applied: [],
-              undoTrip: get().assistant.undoTrip,
-              focusItemId: get().assistant.focusItemId,
             },
           }),
 
@@ -914,15 +997,23 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
             pending.find((change) => change.create)?.create?.id ??
             pending.find((change) => change.itemId)?.itemId ??
             assistant.focusItemId;
+          const appliedNote = {
+            id: `applied-${Date.now()}`,
+            title: "Trip updated",
+            lines: assistant.plan.changes.map((change) => change.summary),
+          };
           set({
             trip: next,
             selectedItemId: focusItemId,
             assistant: {
               open: true,
               plan: null,
+              choices: null,
+              lastChoices: null,
               applied: [],
               undoTrip: trip,
               focusItemId,
+              appliedNote,
             },
           });
           get().showToast(
@@ -940,11 +1031,18 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
           set({
             trip: previous,
             assistant: {
+              ...get().assistant,
               open: true,
               plan: null,
+              choices: null,
               applied: [],
               undoTrip: null,
               focusItemId: null,
+              appliedNote: {
+                id: `undo-${Date.now()}`,
+                title: "Restored the previous trip",
+                lines: ["The last Ask AI apply was undone."],
+              },
             },
           });
           get().showToast("Restored the previous trip", "success");
@@ -1075,7 +1173,7 @@ export function makeTripStore(seed: Trip = NYC_TRIP) {
             selectionSource: null,
             hoveredItemId: null,
             editor: { open: false, mode: "create", draft: null },
-            assistant: { open: false, plan: null, applied: [], undoTrip: null, focusItemId: null },
+            assistant: { open: false, plan: null, choices: null, lastChoices: null, applied: [], undoTrip: null, focusItemId: null, appliedNote: null },
             prefs: { ...DEFAULT_PLANNER_PREFS },
             commentSeen: {},
           });

@@ -87,7 +87,7 @@ import { useSwipe } from "@/lib/use-swipe";
 import { motion } from "motion/react";
 
 import { ActivityEditor } from "./activity-editor";
-import { AssistantOffers, AssistantPlanPanel } from "./assistant";
+import { AskAiPanel } from "./assistant";
 import { Calendar, DayRail, DAY_END_MIN, DAY_START_MIN, SNAP_MIN } from "./calendar";
 import { InviteModal, TravellersPanel } from "./collaborators";
 import { RolesPanel } from "./roles-panel";
@@ -355,17 +355,17 @@ export function PlannerExperience() {
   }, [persist]);
 
   const offers = useMemo(
-    () => offersForDay(trip, activeDay),
-    [trip, activeDay],
+    () => offersForDay(trip, activeDay, selectedItem),
+    [trip, activeDay, selectedItem],
   );
 
   useEffect(() => {
-    if (!assistant.plan) return;
+    if (!assistant.plan && !assistant.choices) return;
     setDockPanel("advisor");
     if (isCompact) {
       setMobileTool("advisor");
     }
-  }, [assistant.plan, isCompact]);
+  }, [assistant.plan, assistant.choices, isCompact]);
 
   const restoreSettings = useCallback(
     (baseline: SettingsBaseline) => {
@@ -448,10 +448,26 @@ export function PlannerExperience() {
      them so a suggestion can be checked rather than just trusted. */
   const dayReading = useMemo(() => {
     const summary = summariseDay(trip, activeDay);
-    const freeMinutes = gapsForDay(trip, activeDay).reduce(
-      (total, gap) => total + gap.minutes,
-      0,
+    const gaps = gapsForDay(trip, activeDay);
+    const freeMinutes = gaps.reduce((total, gap) => total + gap.minutes, 0);
+    const largest = gaps.reduce(
+      (best, gap) => (gap.minutes > best.minutes ? gap : best),
+      gaps[0] ?? { minutes: 0, startMinutes: 0, endMinutes: 0 },
     );
+    const days = tripDayKeys(trip);
+    const busiestDay = days.reduce((best, day) => {
+      const busy = summariseDay(trip, day).busyMinutes;
+      return busy > summariseDay(trip, best).busyMinutes ? day : best;
+    }, days[0]);
+    const last = trip.items
+      .filter(
+        (item) =>
+          item.kind === "activity" &&
+          item.start &&
+          item.start.slice(0, 10) === activeDay,
+      )
+      .sort((a, b) => (a.start ?? "").localeCompare(b.start ?? ""))
+      .at(-1);
     return {
       label: dayLabel(activeDay),
       stops: summary.activityCount,
@@ -459,9 +475,20 @@ export function PlannerExperience() {
       warningCount: summary.warningCount,
       freeMinutes,
       travelMinutes: summary.commuteMinutes,
-      costUsd: summary.costUsd,
+      largestGapMinutes: largest?.minutes ?? 0,
+      largestGapLabel:
+        largest && largest.minutes >= 90
+          ? `${durationLabel(largest.minutes)} free from ${timeLabel(atMinutes(activeDay, largest.startMinutes))}.`
+          : null,
+      selectedTitle: selectedItem?.title ?? null,
+      selectedWhen:
+        selectedItem?.start && selectedItem.end
+          ? `${timeLabel(selectedItem.start)}–${timeLabel(selectedItem.end)}`
+          : null,
+      busiest: busiestDay === activeDay && days.length > 1,
+      eveningOpen: !last?.end || last.end.slice(11, 16) <= "18:00",
     };
-  }, [trip, activeDay]);
+  }, [trip, activeDay, selectedItem]);
 
   const [hoursPrompt, setHoursPrompt] = useState<{
     startMin: number;
@@ -971,26 +998,24 @@ export function PlannerExperience() {
     dockPanel,
   ]);
 
-  const advisorBody = assistant.plan ? (
-    <AssistantPlanPanel
-      key={assistant.plan.id}
-      plan={assistant.plan}
-      applied={assistant.applied}
-      onApplyAll={() => api.getState().applyPlan()}
-      onApplyOne={(id) => api.getState().applyChange(id)}
-      onDismiss={() => api.getState().dismissPlan()}
-      onHoverChange={onHover}
-      canUndo={Boolean(assistant.undoTrip)}
-      onUndo={() => api.getState().undoPlan()}
-    />
-  ) : (
-    <AssistantOffers
+  const advisorBody = (
+    <AskAiPanel
       offers={offers}
+      reading={dayReading}
+      trip={trip}
+      plan={assistant.plan}
+      choices={assistant.choices}
+      applied={assistant.applied}
+      appliedNote={assistant.appliedNote}
+      canUndo={Boolean(assistant.undoTrip)}
       onRequest={(intent) => api.getState().requestPlan(intent)}
       onInterpret={(text) => api.getState().requestFromText(text)}
-      canUndo={Boolean(assistant.undoTrip)}
+      onChoose={(ideaId) => api.getState().chooseAssistantIdea(ideaId)}
+      onApplyAll={() => api.getState().applyPlan()}
+      onApplyOne={(id) => api.getState().applyChange(id)}
+      onDismissPlan={() => api.getState().dismissPlan()}
       onUndo={() => api.getState().undoPlan()}
-      reading={dayReading}
+      onHoverChange={onHover}
     />
   );
 

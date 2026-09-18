@@ -572,6 +572,36 @@ export interface AssistantPlan {
   dayIso: string;
 }
 
+/** A place/activity the traveller can pick before a proposal is built. */
+export interface AssistantChoice {
+  ideaId: string;
+  title: string;
+  subtitle?: string;
+  category: ItemCategory;
+  area: string | null;
+  durationMin: number;
+  travelMin: number | null;
+  why: string;
+  photo: string | null;
+}
+
+/** Option cards shown before a typed plan. Selecting one becomes a proposal. */
+export interface AssistantChoiceSet {
+  action: "add" | "replace";
+  heading: string;
+  detail: string;
+  currentTitle?: string;
+  currentWhen?: string;
+  ideas: AssistantChoice[];
+}
+
+/** Compact confirmation after Apply. */
+export interface AssistantAppliedNote {
+  id: string;
+  title: string;
+  lines: string[];
+}
+
 /* -------------------------------------------------------------------------- */
 /* Derived view models                                                        */
 /* -------------------------------------------------------------------------- */
