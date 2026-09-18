@@ -46,6 +46,22 @@ function destinationInScope(
   return destination.countryCode !== origin.countryCode;
 }
 
+/**
+ * Conservative city-level identity check. Excludes a destination only when
+ * it is the traveller's own origin city — never a neighbouring city, a
+ * same-country city, or a substring match.
+ *
+ * Two signals, either sufficient:
+ * 1. Same country code + exact city name (case-insensitive)
+ * 2. Same country code + coordinates within 20km (catches same-city-
+ *    different-name cases like origin "New York" vs destination "New York City")
+ */
+function isOriginCity(destination: Destination, origin: Origin): boolean {
+  if (destination.countryCode !== origin.countryCode) return false;
+  if (destination.name.toLowerCase() === origin.city.toLowerCase()) return true;
+  return distanceKm(destination.coords, origin.coords) <= 20;
+}
+
 function airportInScope(
   airport: Airport,
   origin: Origin,
@@ -94,8 +110,10 @@ export function destinationHunt(
   scope: TripScope | null,
 ): { ports: DeparturePort[]; destinations: Destination[] } {
   const departure = nearestDeparture(origin.coords);
-  const scoped = destinations.filter((destination) =>
-    destinationInScope(destination, origin, scope),
+  const scoped = destinations.filter(
+    (destination) =>
+      destinationInScope(destination, origin, scope) &&
+      !isOriginCity(destination, origin),
   );
   const airportPool = AIRPORTS.filter(
     (airport) =>
@@ -124,7 +142,7 @@ export function destinationHunt(
     serving.push(airport);
   }
 
-  let places = scoped.filter((destination) =>
+  const places = scoped.filter((destination) =>
     serving.some(
       (airport) =>
         distanceKm(destination.coords, airport.coords) <= PLACE_FROM_PORT_KM,

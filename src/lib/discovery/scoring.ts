@@ -38,15 +38,16 @@ import type {
  *  - The result is decisive: three destinations, not a catalogue.
  */
 
-/** Weights over the survivors. Activities dominate, as in the original. */
+/** Weights over the survivors. Activities still dominate, but reach now
+ * carries enough weight to differentiate origins. */
 const WEIGHTS = {
-  activities: 0.35,
-  experiences: 0.2,
-  populated: 0.1,
-  season: 0.15,
+  activities: 0.3,
+  experiences: 0.18,
+  populated: 0.08,
+  season: 0.14,
   budget: 0.1,
-  reach: 0.05,
-  duration: 0.05,
+  reach: 0.12,
+  duration: 0.08,
 } as const;
 
 /**
@@ -385,7 +386,13 @@ function reachFactor(
   // Flight time is trip time. On a two-night trip it dominates; on a fortnight
   // it barely matters.
   const budgetHours = Math.max(2.5, nights * 2.2);
-  const score = hours <= budgetHours ? 1 : Math.max(0.2, budgetHours / hours);
+  // Gradual decay rather than a hard 1.0 cliff at budgetHours. A 2h flight
+  // should out-score a 10h flight even when both are "within budget" —
+  // that is what makes origin matter in ranking.
+  const score =
+    hours <= 1
+      ? 1
+      : Math.max(0.2, 1 - (hours / budgetHours) * 0.35);
 
   const rounded = Math.round(hours * 10) / 10;
   const detail =
