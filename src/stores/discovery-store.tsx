@@ -187,6 +187,26 @@ function recomputeFrom(prefs: DiscoveryPreferences): RecommendationSet {
   return recommend(DESTINATIONS, prefs);
 }
 
+/**
+ * The final recommendation count — a product decision, not a pagination
+ * default. Preference steps that cannot change which destinations end up
+ * in this set are ceremony, not refinement.
+ */
+const RECOMMENDATION_COUNT = 3;
+
+/**
+ * A preference step is meaningful only when the viable field is larger than
+ * the final recommendation count. When the field is already at
+ * recommendation scale, drip-filtering cannot eliminate (FIELD_FLOOR
+ * prevents it) and the same set is returned regardless of ranking.
+ *
+ * This is derived from current state, never persisted — loosening a hard
+ * constraint recomputes the field and may re-enable skipped steps.
+ */
+function isRefinementMeaningful(result: RecommendationSet): boolean {
+  return result.ranked.length > RECOMMENDATION_COUNT;
+}
+
 function markAnswered(
   answered: DiscoveryStep[],
   step: DiscoveryStep,
@@ -234,6 +254,8 @@ export function makeDiscoveryStore(dates?: {
 
     next: () => {
       const state = get();
+      // Guard: never advance from a non-questions stage (prevents stale clicks)
+      if (state.stage !== "questions") return;
       const { step, subStep, prefs: p } = state;
 
       /*
@@ -303,6 +325,24 @@ export function makeDiscoveryStore(dates?: {
         return;
       }
 
+      /*
+       * Step 5 → Step 6: re-evaluate meaningfulness after must-have filtering.
+       * If the field shrank to recommendation scale, skip Activities and go
+       * straight to processing. The skip is derived from current state, so
+       * loosening a must-have and going back re-enables the step.
+       */
+      if (
+        step === "experiences" &&
+        !isRefinementMeaningful(state.result)
+      ) {
+        set({
+          answered: [...nextAnswered, "activities"],
+          subStep: null,
+        });
+        get().startProcessing();
+        return;
+      }
+
       set({
         step: DISCOVERY_STEPS[index + 1],
         subStep: null,
@@ -315,7 +355,17 @@ export function makeDiscoveryStore(dates?: {
       const { step, subStep, stage } = get();
 
       if (stage === "results") {
-        set({ stage: "questions", step: "activities", subStep: null, activeId: null });
+        /*
+         * Back from results goes to the last step the user actually visited.
+         * If preference steps were skipped (never answered), go to Budget.
+         */
+        const answered = get().answered;
+        const target = answered.includes("activities")
+          ? "activities"
+          : answered.includes("experiences")
+            ? "experiences"
+            : "budget";
+        set({ stage: "questions", step: target, subStep: null, activeId: null });
         return;
       }
       if (subStep === "ports-hunt") {
@@ -336,7 +386,21 @@ export function makeDiscoveryStore(dates?: {
         set({ stage: "intro" });
         return;
       }
-      set({ step: DISCOVERY_STEPS[index - 1], subStep: null });
+      /*
+       * Skip preference steps that were never shown (not in answered).
+       * If the user was on Experiences and clicked through to Activities,
+       * Back should return to Experiences — they were just there and may
+       * want to change selections. Skip only applies to steps the user
+       * never visited because the field was too small.
+       */
+      const prevStep = DISCOVERY_STEPS[index - 1];
+      const isPrefStep = prevStep === "experiences" || prevStep === "activities";
+      const wasAnswered = get().answered.includes(prevStep);
+      if (isPrefStep && !wasAnswered) {
+        set({ step: "budget", subStep: null });
+        return;
+      }
+      set({ step: prevStep, subStep: null });
     },
 
     setDateMode: (dateMode) => {
@@ -450,8 +514,10 @@ export function makeDiscoveryStore(dates?: {
       set({ prefs: next, result: recomputeFrom(next) });
     },
 
-    startProcessing: () =>
-      set({ stage: "processing", processingStage: 0, activeId: null }),
+    startProcessing: () => {
+      if (get().stage === "processing") return;
+      set({ stage: "processing", processingStage: 0, activeId: null });
+    },
 
     advanceProcessing: () =>
       set((state) => ({ processingStage: state.processingStage + 1 })),
@@ -472,14 +538,20 @@ export function makeDiscoveryStore(dates?: {
     },
 
     finishDestHunt: () => {
-      const { answered } = get();
+      const { answered, result } = get();
+      const meaningful = isRefinementMeaningful(result);
       set({
-        answered: markAnswered(answered, "budget"),
-        step: "experiences",
+        answered: meaningful
+          ? markAnswered(answered, "budget")
+          : [...markAnswered(answered, "budget"), "experiences", "activities"],
+        step: meaningful ? "experiences" : "activities",
         subStep: null,
         portsHuntBeat: 0,
         destinationsFound: true,
       });
+      if (!meaningful) {
+        get().startProcessing();
+      }
     },
 
     /*
@@ -488,6 +560,7 @@ export function makeDiscoveryStore(dates?: {
      */
     showResults: () => {
       const { answered, step, result } = get();
+      if (get().stage === "results") return;
       const shortlist = result.ranked.slice(0, 8);
       const top = shortlist.slice(0, 3);
       const opening = top[top.length - 1] ?? null;
@@ -557,6 +630,73 @@ export const useDiscoveryApi = context.useStoreApi;
 
 export function canSkipToResults(state: DiscoveryState): boolean {
   return state.answered.length >= MIN_STEPS_BEFORE_RESULTS;
+}
+
+/**
+ * Whether the current step has valid required state to proceed.
+ * Required steps: dates, scope, origin, budget.
+ * Optional steps: experiences, activities — always proceedable with zero
+ * selections.
+ *
+ * Sub-steps:
+ *  - add-origin: form handles its own submission
+ *  - ports-hunt / dest-hunt: hunt animation handles advancement
+ *  - confirm-origin: always proceedable (the confirm action)
+ *  - weekend-shape: pre-selected, always proceedable
+ *  - income: always proceedable (Skip is a separate button)
+ */
+export function canProceed(state: DiscoveryState): boolean {
+  const { step, subStep, prefs } = state;
+
+  if (subStep === "add-origin") return false;
+  if (subStep === "ports-hunt" || subStep === "dest-hunt") return false;
+  if (subStep === "confirm-origin") return true;
+  if (subStep === "weekend-shape") return true;
+  if (subStep === "income") return true;
+
+  switch (step) {
+    case "dates": {
+      if (prefs.dateMode === "specific") {
+        return Boolean(
+          prefs.startDate &&
+            prefs.endDate &&
+            prefs.endDate >= prefs.startDate,
+        );
+      }
+      if (prefs.dateMode === "weekend") {
+        return Boolean(prefs.weekendShape);
+      }
+      if (prefs.dateMode === "flexible") {
+        return prefs.flexibleNights >= 2;
+      }
+      return false;
+    }
+    case "scope":
+      return prefs.scope !== null;
+    case "origin":
+      /*
+       * The picker (subStep null) needs Continue enabled to reach the
+       * confirm sub-step — confirmation happens on the map, not here.
+       * The confirm sub-step is always proceedable (handled above).
+       */
+      return prefs.origin !== null;
+    case "budget":
+      return prefs.budget !== null;
+    case "experiences":
+    case "activities":
+      return true;
+    default:
+      return true;
+  }
+}
+
+/**
+ * Whether the current viable field is large enough that preference steps
+ * (Must-haves / Activities) can materially change the recommendation set.
+ * Derived from current state — never persisted as a one-way flag.
+ */
+export function refinementIsMeaningful(state: DiscoveryState): boolean {
+  return isRefinementMeaningful(state.result);
 }
 
 /** Survivors still in the running — what the map should be showing. */

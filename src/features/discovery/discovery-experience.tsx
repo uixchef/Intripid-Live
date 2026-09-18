@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import {
   DISCOVERY_STEPS,
   activeRecommendation,
+  canProceed,
   survivingCount,
   useDiscovery,
   useDiscoveryApi,
@@ -82,6 +83,7 @@ export function DiscoveryExperience() {
   const destinationsFound = useDiscovery((s) => s.destinationsFound);
   const surviving = useDiscovery(survivingCount);
   const active = useDiscovery(activeRecommendation);
+  const proceedable = useDiscovery(canProceed);
 
   /** Mobile: whether the map is expanded over the console. */
   const [mapExpanded, setMapExpanded] = useState(false);
@@ -389,7 +391,12 @@ export function DiscoveryExperience() {
                       api.getState().setActive(reveal[index - 1].destination.id);
                       return;
                     }
-                    api.getState().goToStep("activities");
+                    const answered = api.getState().answered;
+                    api.getState().goToStep(
+                      answered.includes("activities") ? "activities"
+                        : answered.includes("experiences") ? "experiences"
+                        : "budget",
+                    );
                   }}
                   onSelect={(id) => api.getState().setActive(id)}
                   onNext={() => {
@@ -401,8 +408,11 @@ export function DiscoveryExperience() {
                     if (next) api.getState().setActive(next.destination.id);
                   }}
                   onAdjust={() => {
+                    const answered = api.getState().answered;
                     api.getState().setActive(null);
-                    api.getState().goToStep("experiences");
+                    api.getState().goToStep(
+                      answered.includes("experiences") ? "experiences" : "budget",
+                    );
                   }}
                   plannerHref={plannerHrefForDestination(
                     active.destination.id,
@@ -431,7 +441,12 @@ export function DiscoveryExperience() {
                     hoveredId={hoveredId}
                     onSelect={handleSelect}
                     onHover={handleHover}
-                    onAdjust={() => api.getState().goToStep("experiences")}
+                    onAdjust={() => {
+                      const answered = api.getState().answered;
+                      api.getState().goToStep(
+                        answered.includes("experiences") ? "experiences" : "budget",
+                      );
+                    }}
                   />
                 </motion.div>
               ) : (
@@ -547,6 +562,7 @@ export function DiscoveryExperience() {
                   type={addingOrigin ? "submit" : "button"}
                   form={addingOrigin ? "discovery-add-origin" : undefined}
                   loading={originBusy}
+                  disabled={!addingOrigin && !proceedable}
                   onClick={
                     addingOrigin ? undefined : () => api.getState().next()
                   }
