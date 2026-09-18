@@ -6,6 +6,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type ReactNode,
 } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Check, Send } from "lucide-react";
@@ -13,7 +14,9 @@ import { ArrowRight, Check, Send } from "lucide-react";
 import { AiMark } from "@/components/brand/ai-mark";
 import { CardMedia } from "@/components/card-media";
 import { Button, IconButton } from "@/components/ui/button";
+import { photosForPlaces } from "@/data/place-photos";
 import { CATEGORY_META } from "@/lib/categories";
+import { walkMinutes } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import {
   appliedAskAi,
@@ -26,14 +29,21 @@ import {
   type AskAiOption,
   type AskAiReading,
 } from "@/lib/trip/ai-chat";
-import { dayLabel, durationLabel, timeLabel } from "@/lib/trip/time";
+import {
+  dayLabel,
+  dayLabelLong,
+  durationLabel,
+  durationMinutes,
+  timeLabel,
+} from "@/lib/trip/time";
 import type { AssistantOffer } from "@/lib/trip/assistant";
 import type {
   AssistantAppliedNote,
   AssistantChange,
-  AssistantChoice,
   AssistantChoiceSet,
   AssistantPlan,
+  ItemCategory,
+  ItineraryItem,
   Trip,
 } from "@/lib/types";
 
@@ -322,9 +332,16 @@ function ChoiceCards({
       ) : null}
       <div className={styles.choiceList}>
         {set.ideas.map((idea) => (
-          <PlaceOptionCard
+          <PlaceCard
             key={idea.ideaId}
-            choice={idea}
+            mode="option"
+            photo={idea.photo}
+            category={idea.category}
+            area={idea.area}
+            title={idea.title}
+            durationMin={idea.durationMin}
+            travelMin={idea.travelMin}
+            why={idea.why}
             onSelect={() => onChoose(idea.ideaId)}
           />
         ))}
@@ -333,34 +350,74 @@ function ChoiceCards({
   );
 }
 
-function PlaceOptionCard({
-  choice,
+function PlaceCard({
+  mode,
+  photo,
+  category,
+  area,
+  title,
+  durationMin,
+  travelMin,
+  why,
+  consequence,
   onSelect,
 }: {
-  choice: AssistantChoice;
-  onSelect: () => void;
+  mode: "option" | "proposal";
+  photo: string | null;
+  category: ItemCategory;
+  area: string | null;
+  title: string;
+  durationMin: number;
+  travelMin: number | null;
+  why?: string;
+  consequence?: { label: string; when: string };
+  onSelect?: () => void;
 }) {
-  const meta = CATEGORY_META[choice.category];
-  return (
-    <button type="button" className={styles.optionCard} onClick={onSelect}>
+  const meta = CATEGORY_META[category];
+  const kickerArea =
+    area && area.trim().toLowerCase() !== title.trim().toLowerCase()
+      ? area
+      : null;
+  const inner = (
+    <>
       <CardMedia
-        photo={choice.photo}
+        photo={photo}
         variant="utility"
         className={styles.optionCardMedia}
       />
       <span className={styles.optionCardBody}>
         <span className={styles.optionCardKicker}>
           {meta.label}
-          {choice.area ? ` · ${choice.area}` : ""}
+          {kickerArea ? ` · ${kickerArea}` : ""}
         </span>
-        <span className={styles.optionCardTitle}>{choice.title}</span>
+        <span className={styles.optionCardTitle}>{title}</span>
         <span className={styles.optionCardMeta}>
-          {durationLabel(choice.durationMin)}
-          {choice.travelMin != null ? ` · ${choice.travelMin} min from context` : ""}
+          {durationLabel(durationMin)}
+          {travelMin != null ? ` · ${travelMin} min from context` : ""}
         </span>
-        <span className={styles.optionCardWhy}>{choice.why}</span>
+        {mode === "option" && why ? (
+          <span className={styles.optionCardWhy}>{why}</span>
+        ) : null}
+        {mode === "proposal" && consequence ? (
+          <span className={styles.proposalWhen}>
+            <span className={styles.proposalWhenLabel}>{consequence.label}</span>
+            <span className={styles.proposalWhenTime}>{consequence.when}</span>
+          </span>
+        ) : null}
       </span>
-    </button>
+    </>
+  );
+
+  if (mode === "option") {
+    return (
+      <button type="button" className={styles.optionCard} onClick={onSelect}>
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div className={cn(styles.optionCard, styles.proposalCard)}>{inner}</div>
   );
 }
 
@@ -407,43 +464,13 @@ export function AssistantPlanPanel({
       </header>
 
       <div className={styles.panelBody}>
-        <div className={styles.changes}>
-          <p className="eyebrow">
-            {plan.changes.length}{" "}
-            {plan.changes.length === 1 ? "change" : "changes"}
-          </p>
-          <ul className={styles.changeList}>
-            {plan.changes.map((change) => {
-              const isApplied = applied.includes(change.id);
-              return (
-                <li
-                  key={change.id}
-                  className={cn(styles.change, isApplied && styles.changeApplied)}
-                  onPointerEnter={() =>
-                    onHoverChange(change.itemId ?? change.create?.id ?? null)
-                  }
-                  onPointerLeave={() => onHoverChange(null)}
-                >
-                  <ChangeVisual change={change} trip={trip} />
-                  {plan.changes.length > 1 && !isApplied ? (
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      onClick={() => onApplyOne(change.id)}
-                    >
-                      Apply
-                    </Button>
-                  ) : isApplied ? (
-                    <span className={styles.changeDone}>
-                      <Check size={12} strokeWidth={2.8} />
-                      Done
-                    </span>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <PlanChanges
+          plan={plan}
+          trip={trip}
+          applied={applied}
+          onApplyOne={onApplyOne}
+          onHoverChange={onHoverChange}
+        />
 
         <div className={styles.reasoning}>
           <p className="eyebrow">Why</p>
@@ -481,6 +508,294 @@ export function AssistantPlanPanel({
   );
 }
 
+function PlanChanges({
+  plan,
+  trip,
+  applied,
+  onApplyOne,
+  onHoverChange,
+}: {
+  plan: AssistantPlan;
+  trip: Trip;
+  applied: string[];
+  onApplyOne: (changeId: string) => void;
+  onHoverChange: (itemId: string | null) => void;
+}) {
+  const addChange = plan.changes.find((change) => change.kind === "add" && change.create);
+  const removeChange = plan.changes.find((change) => change.kind === "remove");
+  const replacePair = plan.intent === "replace" && Boolean(addChange && removeChange);
+  const rest = plan.changes.filter((change) => {
+    if (change === addChange) return false;
+    if (replacePair && change === removeChange) return false;
+    return true;
+  });
+  const showCount =
+    rest.length > 0 || (!addChange && plan.changes.length > 1);
+
+  return (
+    <div className={styles.changes}>
+      {showCount ? (
+        <p className="eyebrow">
+          {plan.changes.length}{" "}
+          {plan.changes.length === 1 ? "change" : "changes"}
+        </p>
+      ) : null}
+
+      {replacePair && removeChange ? (
+        <CurrentActivityRef
+          change={removeChange}
+          plan={plan}
+          trip={trip}
+          slot={addChange?.create ?? null}
+          applied={applied.includes(removeChange.id)}
+          showApply={plan.changes.length > 1}
+          onApply={() => onApplyOne(removeChange.id)}
+          onHoverChange={onHoverChange}
+        />
+      ) : null}
+
+      <ul className={styles.changeList}>
+        {addChange?.create ? (
+          <ChangeRow
+            key={addChange.id}
+            change={addChange}
+            applied={applied.includes(addChange.id)}
+            showApply={plan.changes.length > 1}
+            onApply={() => onApplyOne(addChange.id)}
+            onHoverChange={onHoverChange}
+            place
+          >
+            <ProposedPlaceCard
+              plan={plan}
+              change={addChange}
+              trip={trip}
+              current={
+                removeChange
+                  ? (trip.items.find((item) => item.id === removeChange.itemId) ??
+                    null)
+                  : null
+              }
+            />
+          </ChangeRow>
+        ) : null}
+        {rest.map((change) => (
+          <ChangeRow
+            key={change.id}
+            change={change}
+            applied={applied.includes(change.id)}
+            showApply={plan.changes.length > 1}
+            onApply={() => onApplyOne(change.id)}
+            onHoverChange={onHoverChange}
+          >
+            <ChangeVisual change={change} trip={trip} />
+          </ChangeRow>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ChangeRow({
+  change,
+  applied,
+  showApply,
+  onApply,
+  onHoverChange,
+  place,
+  children,
+}: {
+  change: AssistantChange;
+  applied: boolean;
+  showApply: boolean;
+  onApply: () => void;
+  onHoverChange: (itemId: string | null) => void;
+  place?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <li
+      className={cn(
+        styles.change,
+        place && styles.changePlace,
+        applied && styles.changeApplied,
+      )}
+      onPointerEnter={() =>
+        onHoverChange(change.itemId ?? change.create?.id ?? null)
+      }
+      onPointerLeave={() => onHoverChange(null)}
+    >
+      {children}
+      {showApply && !applied ? (
+        <Button variant="ghost" size="xs" onClick={onApply}>
+          Apply
+        </Button>
+      ) : applied ? (
+        <span className={styles.changeDone}>
+          <Check size={12} strokeWidth={2.8} />
+          Done
+        </span>
+      ) : null}
+    </li>
+  );
+}
+
+function CurrentActivityRef({
+  change,
+  plan,
+  trip,
+  slot,
+  applied,
+  showApply,
+  onApply,
+  onHoverChange,
+}: {
+  change: AssistantChange;
+  plan: AssistantPlan;
+  trip: Trip;
+  slot: ItineraryItem | null;
+  applied: boolean;
+  showApply: boolean;
+  onApply: () => void;
+  onHoverChange: (itemId: string | null) => void;
+}) {
+  const item = trip.items.find((entry) => entry.id === change.itemId);
+  const title =
+    item?.title ??
+    (plan.intent === "replace" && plan.title.startsWith("Replace ")
+      ? plan.title.slice("Replace ".length)
+      : change.summary);
+  const start = item?.start ?? slot?.start ?? null;
+  const end = item?.end ?? slot?.end ?? null;
+  const when =
+    start && end
+      ? `${dayLabel(start.slice(0, 10))} · ${timeLabel(start)}–${timeLabel(end)}`
+      : null;
+
+  return (
+    <div
+      className={cn(styles.changeCurrent, applied && styles.changeCurrentDone)}
+      onPointerEnter={() => onHoverChange(change.itemId ?? null)}
+      onPointerLeave={() => onHoverChange(null)}
+    >
+      <span className={styles.changeCurrentBody}>
+        <span className={styles.changeCurrentLabel}>Current</span>
+        <strong className={styles.changeCurrentTitle}>{title}</strong>
+        {when ? <span className={styles.changeCurrentWhen}>{when}</span> : null}
+      </span>
+      {showApply && !applied ? (
+        <Button variant="ghost" size="xs" onClick={onApply}>
+          Apply
+        </Button>
+      ) : applied ? (
+        <span className={styles.changeDone}>
+          <Check size={12} strokeWidth={2.8} />
+          Done
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function ProposedPlaceCard({
+  plan,
+  change,
+  trip,
+  current,
+}: {
+  plan: AssistantPlan;
+  change: AssistantChange;
+  trip: Trip;
+  current: ItineraryItem | null;
+}) {
+  const created = change.create;
+  if (!created) return null;
+  const durationMin =
+    created.start && created.end
+      ? durationMinutes(created.start, created.end)
+      : 90;
+  return (
+    <PlaceCard
+      mode="proposal"
+      photo={photoForStop(created, trip.destinationId)}
+      category={created.category}
+      area={created.place?.neighbourhood ?? created.place?.name ?? null}
+      title={created.title}
+      durationMin={durationMin}
+      travelMin={travelMinForCreate(created, trip, current)}
+      consequence={consequenceForAdd(plan, created)}
+    />
+  );
+}
+
+function photoForStop(item: ItineraryItem, destinationId: string): string | null {
+  if (!item.place) return null;
+  return (
+    photosForPlaces(
+      [
+        {
+          id: item.id,
+          name: item.place.name,
+          title: item.title,
+          coords: item.place.coords,
+        },
+      ],
+      destinationId,
+    )[item.id] ?? null
+  );
+}
+
+function travelMinForCreate(
+  created: ItineraryItem,
+  trip: Trip,
+  current: ItineraryItem | null,
+): number | null {
+  const fromComment = created.comments
+    ?.map((entry) => entry.text)
+    .join(" ")
+    .match(/(\d+)\s*min from/);
+  if (fromComment) return Number(fromComment[1]);
+  if (!created.place) return null;
+  if (current?.place) {
+    return Math.max(8, walkMinutes(current.place.coords, created.place.coords));
+  }
+  const day = created.start?.slice(0, 10);
+  const neighbors = trip.items.filter(
+    (item) =>
+      item.place &&
+      item.kind === "activity" &&
+      item.start?.slice(0, 10) === day,
+  );
+  if (neighbors.length === 0) return null;
+  const hops = neighbors.map((item) =>
+    walkMinutes(item.place!.coords, created.place!.coords),
+  );
+  return Math.max(8, Math.min(...hops));
+}
+
+function weekdayName(iso: string): string {
+  return dayLabelLong(iso.slice(0, 10)).split(" ")[0] ?? dayLabel(iso.slice(0, 10));
+}
+
+function consequenceForAdd(
+  plan: AssistantPlan,
+  created: ItineraryItem,
+): { label: string; when: string } {
+  const day = created.start ? weekdayName(created.start) : weekdayName(plan.dayIso);
+  const when =
+    created.start && created.end
+      ? `${timeLabel(created.start)}–${timeLabel(created.end)}`
+      : created.start
+        ? timeLabel(created.start)
+        : "";
+  if (plan.intent === "replace") {
+    return { label: `Replace on ${day}`, when };
+  }
+  if (plan.intent === "nearby-dinner") {
+    return { label: `Dinner · ${day}`, when };
+  }
+  return { label: `Add to ${day}`, when };
+}
+
 function ChangeVisual({ change, trip }: { change: AssistantChange; trip: Trip }) {
   const item = trip.items.find((entry) => entry.id === change.itemId) ?? null;
   if (change.kind === "move" && item?.start && change.patch?.start) {
@@ -496,19 +811,6 @@ function ChangeVisual({ change, trip }: { change: AssistantChange; trip: Trip })
             {dayLabel(change.patch.start.slice(0, 10))} · {timeLabel(change.patch.start)}
           </span>
         </span>
-      </span>
-    );
-  }
-  if (change.kind === "add" && change.create) {
-    return (
-      <span className={styles.changeVisual}>
-        <span className={styles.changeSummary}>{change.summary}</span>
-        {change.create.start ? (
-          <span className={styles.changeShift}>
-            Lands {dayLabel(change.create.start.slice(0, 10))} ·{" "}
-            {timeLabel(change.create.start)}
-          </span>
-        ) : null}
       </span>
     );
   }
